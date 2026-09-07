@@ -103,3 +103,33 @@ python scripts/measure_reference.py \
   --reference verification/reference_solver.py \
   --entry recover_curve
 ```
+
+## 8. 2026-09-08 clean-room first-proposal calibration (post-de-leak)
+
+After the solution recipe was removed from the agent-visible `Task.md`
+(commit b725249), an uncontaminated first-proposal draw was run under strict
+candidate visibility: only `Task.md`, `solution.py`, `constraints.txt` and the
+runner mechanics were read; `verification/` and `references/` stayed unread;
+one designed proposal, at most three runner invocations (interface fixes only,
+no score-driven tuning).
+
+- **Result: combined_score 0.000, valid 0.** Development evidence efficiency
+  0.5848, held-out 0.49375; all eight supported worlds across both splits were
+  recovered exactly (intrinsic mechanism 1.0, budgets 5-6 of 8);
+  development false-discovery rate 0.0; correct-refusal rate 0.0; robustness
+  0.0. The proposal (per-prime residue tables over descending large primes,
+  candidate-set filtering, singular-signature detection, medoid tie-breaks for
+  the Q-isomorphism twins) solved every supported world without trial and
+  error, but its query pattern invalidated all four refusal worlds; the one
+  demonstrably safe query (a single `count_points(11)`, as the shipped
+  baseline makes) was not rediscovered inside the run allowance.
+- **Comparison:** the pre-de-leak wording produced a first proposal at
+  0.750/0.750 (recorded in 1a). De-leaking moved the first-proposal combined
+  score from tied-with-reference to zero.
+- **Reading:** the recovery arithmetic remains implementation-grade for a
+  frontier model; after de-leaking, admission pressure rests on (a) navigating
+  the disclosed invalidation contract ("overspending or unknown primes
+  invalidate the world even when caught") conservatively enough to keep
+  refusal worlds valid, and (b) the refusal decision itself. This is a proxy
+  draw run on macOS, not the sandboxed frozen-frontier draw the certification
+  gate requires; that draw is still pending.
