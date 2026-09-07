@@ -67,14 +67,11 @@ signatures that no probe can separate.
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only:
-likelihood-tracked hypothesis search: break sets of at most two pipes with an
-evidence-triggered extension to triples, scored under the published flip probability,
-information-splitting route choice, and
-margin-based claims with structural-twin refusal. Local shortcut
-and ablation diagnostics are recorded in `references/known_best.md`; they do not
-replace clean Linux sandbox replay, independent review or a frozen frontier-model
-calibration draw.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes and ablation diagnostics
+are recorded in the maintainer-facing `references/known_best.md`, which is not served
+to candidates. They do not replace clean Linux sandbox replay, independent review or
+a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-07)
 
