@@ -88,15 +88,17 @@ def problem_statement(world):
         "refusal_note": (
             "runtimes that branch on the input size follow no single class and must "
             "be refused -- the branching residue need not be one a geometric size "
-            "ladder ever samples; noise floors well above five percent make the law "
-            "unrecoverable and must be refused"
+            "ladder ever samples; noise floors that swamp the affordable ladder make "
+            "the law unrecoverable and must be refused"
         ),
     }
 
 
 def _true_runtime(world, size):
     if world["kind"] == "branch":
-        # The branch predicate is public: sizes congruent to 1 mod 3 run quadratic.
+        # Branch predicate, maintainer-only (recorded in references/known_best.md):
+        # sizes congruent to 1 mod 3 run quadratic, all others linearithmic. It is
+        # withheld from candidates, who must recover it by split-hypothesis fitting.
         value = world["scale"] * (size ** 2 if size % 3 == 1
                                   else size * math.log2(max(size, 2)))
     else:

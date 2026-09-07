@@ -1,7 +1,8 @@
 """Truth-blind reference witness: residue-covering ladder with BIC class selection.
 
 The eight-call ladder (16, 16, 16, 13, 27, 55, 62, 192) supports a five-versus-three
-split around the public size-mod-three branch, carries one size at 192 where the
+split around the size-mod-three branch (maintainer-only knowledge; candidates must
+recover the split from measurements), carries one size at 192 where the
 quadratic and exponential shapes finally separate by two orders of magnitude, and
 repeats size 16 three times for a noise-floor estimate. Its tier costs sum to the
 nine-unit budget. Classes are compared by a BIC-style score (n log

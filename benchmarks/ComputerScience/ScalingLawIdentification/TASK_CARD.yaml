@@ -15,12 +15,15 @@ oracle:
 difficulty_ladder:
   default_level: 1
   levels:
-    1: seven percent noise, public mod-three branching, sixty percent jitter
+    1: seven percent noise, undisclosed mod-three branching (predicate recoverable by
+      split-hypothesis fitting), sixty percent jitter
 normalization:
   baseline: one timing, uniform probabilities and a fixed mid-range scale
   reference: eight-call, six-unique-size residue-covering ladder with a 192 top,
     fixed-shape penalized
-    class selection, public mod-three split-fit branch test and repeated-size jitter gate
+    class selection, predicate-agnostic split-fit branch test and repeated-size
+    jitter gate; the branch predicate and the numeric noise criterion are
+    maintainer-only and withheld from candidates
   score: geometric mean of class probability, log-scale score and sealed
     extrapolation, multiplied by 1 - 0.25 * budget_used / 9 on supported discoveries and normalized
     above always abstaining; refusal credit remains unweighted on its separate axis

@@ -76,8 +76,7 @@ polynomial classes from the exponential tail.
 ## Admission and reference scope
 
 This package remains **candidate**. The runnable reference uses public inputs only: an
-eight-call, six-unique-size ladder covering both sides of the public mod-3 branch
-split and repeating size 16 three times, per-class
+eight-call, six-unique-size ladder repeating size 16 three times, per-class
 log-space regression with an exponent penalty, a split-fit branch test and a
 repeat-estimated jitter gate. Local shortcut and ablation diagnostics are recorded in
 `references/known_best.md`; they do not replace clean Linux sandbox replay,

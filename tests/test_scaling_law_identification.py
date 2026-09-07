@@ -15,6 +15,9 @@ import importlib.util
 import json
 
 
+import sys
+
+
 import unittest
 
 
@@ -119,6 +122,40 @@ class ScalingLawPins(unittest.TestCase):
             world = ev._world(spec)
             if world["kind"] != "branch":
                 self.assertIn(world["family"], ev.CLASSES)
+
+
+class ScalingLawRunnerIntegration(unittest.TestCase):
+    """Launch frontier_eval/run_eval.py exactly as eval_command.txt does.
+
+    The shipped runner was once an unrendered template: it wrote the metrics file
+    and then died on a doubled-brace set literal, so every entrypoint run exited
+    nonzero. This test executes the real command line so that class of defect
+    cannot come back unnoticed.
+    """
+
+    def test_runner_executes_reference_end_to_end(self):
+        import subprocess
+        import tempfile
+
+        task = ROOT / "benchmarks/ComputerScience/ScalingLawIdentification"
+        command = [
+            sys.executable, "frontier_eval/run_eval.py",
+            "--candidate", str((task / "verification" / "reference_solver.py").resolve()),
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            metrics_path = Path(tmp) / "metrics.json"
+            command += ["--metrics-out", str(metrics_path)]
+            completed = subprocess.run(command, cwd=str(task), capture_output=True,
+                                       text=True, timeout=300)
+            self.assertEqual(completed.returncode, 0, completed.stderr[-500:])
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+            for key in ("combined_score", "valid", "robustness_score",
+                        "mechanism_score"):
+                self.assertIn(key, metrics)
+            self.assertEqual(metrics["valid"], 1.0)
+            self.assertNotIn("error_message", metrics)
+            reported = json.loads(completed.stdout.strip().splitlines()[-1])
+            self.assertEqual(reported["combined_score"], metrics["combined_score"])
 
 
 if __name__ == "__main__":
