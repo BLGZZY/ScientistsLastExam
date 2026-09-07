@@ -85,18 +85,18 @@ EnergyBalanceModel fits climate dynamics, ForcedSignalAttribution identifies for
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
 Each `proxy_catalog` row also supplies `calibration_temperature_c`, `calibration_proxy_values` (paired length-7 arrays), and scalar `calibration_noise_std`. These are noisy laboratory calibration observations of the proxy response, not the hidden historical climate series. They make a shared nonlinear response testable even when all historical proxies agree on that transformed series.
 
-### Current reference and remaining difficulty
-
-Calibration-tested, dated Gaussian-process reconstruction with propagated age error and coherence refusal. Public noisy proxy calibration observations make shared nonlinear response misspecification testable. Five sparse dates support shape-preserving age-depth interpolation. The posterior still approximates shared chronology errors diagonally. The optimization reference defines 1 by construction; a discovery reference is evaluated against the fixed recovery ceiling. Neither fact certifies difficulty.
-
 Each catalog row additionally supplies `chronology_model` (description), `accumulation_segments`
-(integer), and `age_bounds_years` ([0,2000]). The reference interpolates sparse dates with PCHIP
-and performs GP climate reconstruction; it does not know hidden accumulation rates. Joint
-age/climate posterior sampling and adaptive dating remain possible improvements.
+(integer), and `age_bounds_years` ([0,2000]). These fields describe the public
+chronology contract; hidden accumulation rates are never candidate inputs.
 
 The variable-accumulation construction is motivated by age-uncertain reconstruction methods in
 [geoChronR](https://gchron.copernicus.org/articles/3/149/2021/gchron-3-149-2021.html);
