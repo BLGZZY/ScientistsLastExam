@@ -108,3 +108,33 @@ python scripts/measure_reference.py \
   --reference verification/reference_solver.py \
   --entry identify_scaling_law
 ```
+
+## 8. 2026-09-08 clean-room first-proposal calibration (post-de-leak)
+
+After the mod-3 branch-predicate phrase and the "well above five percent"
+noise figure were removed from the agent-visible `Task.md` and the runtime
+`refusal_note` (commit 0c00206), an uncontaminated first-proposal draw was run
+under strict candidate visibility (same protocol: `Task.md`, `solution.py`,
+`constraints.txt`, runner mechanics only; one designed proposal; up to three
+runner invocations for interface fixes only).
+
+- **Result: combined_score 0.000, valid 0** (mechanism 0.342; class
+  probability 0.548; scale 0.797; extrapolation 0.649; robustness 0.0). Four
+  of six supported worlds were identified with high confidence, one partially,
+  one confidently wrong; both refusal worlds were mishandled (FDR 0.5 in the
+  method-pure run; world invalidation spread further when the ladder was
+  capped in a defensive variant). The proposal chose its ladder
+  ([8, 32, 64, 192, 384] plus one repeat) from cost-tier reasoning alone,
+  fitted single-parameter families in log space, set softmax temperatures from
+  repeat-measured noise, and built a three-part identifiability gate; it never
+  saw the branch predicate or the noise threshold, which had to be discovered
+  by split-hypothesis scanning and repeat measurement.
+- **Comparison:** the pre-de-leak wording produced a first proposal at
+  0.709/0.708 (see section 6). De-leaking moved the first proposal to zero,
+  with genuine misclassification under noise on at least one supported world.
+- **Reading:** the admission bar (first proposal far below the reference
+  0.711/0.703) now holds with margin, and part of the margin is earned
+  difficulty (predicate discovery, noise-gate calibration, refusal), while
+  part comes from the disclosed invalidation contract claiming worlds that
+  probe aggressively. This is a proxy draw run on macOS; the sandboxed
+  frozen-frontier draw required for certification is still pending.
