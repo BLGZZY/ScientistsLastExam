@@ -15,6 +15,12 @@ normalization:
     the oracle's block-exchange commitment anchor.
   score: Development energy-cost savings are uncapped above the block-search anchor; held-out networks, demand growth and four-hour
     outage resilience remain separate.
+evaluation_budget: 120 s expected evaluation time (frontier_eval/metadata.yaml) and a
+  300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py). A direct
+  local evaluation on 2026-09-07 took 34.8 s for the baseline and 32.1 s for the
+  runnable reference; the maintainer observed 79 s for the baseline on another host,
+  which sits inside the declared envelope, so the runtime budget is designed rather
+  than accidental.
 citations:
 - id: url:https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10113EM.TXT
   title: EPANET 2.2 User Manual

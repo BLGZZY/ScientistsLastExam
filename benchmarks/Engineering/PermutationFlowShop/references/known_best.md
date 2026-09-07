@@ -12,6 +12,10 @@ descent at 3000 iterations with seed 0 freezes the record makespans. The former
 reference now performs one complete perturb-and-descent cycle. The frozen record is
 not a claimed optimum; fresh instances in these size classes remain hard search problems.
 A local direct evaluation of the runnable reference took 0.93 seconds on 2026-09-06.
+The 2026-09-07 maintainer-method retest (in-process `evaluate` on both entries) measured
+0.71 s for the reference and 0.24 s for the baseline, with 0.636364 development and the
+baseline exactly zero, confirming both required fixes hold at the current head; the
+budget now also appears in TASK_CARD.yaml as `evaluation_budget`.
 
 ## 2. Baseline and normalization
 

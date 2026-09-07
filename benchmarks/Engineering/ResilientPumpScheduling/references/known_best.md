@@ -13,7 +13,10 @@ The shipped `solution.py` is the zero baseline. The runnable all-on convex dispa
 `0.569407` development / `0.493703` held-out. The evaluator's block-exchange commitment search
 is the reproducible score-one anchor; discrete commitment is the measured headroom. The scale is
 floored at zero and uncapped. The maintainer observed 79 seconds for the baseline on another host;
-the declared expected time is 120 seconds and the wrapper timeout is 300 seconds.
+the declared expected time is 120 seconds and the wrapper timeout is 300 seconds. The 2026-09-07
+maintainer-method retest (in-process `evaluate` on both entries) measured 34.8 s baseline /
+32.1 s reference with the baseline exactly zero and the reference 0.569407, and the budget now
+also appears in TASK_CARD.yaml as `evaluation_budget`.
 
 ## 3. Capability comparisons and ablations
 
