@@ -15,21 +15,36 @@ def infer_imu(problem):
     bias, drift = coef[0], coef[1]
     residual = Y - X @ coef
     rms = float(np.sqrt(np.mean(residual ** 2)))
-    orientation_resid = []
-    for row, resid in zip(rows, residual):
-        orientation_resid.append(float(np.linalg.norm(resid)))
-    max_resid = max(orientation_resid)
-    by_temp = {}
-    for row, resid in zip(rows, residual):
-        by_temp.setdefault(row["temperature_c"], []).append(float(np.linalg.norm(resid)))
-    temp_pattern = max(np.mean(v) for v in by_temp.values()) - min(np.mean(v) for v in by_temp.values())
+    norms = np.linalg.norm(residual, axis=1)
+    robust_scale = max(float(np.median(norms)), 0.01)
+
+    dt = X[:, 1]
+    X_quad = np.column_stack([np.ones(len(rows)), dt, dt ** 2])
+    quadratic_detected = False
+    for axis in range(3):
+        qcoef, *_ = np.linalg.lstsq(X_quad, Y[:, axis], rcond=None)
+        qres = Y[:, axis] - X_quad @ qcoef
+        linear_ss = float(np.sum(residual[:, axis] ** 2))
+        quad_ss = float(np.sum(qres ** 2))
+        improvement = (linear_ss - quad_ss) / max(linear_ss, 1e-12)
+        if abs(float(qcoef[2])) > 8e-5 and improvement > 0.18:
+            quadratic_detected = True
+
+    orientation = np.asarray([row["orientation"] for row in rows], dtype=float)
+    coupling_detected = False
+    for axis in range(3):
+        ccoef, *_ = np.linalg.lstsq(GRAVITY * orientation, residual[:, axis], rcond=None)
+        off_axis = np.delete(ccoef, axis)
+        if float(np.max(np.abs(off_axis))) > 0.0045:
+            coupling_detected = True
+
     diagnosis = "supported"
     abstain = False
-    if max_resid > 0.30 and rms < 0.20:
+    if float(np.max(norms)) > max(0.10, 4.5 * robust_scale):
         diagnosis, abstain = "motion_contamination", True
-    elif rms > 0.08 and temp_pattern > 0.03:
+    elif quadratic_detected:
         diagnosis, abstain = "thermal_nonlinearity", True
-    elif rms > 0.08:
+    elif coupling_detected:
         diagnosis, abstain = "axis_misalignment", True
     prediction = GRAVITY * np.asarray(problem["prediction_orientation"]) + bias + drift * (problem["prediction_temperature_c"] - T_REF)
     return {
@@ -37,7 +52,7 @@ def infer_imu(problem):
         "temperature_drift_mps2_per_c": drift.tolist(),
         "prediction_accel_mps2": prediction.tolist(),
         "diagnosis": diagnosis,
-        "confidence": float(np.clip(1.0 - rms / 0.25, 0.0, 1.0)),
+        "confidence": 0.95 if abstain else float(np.clip(0.99 - rms / 0.50, 0.0, 1.0)),
         "abstain": abstain,
         "evidence_ids": [r["record_id"] for r in rows],
     }

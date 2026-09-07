@@ -33,15 +33,15 @@ _TEMPERATURES = (5.0, 20.0, 35.0, 50.0)
 DEVELOPMENT_WORLDS = (
     {"kind": "supported", "seed": 1201, "bias": [0.11, -0.07, 0.16], "drift": [0.0015, -0.0020, 0.0010]},
     {"kind": "supported", "seed": 1202, "bias": [-0.18, 0.09, 0.05], "drift": [0.0022, 0.0010, -0.0018]},
-    {"kind": "thermal_nonlinearity", "seed": 1203, "bias": [0.08, 0.04, -0.12], "drift": [0.0010, -0.0012, 0.0015], "quadratic_axis": 1},
-    {"kind": "axis_misalignment", "seed": 1204, "bias": [0.12, -0.11, 0.06], "drift": [0.0010, 0.0014, -0.0010]},
-    {"kind": "motion_contamination", "seed": 1205, "bias": [-0.04, 0.13, 0.08], "drift": [0.0014, -0.0010, 0.0012]},
+    {"kind": "thermal_nonlinearity", "seed": 1203, "bias": [0.08, 0.04, -0.12], "drift": [0.0010, -0.0012, 0.0015], "quadratic_axis": 1, "quadratic": 0.00020},
+    {"kind": "axis_misalignment", "seed": 1204, "bias": [0.12, -0.11, 0.06], "drift": [0.0010, 0.0014, -0.0010], "misalignment_scale": 0.44},
+    {"kind": "motion_contamination", "seed": 1205, "bias": [-0.04, 0.13, 0.08], "drift": [0.0014, -0.0010, 0.0012], "motion": [0.22, -0.15, 0.12]},
 )
 HELDOUT_WORLDS = (
     {"kind": "supported", "seed": 2201, "bias": [0.20, 0.03, -0.09], "drift": [-0.0015, 0.0018, 0.0011]},
     {"kind": "supported", "seed": 2202, "bias": [-0.06, -0.16, 0.12], "drift": [0.0020, -0.0015, -0.0013]},
-    {"kind": "thermal_nonlinearity", "seed": 2203, "bias": [0.05, -0.02, 0.10], "drift": [0.0012, 0.0010, -0.0014], "quadratic_axis": 2},
-    {"kind": "axis_misalignment", "seed": 2204, "bias": [0.09, 0.07, -0.05], "drift": [-0.0011, 0.0013, 0.0016]},
+    {"kind": "thermal_nonlinearity", "seed": 2203, "bias": [0.05, -0.02, 0.10], "drift": [0.0012, 0.0010, -0.0014], "quadratic_axis": 2, "quadratic": 0.00017},
+    {"kind": "axis_misalignment", "seed": 2204, "bias": [0.09, 0.07, -0.05], "drift": [-0.0011, 0.0013, 0.0016], "misalignment_scale": 0.38},
 )
 
 
@@ -55,12 +55,13 @@ def _records(spec: dict[str, Any]) -> list[dict[str, Any]]:
             u = orientation.copy()
             value = GRAVITY * u + bias + drift * (temp - T_REF)
             if spec["kind"] == "thermal_nonlinearity":
-                value[spec["quadratic_axis"]] += 0.00085 * (temp - T_REF) ** 2
+                value[spec["quadratic_axis"]] += spec["quadratic"] * (temp - T_REF) ** 2
             elif spec["kind"] == "axis_misalignment":
-                matrix = np.asarray([[1.0, 0.018, -0.012], [-0.014, 1.0, 0.020], [0.010, -0.016, 1.0]])
+                scale = spec["misalignment_scale"]
+                matrix = np.eye(3) + scale * np.asarray([[0.0, 0.018, -0.012], [-0.014, 0.0, 0.020], [0.010, -0.016, 0.0]])
                 value = matrix @ (GRAVITY * u) + bias + drift * (temp - T_REF)
             elif spec["kind"] == "motion_contamination" and oi == 0 and ti in (1, 2):
-                value = value + np.asarray([0.65, -0.45, 0.35])
+                value = value + np.asarray(spec["motion"])
             value = value + rng.normal(0.0, 0.012, size=3)
             rows.append({
                 "record_id": f"r{oi:02d}_{ti:02d}",
