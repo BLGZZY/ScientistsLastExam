@@ -133,3 +133,21 @@ no score-driven tuning).
   refusal worlds valid, and (b) the refusal decision itself. This is a proxy
   draw run on macOS, not the sandboxed frozen-frontier draw the certification
   gate requires; that draw is still pending.
+
+## 9. Scientific correction and fresh audit (2026-09-08)
+
+The earlier refusal generator was scientifically wrong: a squarefree quartic
+hyperelliptic model has genus one, its counter omitted affine roots, and it
+always added two points at infinity regardless of the leading coefficient.
+It is replaced by a monic degree-five polynomial, verified squarefree at every
+queryable prime, with every affine root counted once and one point at infinity.
+This is the odd-degree genus-two construction in [Sutherland’s definitions](https://math.mit.edu/~drew/Definitions.html).
+Direct two-coordinate enumeration tests independently verify the point counter.
+The earlier first-proposal observations in section 8 apply to the old, incorrect
+refusal worlds and are **not admission evidence for this revision**. The full
+reference still needs a fresh frozen model comparison.
+
+The convenience runner now uses the trusted sandbox path. Fractional/bool prime
+queries and fractional/bool coefficient claims fail closed; invalid rows no
+longer count as discovery attempts. Confidence is checked against response
+quality, and held-out rate denominators are published.

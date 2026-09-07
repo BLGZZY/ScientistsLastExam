@@ -28,6 +28,8 @@ import unittest
 
 
 from pathlib import Path
+from _sandbox_tools import skip_unless_sandbox
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -117,6 +119,7 @@ class EllipticCurvePins(unittest.TestCase):
                 self.assertEqual(4 * world["a"] ** 3 + 27 * world["b"] ** 2, 0)
 
 
+@skip_unless_sandbox("bwrap")
 class RunnerIntegrationTests(unittest.TestCase):
     """The black-box entrypoint must survive a real subprocess launch.
 
@@ -138,7 +141,7 @@ class RunnerIntegrationTests(unittest.TestCase):
                 [sys.executable, str(task / "frontier_eval" / "run_eval.py"),
                  "--candidate", str(task / candidate),
                  "--metrics-out", str(metrics_path)],
-                cwd=ROOT, capture_output=True, text=True, timeout=120)
+                cwd=ROOT, capture_output=True, text=True, timeout=420)
             stdout = json.loads(completed.stdout.strip().splitlines()[-1])
             metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         return completed.returncode, stdout, metrics
@@ -162,6 +165,82 @@ class RunnerIntegrationTests(unittest.TestCase):
         for key in self.SCORE_KEYS:
             self.assertIn(key, metrics)
         self.assertAlmostEqual(metrics["combined_score"], 0.0)
+
+
+
+class ReviewContractRegressions(unittest.TestCase):
+    def test_invalid_rows_are_not_discovery_attempts(self):
+        ev = _load(ROOT / "benchmarks/Mathematics/EllipticCurveRecovery/verification/evaluator.py", "review_invalid")
+        result = ev.evaluate(lambda *args: {})
+        self.assertEqual(result["valid"], 0.0)
+        self.assertEqual(result["combined_score"], 0.0)
+        self.assertEqual(result["development_discovery_attempt_count"], 0)
+        self.assertEqual(result["development_discovery_coverage"], 0.0)
+        self.assertEqual(result["heldout_discovery_attempt_count"], 0)
+        self.assertEqual(result["heldout_discovery_coverage"], 0.0)
+        self.assertGreater(result["heldout_unsupported_world_count"], 0)
+        self.assertEqual(result["heldout_false_discovery_count"], 0)
+
+    def test_runner_routes_through_trusted_harness_without_importing_candidate(self):
+        import contextlib
+        import io
+        import tempfile
+        import subprocess
+        runner = _load(ROOT / "benchmarks/Mathematics/EllipticCurveRecovery/frontier_eval/run_eval.py", "review_runner")
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp) / "candidate.py"
+            candidate.write_text("raise AssertionError('must never import here')\n")
+            metrics = Path(tmp) / "metrics.json"
+            completed = subprocess.CompletedProcess([], 0, '{"combined_score": 0.2, "valid": 1.0}', '')
+            with patch.object(sys, "argv", ["run_eval.py", "--candidate", str(candidate), "--metrics-out", str(metrics)]), patch.object(runner.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner.main(), 0)
+            command = run.call_args.args[0]
+            self.assertEqual(command[1:4], ["-m", "sle", "eval"])
+            self.assertEqual(command[command.index("--task") + 1], "Mathematics/EllipticCurveRecovery")
+            self.assertEqual(command[command.index("--candidate") + 1], str(candidate.resolve()))
+            self.assertEqual(json.loads(metrics.read_text())["combined_score"], 0.2)
+
+
+class ArithmeticScienceRegressions(unittest.TestCase):
+    def setUp(self):
+        self.ev = _load(ROOT / "benchmarks/Mathematics/EllipticCurveRecovery/verification/evaluator.py", "review_arithmetic")
+
+    def test_quintic_counts_include_affine_roots_and_one_infinity(self):
+        for coefficients in ([1, 0, 0, 0, 1, 0], [1, -2, 3, 0, 4, 1]):
+            for prime in (11, 13, 17):
+                direct = 1 + sum((y*y - sum(c * x**(5-i) for i, c in enumerate(coefficients))) % prime == 0 for x in range(prime) for y in range(prime))
+                self.assertEqual(self.ev._legendre_count_quintic(prime, coefficients), direct)
+
+    def test_refusal_worlds_are_smooth_genus_two_at_every_query_prime(self):
+        for spec in self.ev._BASE_DEVELOPMENT_SPECS + self.ev.HELDOUT_SPECS:
+            if spec[1] != "genus_two":
+                continue
+            world = self.ev._world(spec)
+            coefficients = world["quintic"]
+            self.assertEqual(len(coefficients), 6)
+            self.assertEqual(coefficients[0], 1)
+            for prime in self.ev.PRIME_LIST:
+                self.assertTrue(self.ev._squarefree_mod_prime(coefficients, prime))
+                count = self.ev._legendre_count_quintic(prime, coefficients)
+                self.assertLessEqual(abs(count - prime - 1), 4 * prime**0.5)
+
+    def test_fractional_coefficients_and_queries_do_not_truncate(self):
+        for value in (11.1, "11", True):
+            oracle = self.ev._ArithmeticOracle(self.ev._world((41011, "elliptic")))
+            with self.assertRaises(ValueError):
+                oracle.count_points(value)
+            self.assertTrue(oracle.violated)
+            self.assertEqual(oracle.used, 0)
+        for value in (0.5, "0", False):
+            with self.assertRaises(ValueError):
+                self.ev._validate({"a": value, "b": 1, "abstain": False, "confidence": 0.5})
+        with self.assertRaises(ValueError):
+            self.ev._validate({"a": -3, "b": 2, "abstain": False, "confidence": 0.5})
+
+    def test_confident_wrong_coefficients_do_not_get_perfect_calibration(self):
+        row = self.ev._evaluate_world(lambda *args: {"a": 1200, "b": 1200, "abstain": False, "confidence": 1.0}, (41011, "elliptic"), "development", 0)
+        self.assertTrue(row["valid"])
+        self.assertLess(row["confidence_score"], 0.99)
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ artifact: A bounded integer coefficient pair, optional abstention and a confiden
 oracle:
   model: seeded nonsingular curves with |a|,|b| <= 1200, exact Legendre-sum point
     counts over a published prime list with tiered costs (<= 100 costs one),
-    singular cubics (a = -3t^2, b = 2t^3) and genus-two quartics as refusal worlds
+    singular cubics (a = -3t^2, b = 2t^3) and smooth genus-two quintics as refusal worlds
   feasibility: primes from the published list, charged by tier within an
     eight-unit budget, bounded integer coefficients
   deterministic: true
@@ -24,6 +24,8 @@ normalization:
     1 - 0.25 * budget_used / 8 on supported recoveries and normalized above always
     abstaining; refusal credit remains unweighted on its separate axis
 citations:
+- id: url:https://math.mit.edu/~drew/Definitions.html
+  title: Hyperelliptic curves of odd degree — definitions and notation
 - id: isbn:9780387094939
   title: The Arithmetic of Elliptic Curves
 invariants:
@@ -38,9 +40,10 @@ licensing:
   note: All runtime worlds are generated from original repository code; cited
     publications are not redistributed.
 contamination:
-  status: cannot_be_contaminated
-  rationale: Curves, singular pairs and quartics are seeded per world; no published
-    table transfers.
+  status: repository_visible_procedural
+  rationale: Fixed seeds and generated worlds are repository-visible. Procedural
+    origin does not rule out memorization or benchmark-specific fingerprinting;
+    server-held fresh worlds are required for generalization claims.
 review:
   domain: pending_external_mathematics
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending

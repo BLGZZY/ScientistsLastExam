@@ -6,7 +6,7 @@ An elliptic curve y^2 = x^3 + ax + b with integer coefficients is studied throug
 its reduction modulo primes: for a chosen prime p, the exact number of points on
 the reduced curve over the finite field F_p is an obtainable measurement.
 Coefficients live in a bounded integer window. Not every world is such a curve:
-two break the elliptic premise — a singular cubic and a genus-two quartic — and
+two break the elliptic premise — a singular cubic and a smooth genus-two quintic — and
 their measurements are not reproducible by any admissible pair (a, b).
 
 ## Your task
@@ -25,12 +25,17 @@ prime_list        the queryable primes
 cost_tiers        prime <= 100 costs 1, <= 1000 costs 2, otherwise 3
 budget_units      8
 answer_semantics  the oracle returns #E(F_p) exactly
-refusal_note      singular cubics and genus-two quartics must be refused
+refusal_note      singular cubics and smooth genus-two quintics must be refused
 ```
 
 `count_points(prime)` charges by tier and returns `{prime, point_count,
 budget_cost}`. Overspending or unknown primes invalidate the world even when
 caught.
+
+Primes and claimed coefficients must be integers; booleans, strings and fractional
+values are invalid. A claim must satisfy `4*a**3 + 27*b**2 != 0`. On abstention,
+return both `a: None` and `b: None`, together with `abstain: True` and a finite
+confidence between zero and one.
 
 ## Evaluation
 
@@ -84,3 +89,11 @@ or a frozen frontier-model calibration draw.
 See `.research/elliptic_curve_recovery_frontier_eng_overlap_2026-09-07.md` for
 the task-specific comparison against the pinned paper and available repository
 catalog. Independent mathematics review and maintainer acceptance remain pending.
+
+## Metric interpretation
+
+Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
+including a correct refusal. Its diagnostic is one minus squared error against
+that quality, before any evidence-cost adjustment. Invalid submissions do not
+count as discovery attempts. Both splits publish attempt, false-discovery and
+refusal counts with their denominators. These diagnostics remain evaluator-only.

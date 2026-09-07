@@ -5,13 +5,14 @@ chosen primes: for each p the oracle returns #E(F_p) exactly. Each count leaves
 a finite set of compatible (a mod p, b mod p) pairs; the Chinese remainder
 theorem combines the residue sets in the bounded integer window. Two worlds
 break the elliptic premise — a singular cubic and a
-genus-two quartic — whose point counts no pair (a, b) can reproduce, and those
+smooth genus-two quintic — whose point counts no pair (a, b) can reproduce, and those
 worlds must be refused rather than fitted.
 """
 
 from __future__ import annotations
 
 import math
+from numbers import Integral
 
 import numpy as np
 
@@ -65,28 +66,44 @@ def _legendre_count_cubic(prime, a, b):
     return total
 
 
-def _legendre_count_quartic(prime, coefficients):
-    """Affine point count of y^2 = quartic(x) over F_p, plus the two points at
-    infinity on the smooth (genus-two) model.
+def _legendre_count_quintic(prime, coefficients):
+    """Exact smooth projective count for y^2=f(x), monic squarefree degree 5.
 
-    A smooth genus-two curve averages p + 1 points over F_p, exactly like an
-    elliptic curve; Hasse-Weil gives |#C - (p + 1)| <= 4*sqrt(p) for genus two
-    against |#E - (p + 1)| <= 2*sqrt(p) for elliptic, and the two intervals
-    [p+1-4*sqrt(p), p+1+4*sqrt(p)] and [p+1-2*sqrt(p), p+1+2*sqrt(p)] overlap
-    heavily. Count magnitude therefore does NOT certify refusal on its own: the
-    refusal path relies on the empirical fact that, on the frozen seeds, no
-    admissible (a, b) in the window reproduces the returned counts.
+    The odd-degree hyperelliptic model has genus (5-1)/2=2 and one point at
+    infinity. A root of f contributes the affine point (x, 0), not zero points.
     """
-    total = 0
+    total = 1
     for x in range(prime):
         value = 0
         for coefficient in coefficients:
             value = (value * x + coefficient) % prime
         if value == 0:
-            continue
-        if pow(value, (prime - 1) // 2, prime) == 1:
+            total += 1
+        elif pow(value, (prime - 1) // 2, prime) == 1:
             total += 2
-    return total + 2  # two points at infinity on the smooth model
+    return total
+
+
+def _squarefree_mod_prime(coefficients, prime):
+    """Euclidean polynomial gcd(f, f') over F_p, using descending coefficients."""
+    def trim(values):
+        values = [int(value) % prime for value in values]
+        while values and values[0] == 0:
+            values.pop(0)
+        return values
+
+    a = trim(coefficients)
+    degree = len(a) - 1
+    b = trim([value * (degree - index) for index, value in enumerate(a[:-1])])
+    while b:
+        remainder = a[:]
+        while len(remainder) >= len(b):
+            factor = remainder[0] * pow(b[0], -1, prime) % prime
+            for index, value in enumerate(b):
+                remainder[index] = (remainder[index] - factor * value) % prime
+            remainder = trim(remainder)
+        a, b = b, remainder
+    return len(a) == 1
 
 
 def _world(spec):
@@ -98,7 +115,7 @@ def _world(spec):
             b = int(rng.integers(-COEFFICIENT_BOUND, COEFFICIENT_BOUND + 1))
             if 4 * a ** 3 + 27 * b * b != 0:
                 break
-        quartic = None
+        quintic = None
     elif kind == "singular":
         # Discriminant zero: a nodal or cuspidal cubic.
         while True:
@@ -111,11 +128,16 @@ def _world(spec):
         # exact singular pair: choose t with a = -3t^2, b = 2t^3
         t = int(rng.integers(1, 3))
         a, b = -3 * t * t, 2 * t ** 3
-        quartic = None
+        quintic = None
     else:
         a = b = None
-        quartic = [int(v) for v in rng.integers(-8, 9, size=5)]
-    return {"seed": int(seed), "kind": kind, "a": a, "b": b, "quartic": quartic}
+        for _ in range(1000):
+            quintic = [1] + [int(v) for v in rng.integers(-8, 9, size=5)]
+            if all(_squarefree_mod_prime(quintic, prime) for prime in PRIME_LIST):
+                break
+        else:
+            raise ValueError("could not generate a smooth genus-two world")
+    return {"seed": int(seed), "kind": kind, "a": a, "b": b, "quintic": quintic}
 
 
 def problem_statement(world):
@@ -128,7 +150,7 @@ def problem_statement(world):
         "budget_units": BUDGET_UNITS,
         "answer_semantics": "the oracle returns the exact size of the solution set mod p, computed by Legendre sums",
         "refusal_note": (
-            "singular cubics and genus-two quartics produce point counts no "
+            "singular cubics and smooth genus-two quintics produce point counts no "
             "elliptic pair can reproduce and must be refused"
         ),
     }
@@ -143,6 +165,8 @@ class _ArithmeticOracle:
 
     def count_points(self, prime):
         try:
+            if isinstance(prime, (bool, np.bool_)) or not isinstance(prime, Integral):
+                raise ValueError("prime must be an integer from the published list")
             value = int(prime)
             if value not in PRIME_LIST:
                 self.violated = True
@@ -158,7 +182,7 @@ class _ArithmeticOracle:
             elif self.world["kind"] == "singular":
                 count = _legendre_count_cubic(value, self.world["a"], self.world["b"])
             else:
-                count = _legendre_count_quartic(value, self.world["quartic"])
+                count = _legendre_count_quintic(value, self.world["quintic"])
             return {"prime": value, "point_count": int(count), "budget_cost": cost}
         except Exception:
             self.violated = True
@@ -178,11 +202,16 @@ def _validate(submission):
         if submission.get("a") is not None or submission.get("b") is not None:
             raise ValueError("abstention requires empty coefficients")
         return None, None, confidence, True
-    a = int(submission.get("a"))
-    b = int(submission.get("b"))
+    values = [submission.get("a"), submission.get("b")]
+    if any(isinstance(value, (bool, np.bool_)) or not isinstance(value, Integral)
+           for value in values):
+        raise ValueError("coefficients must be integers")
+    a, b = map(int, values)
     if not (-COEFFICIENT_BOUND <= a <= COEFFICIENT_BOUND
             and -COEFFICIENT_BOUND <= b <= COEFFICIENT_BOUND):
         raise ValueError("coefficients outside public bounds")
+    if 4 * a ** 3 + 27 * b * b == 0:
+        raise ValueError("a claimed elliptic curve must have nonzero discriminant")
     return a, b, confidence, False
 
 
@@ -211,7 +240,9 @@ def _evaluate_world(candidate, spec, split, index):
             mechanism = 0.0
         else:
             mechanism = 1.0 if abstain else 0.0
-        target = 1.0 if (supported != abstain or (not supported and abstain)) else 0.0
+        # Confidence predicts the intrinsic quality of the submitted response,
+        # including correct refusal; a wrong supported claim is not rewarded.
+        target = mechanism
         evidence_efficiency = 1.0 - MAX_EVIDENCE_COST_PENALTY * (
             oracle.used / BUDGET_UNITS)
         # Efficiency adjusts supported recovery only. Correct-refusal credit stays
@@ -239,11 +270,12 @@ def _summary(rows, specs):
     return {
         "normalized": float(np.clip((raw - abstain_base) / (1.0 - abstain_base), 0.0, 1.0)),
         "raw": raw,
+        "confidence": float(np.mean([r["confidence_score"] for r in rows])),
         "valid_count": sum(r["valid"] for r in rows),
         "evidence_efficiency": float(np.mean([r["evidence_efficiency_score"] for r in rows])),
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -261,6 +293,8 @@ def evaluate(recover_curve):
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "development_confidence_score": dev["confidence"],
+        "development_discovery_attempt_count": dev["attempt_count"],
         "development_evidence_efficiency_score": dev["evidence_efficiency"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
@@ -271,6 +305,13 @@ def evaluate(recover_curve):
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
         "heldout_evidence_efficiency_score": hold["evidence_efficiency"],
+        "heldout_confidence_score": hold["confidence"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
