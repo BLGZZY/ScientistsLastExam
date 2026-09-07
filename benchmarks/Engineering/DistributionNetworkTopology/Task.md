@@ -12,13 +12,13 @@ never be told apart, and a confident localization there is a false discovery.
 
 ```python
 def recover_network(problem, probe, budget_units):
-    """Return {"broken_pipes": [pipe ids], "abstain": bool, "confidence": [0,1]}."""
+    """Return {"broken_pipes": [pipe ids] or None, "abstain": bool, "confidence": [0,1]}."""
 ```
 
 `problem` is a mapping with the keys
 
 ```text
-pipe_ids                  the grid pipes plus two parallel service lines
+pipe_ids                  the grid pipes plus two indistinguishable service pipes
 parallel_service_pipes    the twin ids s11 and s21
 routes                    route id -> ordered pipe list (several hundred monotone
                           routes across a 4x4 grid, plus the twin service corridor)
@@ -44,7 +44,12 @@ Overspending or unknown ids invalidate the world even when caught.
   reported with denominators; a full abstention scores exactly zero.
 - `robustness_score` repeats the audit on held-out break sets.
 
-This is a synthetic boolean grid, not a claim about any real district.
+This is a synthetic Boolean path-failure model inspired by water distribution.
+It does not simulate hydraulics, flow splitting, pressure, or tracer transport.
+Its OR-of-failures and distinct-path-signature criterion follows Boolean network
+tomography; see [Ma et al. (IMC 2014)](https://conferences2.sigcomm.org/imc/2014/papers/p195.pdf).
+The cited water sensor-network study provides application context, not validation
+of this simplified oracle.
 
 ## Rules
 
@@ -78,3 +83,11 @@ a frozen frontier-model calibration draw.
 无. Nearest catalog entries: EV2GymSmartCharging; tree_gsm_safety_stock. Paid path tests identify failed water pipes with inseparable twin-line refusal. FE chooses charging schedules or inventory service times on known graphs. Despite the name, this task diagnoses failures on a supplied route graph; it is not network-layout or energy-dispatch optimization.
 
 See `.research/distribution_network_topology_frontier_eng_overlap_2026-09-07.md` for the task-specific comparison against the pinned paper and available repository catalog. The requested 95-entry source could not be reconciled with the available 78 rows (84 expanded tasks); source reconciliation and maintainer acceptance remain pending.
+
+## Metric interpretation
+
+Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
+including a correct refusal. Its diagnostic is one minus squared error against
+that quality, before any evidence-cost adjustment. Invalid submissions do not
+count as discovery attempts. Both splits publish attempt, false-discovery and
+refusal counts with their denominators. These diagnostics remain evaluator-only.

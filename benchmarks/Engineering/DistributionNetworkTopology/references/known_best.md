@@ -73,3 +73,16 @@ python scripts/measure_reference.py \
   --reference verification/reference_solver.py \
   --entry recover_network
 ```
+
+## 2026-09-08 evaluator review
+
+The convenience entrypoint now routes candidates through the trusted Linux
+sandbox rather than importing them into the scoring process. Invalid responses
+no longer count as discovery attempts, confidence reflects response quality,
+and held-out rate denominators are exposed. Alias generation now samples only
+the observationally identical service pipes: the previous fallback h00 was
+signature-unique and could not justify refusal. Exhausted supported-world
+sampling now fails explicitly. Bit-set signature multiplicities preserve the
+exact identifiability test while avoiding repeated route-set enumeration.
+The registered level-three reference remains 0.600 development / 1.000 held out
+in a local direct run; this is not a frozen frontier-model calibration.

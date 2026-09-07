@@ -12,6 +12,8 @@ consistent minimal set exists.
 from __future__ import annotations
 
 import math
+from collections import Counter
+from functools import lru_cache
 from itertools import combinations
 
 import numpy as np
@@ -85,6 +87,10 @@ ROUTES = _unique
 # belong to exactly the same routes and are indistinguishable by construction.
 ROUTES.append(["h10", "s11", "s21", "h12"])
 ROUTE_IDS = ["R%02d" % index for index in range(len(ROUTES))]
+_PIPE_SIGNATURE_BITS = {
+    pipe: sum(1 << index for index, route in enumerate(ROUTES) if pipe in route)
+    for pipe in PIPE_IDS
+}
 
 PROBE_COST = 1
 BUDGET_UNITS = 26
@@ -118,27 +124,36 @@ def _identifiable(broken, max_size):
     indistinguishable pairs; supported worlds must avoid them and alias worlds must
     be exactly them.
     """
-    target = _signature(broken)
-    pool = [name for name in PIPE_IDS]
-    for size in range(1, max_size + 1):
-        for subset in combinations(pool, size):
-            if set(subset) == set(broken):
-                continue
-            if _signature(subset) == target:
-                return False
-    return True
+    return _signature_counts(max_size)[_signature_bits(broken)] == 1
+
+
+def _signature_bits(broken):
+    bits = 0
+    for pipe in broken:
+        bits |= _PIPE_SIGNATURE_BITS[pipe]
+    return bits
+
+
+@lru_cache(maxsize=6)
+def _signature_counts(max_size):
+    # The route family is fixed. Count OR signatures once instead of rebuilding
+    # thousands of route sets for each sampled world and each candidate call.
+    return Counter(_signature_bits(subset)
+                   for size in range(1, max_size + 1)
+                   for subset in combinations(PIPE_IDS, size))
 
 
 def _world(spec):
-    from itertools import combinations as _c
     seed, kind = spec
     profile = _difficulty_profile()
     rng = np.random.default_rng(int(seed))
     if kind == "alias":
         # Structural ambiguity: the twin corridor, or a mirror-symmetric single
         # break -- no route family separates them.
-        choice = int(rng.integers(0, 3))
-        broken = [["s11"], ["s21"], ["h00"]][choice]
+        # Only the service-pipe twins are aliases by construction. Grid edge h00
+        # has a distinct route signature and must never be labelled unidentifiable.
+        choice = int(rng.integers(0, 2))
+        broken = [["s11"], ["s21"]][choice]
     else:
         pool = [name for name in PIPE_IDS if name not in PARALLEL_IDS]
         for _attempt in range(64):
@@ -147,6 +162,8 @@ def _world(spec):
             broken = [pool[index] for index in indices]
             if _identifiable(broken, profile["max_broken"] + 1):
                 break
+        else:
+            raise ValueError("could not generate an identifiable break set")
     return {"seed": int(seed), "kind": kind, "broken": sorted(broken),
             "flip": profile["flip_probability"]}
 
@@ -257,7 +274,9 @@ def _evaluate_world(candidate, spec, split, index):
             correct = bool(abstain)
             f1 = 0.0
             mechanism = 1.0 if correct else 0.0
-        target = 1.0 if (supported != abstain or (not supported and abstain)) else 0.0
+        # Confidence predicts the intrinsic quality of the submitted response,
+        # including correct refusal; a wrong supported claim is not rewarded.
+        target = mechanism
         row.update({"valid": True, "abstained": abstain,
                     "mechanism_score": mechanism, "set_f1": float(f1),
                     "false_discovery": bool(not supported and not abstain),
@@ -277,11 +296,12 @@ def _summary(rows, specs):
     return {
         "normalized": float(np.clip((raw - abstain_base) / (1.0 - abstain_base), 0.0, 1.0)),
         "raw": raw,
+        "confidence": float(np.mean([r["confidence_score"] for r in rows])),
         "valid_count": sum(r["valid"] for r in rows),
         "set_f1": float(np.mean([r["set_f1"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -299,6 +319,8 @@ def evaluate(recover_network):
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "development_confidence_score": dev["confidence"],
+        "development_discovery_attempt_count": dev["attempt_count"],
         "development_set_f1": dev["set_f1"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
@@ -308,6 +330,13 @@ def evaluate(recover_network):
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
+        "heldout_confidence_score": hold["confidence"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
