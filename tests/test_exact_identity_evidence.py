@@ -111,6 +111,34 @@ class ExactIdentityEvidenceTests(unittest.TestCase):
         self.assertGreater(first["combined_score"], 0.5)
         self.assertEqual(first["development_false_discovery_rate"], 0.0)
 
+    def test_full_budget_reference_leaves_efficiency_headroom(self):
+        result = self.ev.evaluate(self.ref.audit_identity_claims)
+        self.assertEqual(result["valid"], 1.0)
+        self.assertAlmostEqual(result["combined_score"], 0.675)
+        self.assertAlmostEqual(result["development_evidence_efficiency_score"], 0.75)
+        self.assertEqual(result["development_false_discovery_rate"], 0.0)
+
+    def test_zero_purchase_audit_keeps_full_credit(self):
+        # A candidate that answers attempted verdicts without spending any of the
+        # purchase budget is not efficiency-discounted: only purchases reduce the
+        # multiplier, so cheap correctness can beat the full-budget reference.
+        world = self.ev._world(91011)
+        library = self.ev._Library(world)
+
+        def gambler(problem, purchase, budget):
+            verdicts, coefficients = {}, {}
+            for claim in problem["claims"]:
+                verdicts[claim["id"]] = "exact"
+                coefficients[claim["id"]] = [1, -1, 1]
+            return {"verdicts": verdicts, "coefficients": coefficients,
+                    "confidence": 0.5}
+
+        row = self.ev._evaluate_world(gambler, 91011, "dev", 0)
+        self.assertEqual(row["budget_used"], 0)
+        self.assertAlmostEqual(row["evidence_efficiency_score"], 1.0)
+        self.assertAlmostEqual(
+            row["raw"], row["intrinsic_raw"], places=12)
+
     def test_false_rejection_is_penalized_below_abstention(self):
         claim = {"id": "X", "values": ["a", "b", "c"], "kind": "exact",
                  "coefficients": [2, 3, 1]}

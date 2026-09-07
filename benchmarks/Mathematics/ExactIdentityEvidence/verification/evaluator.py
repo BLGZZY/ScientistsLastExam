@@ -21,6 +21,12 @@ COEFFICIENT_BOUND = 9
 EPSILON_FLOOR_EXPONENT = 70  # any planted epsilon is zero or at least 10**-70
 VERDICTS = ("exact", "false", "undecidable")
 
+# Correct verdicts alone should not saturate the clipped scale when certification
+# exhausts the purchase budget. Attempted verdicts therefore retain 25% headroom
+# for an equally correct audit obtained from fewer digit purchases, mirroring the
+# evidence-cost weighting of the sibling EllipticCurveRecovery task.
+MAX_EVIDENCE_COST_PENALTY = 0.25
+
 _BASE_DEVELOPMENT_SPECS = (91011, 91017, 91023, 91029, 91031, 91037)
 HELDOUT_SPECS = (92007, 92013, 92019, 92023)
 
@@ -334,10 +340,10 @@ def _score_claim(entry, verdict, row):
 
 def _empty(split, index):
     return {"split": split, "world_index": index, "valid": False, "raw": 0.0,
-            "normalized": 0.0, "exact_hits": 0, "false_hits": 0,
-            "refusal_hits": 0, "false_discovery": False,
+            "intrinsic_raw": 0.0, "normalized": 0.0, "exact_hits": 0,
+            "false_hits": 0, "refusal_hits": 0, "false_discovery": False,
             "attempt_count": 0, "claim_count": 0, "budget_used": 0,
-            "passive_raw": 0.0}
+            "passive_raw": 0.0, "evidence_efficiency_score": 0.0}
 
 
 def _evaluate_world(candidate, spec, split, index):
@@ -353,17 +359,28 @@ def _evaluate_world(candidate, spec, split, index):
         verdicts, coefficient_rows, _confidence = _validate(submission, world)
         if library.violated:
             raise ValueError("library contract violated")
-        scores, false_discoveries = [], 0
+        scores, intrinsic_scores, false_discoveries = [], [], 0
+        evidence_efficiency = 1.0 - MAX_EVIDENCE_COST_PENALTY * (
+            library.used / PURCHASE_BUDGET)
         for entry in world["claims"]:
             verdict = verdicts[entry["id"]]
-            scores.append(_score_claim(entry, verdict,
-                                       coefficient_rows.get(entry["id"])))
+            base = _score_claim(entry, verdict,
+                                coefficient_rows.get(entry["id"]))
+            intrinsic_scores.append(base)
+            # Efficiency adjusts attempted verdicts only. Refusal credit stays on
+            # its own axis; otherwise evidence-backed refusal would score below
+            # the zero-cost all-undecided passive floor.
+            if verdict != "undecidable":
+                base *= evidence_efficiency
+            scores.append(base)
             if entry["kind"] != "exact" and verdict == "exact":
                 false_discoveries += 1
         raw = _mean(scores)
         normalized = (raw - passive) / (1.0 - passive) if passive < 1.0 else 0.0
         row.update({
             "valid": True, "raw": raw, "normalized": float(max(0.0, normalized)),
+            "intrinsic_raw": _mean(intrinsic_scores),
+            "evidence_efficiency_score": evidence_efficiency,
             "exact_hits": sum(1 for entry in world["claims"]
                               if entry["kind"] == "exact"
                               and verdicts[entry["id"]] == "exact"),
@@ -386,13 +403,16 @@ def _evaluate_world(candidate, spec, split, index):
 
 def _summary(rows):
     raw = _mean([r["raw"] for r in rows])
+    intrinsic = _mean([r["intrinsic_raw"] for r in rows])
     passive = _mean([r.get("passive_raw", 0.0) for r in rows])
     normalized = (raw - passive) / (1.0 - passive) if passive < 1.0 else 0.0
     claims = sum(r["claim_count"] for r in rows if r["valid"])
     return {
-        "raw": raw, "passive": passive,
+        "raw": raw, "intrinsic": intrinsic, "passive": passive,
         "normalized": float(max(0.0, normalized)),
         "valid_count": sum(r["valid"] for r in rows),
+        "evidence_efficiency": _mean([r["evidence_efficiency_score"]
+                                      for r in rows]),
         "false_discovery_count": sum(r["false_discovery"] for r in rows),
         "attempt_count": sum(r["attempt_count"] for r in rows if r["valid"]),
         "claim_count": claims,
@@ -412,7 +432,9 @@ def evaluate(audit_identity_claims):
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "intrinsic_mechanism_score": dev["intrinsic"],
         "passive_mechanism_score": dev["passive"],
+        "development_evidence_efficiency_score": dev["evidence_efficiency"],
         "development_false_discovery_rate": (
             dev["false_discovery_count"] / dev["claim_count"]
             if dev["claim_count"] else 0.0),
@@ -421,6 +443,7 @@ def evaluate(audit_identity_claims):
         "false_discovery_count": dev["false_discovery_count"],
         "claim_count": dev["claim_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
+        "heldout_evidence_efficiency_score": hold["evidence_efficiency"],
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": (
             hold["false_discovery_count"] / hold["claim_count"]

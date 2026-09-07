@@ -50,10 +50,20 @@ calls invalidate the world even when caught.
   counted as a false discovery). A claim whose values include a cap below the
   epsilon-floor exponent scores 1.0 for `undecidable` — no purchasable precision can
   separate a zero residual from a hidden deviation — and 0.0 otherwise.
+- Attempted verdicts (`exact` or `false`) are multiplied by
+  `1 - 0.25 * purchases_used / 10`; `undecidable` refusals are not weighted, so an
+  evidence-backed refusal is never penalized relative to blind abstention. An
+  equally correct audit from fewer purchases scores above the full-budget reference.
 - `combined_score` is the development mean above the all-undecided auditor (the
   passive floor), which scores exactly zero after normalization.
-- False discovery rate and discovery coverage are reported with their denominators.
+- Intrinsic and efficiency-adjusted audit means, evidence efficiency, false
+  discovery rate and discovery coverage are reported with their denominators.
 - `robustness_score` repeats the audit on held-out values, epsilons and caps.
+
+The aggregate efficiency diagnostics are `development_evidence_efficiency_score` and
+`heldout_evidence_efficiency_score`; per-world rows also retain `intrinsic_raw`,
+`raw`, `evidence_efficiency_score` and `budget_used`. Split membership and hidden
+truth are never candidate inputs.
 
 This is a synthetic exact-arithmetic world, not a claim about any published constant.
 

@@ -16,8 +16,12 @@ the gamble between certified and guessed verdicts beyond honest refusal.
 
 The shipped `solution.py` refuses every claim without spending — the passive floor,
 scoring exactly `0.000000`. A truth-informed verdict vector (correct verdict and row
-everywhere) scores one. Measured on 2026-09-05 the reference reaches `0.900`
-development and `0.925` robustness with zero false discoveries.
+everywhere) scores one. Attempted verdicts (`exact` or `false`) are multiplied by
+`1 - 0.25 * purchases_used / 10`; `undecidable` refusals stay unweighted, so the
+zero-cost passive floor is unchanged and a refusal never scores below blind
+abstention. The full-budget reference has evidence efficiency `0.750`. Re-measured
+on 2026-09-07 under this weighting it reaches `0.675000` development and `0.693750`
+robustness with zero false discoveries (pre-weighting, 2026-09-05: `0.900`/`0.925`).
 
 ## 3. Capability comparisons and ablations
 
@@ -25,13 +29,16 @@ Local oracle-direct ablations of the reference, measured 2026-09-05:
 
 | variant | development | robustness | FDR |
 |---|---:|---:|---:|
-| full reference | 0.900 | 0.925 | 0.00 |
+| full reference | 0.675 | 0.694 | 0.00 |
 | no purchases (cap refusal + base rows only) | 0.600 | — | 0.083 |
-| no cap-driven refusal | 0.850 | — | 0.042 |
-| gamble on uncovered claims (call them exact) | 0.633 | — | 0.056 |
+| no cap-driven refusal † | 0.850 | — | 0.042 |
+| gamble on uncovered claims (call them exact) † | 0.633 | — | 0.056 |
 
-Every capability contributes; refusing to gamble is what keeps the false-discovery
-rate at zero. These are local debugging numbers, not frozen benchmark evidence.
+† measured 2026-09-05 under the pre-efficiency score (no purchase weighting);
+spend-free variants are unaffected by the weighting and spend-heavy ones only move
+down, so the capability ordering is unchanged. Every capability contributes;
+refusing to gamble is what keeps the false-discovery rate at zero. These are local
+debugging numbers, not frozen benchmark evidence.
 
 ## 4. Shortcut probes
 
@@ -41,9 +48,12 @@ rate at zero. These are local debugging numbers, not frozen benchmark evidence.
   claims only).
 - All-false: negative on true relations (the −0.5 penalty), below the passive floor.
 
-The 0.600 shortcut sits well below the 0.900 reference; the certification and refusal
-gap is the remaining difficulty. All remaining untested families are admission risks;
-passing these probes does not prove the absence of shortcuts.
+The 0.600 shortcut spends nothing, so the efficiency weighting leaves it untouched
+and it now sits within 0.075 of the 0.675 reference — closer than before, which is
+the point of the headroom: a cheaper or smarter certification must beat the
+full-budget witness rather than tie it. The certification and refusal gap remains
+the difficulty. All remaining untested families are admission risks; passing these
+probes does not prove the absence of shortcuts.
 
 ## 5. Frontier-model calibration
 

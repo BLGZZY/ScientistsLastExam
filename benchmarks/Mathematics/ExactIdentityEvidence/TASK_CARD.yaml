@@ -22,7 +22,9 @@ normalization:
   reference: base-precision row fits, cap-driven refusal, fewest-missing-first
     purchases at the 80-digit tier
   score: per-claim scores averaged and normalized above the passive floor, with a
-    -0.5 penalty for certified-false verdicts on exactly true relations
+    -0.5 penalty for certified-false verdicts on exactly true relations; attempted
+    verdicts are multiplied by 1 - 0.25 * purchases_used / 10 while undecidable
+    refusals stay unweighted
 citations:
 - id: doi:10.1090/S0025-5718-99-01081-3
   title: Analysis of PSLQ, an integer relation finding algorithm
@@ -32,8 +34,9 @@ invariants:
 - the passive all-undecided auditor scores exactly zero
 - a truth-informed verdict vector scores one
 known_shortcuts: A base-precision-only auditor that rejects gross failures and calls
-  every near-zero claim exact with its fitted row reaches 0.600 against the 0.900
-  reference; the remaining gap is certification and refusal. Formal clean Linux
+  every near-zero claim exact with its fitted row reaches 0.600 against the 0.675
+  full-budget reference (an equally correct audit from fewer purchases scores above
+  it); the remaining gap is certification and refusal. Formal clean Linux
   calibration and independent review remain pending.
 licensing:
   task_package: repository_license_not_declared
@@ -92,8 +95,9 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
     and clean frontier-model calibration before certification
-  remaining_risk: The reference leaves 0.10 of headroom concentrated in purchase
-    planning; a frontier draw must show first proposals do not reach it.
+  remaining_risk: The reference leaves 0.325 of headroom split between cheaper
+    certification and purchase planning; a frontier draw must show first proposals
+    do not reach it.
 
 frontier_eng_overlap_review:
   date: '2026-09-06'
