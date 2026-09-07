@@ -16,87 +16,89 @@ EOF
 
 ## 1. Reference method
 
-`verification/reference.py` is standalone and uses only public inputs and charged interfaces: ten
-seeded permutation starts followed by one adjacent-exchange refinement pass over the symmetric
-half stack. The evaluator independently computes the score-one anchor: tiled block-family seeds
-(contiguous width-1-3 blocks over all angle orders), a ten-permutation adjacency warm start,
-twelve random starts each refined by full pair exchange to convergence, and sixteen
-iterated-local-search rounds (three random swaps re-converged). The witness deliberately does
-NOT screen structured block families, which is why the block probe below outruns it; that risk is
-recorded in section 4. Paired bending moments and both-face Tsai-Hill stress make first-ply
-failure depend on stacking order. Independent anisotropic buckling review is pending.
+`verification/reference.py` is standalone and uses only public inputs and charged interfaces:
+thirteen seeded permutation starts followed by adjacent-exchange refinement of the symmetric
+half stack to convergence. The evaluator independently computes the score-one anchor: tiled
+block-family seeds (contiguous width-1-3 blocks over all angle orders, filtered by the run
+limit), a twenty-four-permutation adjacency warm start, eight random starts each refined by
+full pair exchange to convergence, and twelve iterated-local-search rounds. Paired bending
+moments and both-face Tsai-Hill stress make first-ply failure depend on stacking order.
+Independent anisotropic buckling review is pending.
 
-## 2. Baseline and normalization (2026-09-07 instance scale-up)
+## 2. Baseline and normalization (2026-09-07 second revision: run limit 2, three conflicting cases)
 
-Panels were scaled to 36-48 plies (symmetric half stacks of 18-24 plies) with deliberately uneven
-angle mixes; multinomial half-permutation counts are 3.1e8, 5.6e9, 1.3e11, 3.0e11 (development)
-and 8.2e9, 5.5e11 (held out), all above 1e8, so exhaustive half-stack screening is out of reach.
-Every instance carries its own load mix and its own paired bending-moment cases; no two share a
-moment vector. The interleaved baseline was generalized to largest-remaining-first placement with
-a run cap and a mirror-junction repair so it stays feasible on uneven mixes.
+Panels span 36-48 plies (symmetric half stacks of 18-24 plies) with deliberately uneven angle
+mixes; multinomial half-permutation counts are 3.1e8, 5.6e9, 1.3e11, 3.0e11 (development) and
+8.2e9, 5.5e11 (held out). Every instance carries THREE paired load/moment cases whose optima
+conflict: an axial case (0-dominant), a transverse case (90-dominant) and a shear/twisting case
+(Mxy-dominant, which punishes the D16/D26 coupling that clustered +/-45 blocks cannot zero).
+The manufacturing limit is now at most TWO consecutive equal plies, a standard matrix-cracking
+constraint that removes tiled width-3 block patterns outright.
 
 | entry | development | held-out policy |
 |---|---|---|
 | shipped baseline (`solution.py`) | **0.000000** (valid=1) | 0.000 |
-| runnable witness (`verification/reference.py`) | **0.768732** | 0.579723 |
+| runnable witness (`verification/reference.py`) | **0.740840** | 0.874556 |
+| block/clustered family (probe) | 0.557119 | 0.820202 |
+| lamination-parameter-guided family (probe) | 0.372152 | 0.597202 |
 
-Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 72.3 s for the
-baseline entry (this includes all six anchor searches, cached thereafter) and 0.2 s for the
-witness; the metadata envelope is 90 s and the wrapper timeout 300 s, leaving roughly 225 s of
-candidate search room. The previous 16-24-ply panels with shared moment cases were retired
-because their 2.5e3-3.6e6 half-permutation spaces were nearly exhaustible (witness 0.732584
-against a 900-start anchor in 1.6 s; pre-revision numbers retained below as history).
+Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 20.4 s for the
+baseline entry (includes all six anchor searches, cached thereafter) and 0.3 s for the witness;
+the metadata envelope is 45 s and the wrapper timeout 300 s, leaving over 250 s of candidate
+search room. The witness score is sensitive to its start count (0.616 at ten starts, 0.784 at
+fourteen); thirteen starts are pinned by the regression tests.
 
 ## 3. Capability comparisons and ablations
 
-Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json --sweeps`.
-On the pre-revision dirty macOS tree, ten starts plus one adjacent-exchange pass scored 0.732584
-development / 0.724395 robustness and the historical random-screening construction clipped to
-0.000000 development. On the current panels the ten-start adjacency witness scores 0.768732
-against the structured-seed anchor; the anchor components (block seeds, full pair exchange, ILS)
-were each added after measuring that a narrower anchor failed to dominate the probe families.
+Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json`.
+Revision history on this tree: the pre-2026-09-07 16-24-ply two-case panels carried a witness
+of 0.732584 against a 900-start anchor; the first scale-up (two cases, run limit 3) measured the
+ten-start witness at 0.768732 but let the block family reach 0.992897; the second revision
+(three conflicting cases, run limit 2) measures the thirteen-start witness at 0.740840 with the
+block family at 0.557119, 0.184 below the reference. Earlier measurements are retained here
+only as history.
 
 ## 4. Shortcut probes
 
 ### 2026-09-07 shortcut re-audit (measured on the current tree)
 
-Two families were implemented and run (`tmp/probe_laminate.py` on the builder tree):
-lamination-parameter-guided stacking (81 bending-lamination-parameter targets on a 9x9 grid,
-greedy outer-to-inner assembly with count-balance and run-cap rules, one candidate per target)
-and block/clustered patterns (contiguous same-angle blocks of width 1-3 tiled round-robin over
-all 24 angle orders; 322-704 valid patterns per panel).
+Two families are implemented and run (`tmp/probe_laminate.py` on the builder tree;
+lamination-parameter-guided: 81 bending-lamination-parameter targets on a 9x9 grid with greedy
+outer-to-inner assembly, count-balance and run-cap rules; block/clustered: contiguous
+same-angle blocks of width 1-3 tiled round-robin over all 24 angle orders, 96-240 valid
+patterns per panel under the run limit):
 
-| family | development | held-out policy |
-|---|---|---|
-| lamination-parameter-guided greedy | 0.615927 | 0.242384 |
-| block/clustered patterns (width 1-3, all angle orders) | **0.992897** | 0.947302 |
-| runnable witness (10-start adjacency) | 0.768732 | 0.579723 |
+| family | development | held-out policy | gap to witness |
+|---|---|---|---|
+| lamination-parameter-guided greedy | 0.372152 | 0.597202 | 0.369 below |
+| block/clustered patterns (width 1-3, all angle orders) | **0.557119** | 0.820202 | **0.184 below** |
+| runnable witness (13-start adjacency to convergence) | 0.740840 | 0.874556 | — |
 
-**The block/clustered family nearly closes the anchor gap and exceeds the shipped witness.**
-This is the primary open difficulty risk of the package: a few hundred textbook tiled patterns
-recover essentially the whole anchor improvement over the baseline. The anchor seeds itself with
-these families so the normalization bound still dominates them (their score is 0.9929, not
-above 1), but relative to the ten-start adjacency witness the family is a first-shot shortcut of
-exactly the kind that led to PermutationFlowShop being withdrawn. Pre-merge decision required:
-strengthen the witness (for example block screening plus adjacency, which would need a
-correspondingly stronger anchor to stay in the 0.5-0.8 band) or redesign load cases to penalize
-clustered stacks. These values are local diagnostics, not frozen benchmark evidence.
+**The near-ceiling clustering shortcut is closed.** On the pre-revision two-case run-limit-3
+panels the block family measured 0.992897, above the then-witness of 0.768732 - the same
+first-shot disease that led to PermutationFlowShop being withdrawn. Two physics changes fixed
+it: the run limit of two consecutive plies (a real matrix-cracking constraint) and the
+shear/twisting third load case whose Mxy-dominant moments punish clustered stacks through the
+bending-twisting coupling they cannot avoid. The best block variant now sits 0.184 below the
+reference, and the lamination-parameter family 0.369 below. These values are local
+diagnostics, not frozen benchmark evidence.
 
 ## 5. Frontier-model calibration
 
 Not run. This task remains `candidate`. A clean Linux model draw, frozen before exposure, must
-show that the first proposal does not reach the competent reference; given the block-family
-result above, the reference design must be revisited before that draw is meaningful. Server-held
-panels and independent model review remain required.
+show that the first proposal does not reach the competent reference. Server-held panels and
+independent model review remain required.
 
 ## 6. Construction errors and revisions
 
-2026-09-07 hardening: instances scaled to 36-48 plies with uneven mixes and per-instance load
-and moment cases; anchor rebuilt (block seeds + multi-start full pair exchange + ILS) because the
-old 900-start random screen was both nearly exhaustible on the small panels and unaffordable on
-the large ones; witness kept at ten starts plus one adjacency pass; witness/anchor scores
-re-measured (0.768732 development); lamination-parameter and block-family probes measured and
-pinned; Task.md spoilers (witness score and anchor mechanics) removed.
+2026-09-07 second hardening (admission-bar fix): the block-family probe at 0.992897 exceeded
+the witness; resolved by the run-limit-2 manufacturing constraint, three conflicting
+load/moment cases per panel (axial/transverse/shear-twist), a thirteen-start
+adjacency-to-convergence witness and a twenty-four-draw anchor warm start. All numbers
+re-measured and pinned.
+2026-09-07 first hardening: instances scaled to 36-48 plies with uneven mixes and per-instance
+load and moment cases; anchor rebuilt as block seeds plus multi-start full pair exchange plus
+ILS; witness/anchor spoilers removed from Task.md; probes measured and pinned.
 2026-09-05 hardening: the witness refines permutations rather than stopping after random
 screening; paired bending moments and both-face Tsai-Hill stress make first-ply failure depend
 on order; standalone references no longer import the hidden evaluator. Earlier measurements
@@ -111,8 +113,6 @@ pending. See the task card citations for background; the explicitly declared red
 not certified by those publications.
 
 ## Historical pre-hardening record (obsolete scores)
-
-# Reference witness
 
 The normalization witness performed 900 fixed-seed permutations of the public symmetric half
 laminate and retained the best valid sequence under the same nominal CLT oracle. It is

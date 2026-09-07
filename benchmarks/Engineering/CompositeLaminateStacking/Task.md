@@ -12,7 +12,8 @@ def design_laminate(problem):
 Choose the order of a fixed multiset of unidirectional plies. The number of plies, permitted
 angles and exact count of every angle are supplied in `problem`. The returned laminate must be
 symmetric and balanced and may not contain more than the published number of consecutive equal
-plies. Values are checked exactly; the oracle never repairs a submission.
+plies (two on every shipped panel, a standard matrix-cracking limit). Values are checked
+exactly; the oracle never repairs a submission.
 
 The public model is classical laminate theory. The trusted evaluator assembles the `A` and `D`
 matrices, searches simply-supported Navier modes `(m,n)=1..4` for buckling, and computes a
@@ -52,12 +53,12 @@ All keys and shapes are part of the contract; forecasts contain exactly `horizon
 | `required_angle_counts.90` | 4 |
 | `symmetric` | True |
 | `balanced` | True |
-| `maximum_consecutive_equal_plies` | 3 |
+| `maximum_consecutive_equal_plies` | 2 |
 | `ply_thickness_m` | 0.000125 |
 | `panel_length_m` | 1.2 |
 | `panel_width_m` | 0.72 |
-| `load_cases_n_per_m` | array [2, 3] |
-| `moment_cases_n` | array [2, 3]; per-instance bending moments paired with the load cases |
+| `load_cases_n_per_m` | array [3, 3] |
+| `moment_cases_n` | array [3, 3]; per-instance bending moments paired with the load cases |
 | `material` | mapping; fields listed below |
 | `material.e1_pa` | 132000000000.0 |
 | `material.e2_pa` | 9200000000.0 |
@@ -80,15 +81,17 @@ This package remains **candidate**. The metadata difficulty is a target, not a c
 
 ### Current reference and remaining difficulty
 
-The runnable witness is a truth-blind seeded permutation-search method over the symmetric half
-stack; the evaluator independently recomputes a stronger multi-start, full pair-exchange anchor
-as score one. Panels now span 36–48 plies (half-stacks of 18–24 plies) with deliberately uneven
-angle mixes, so the half-permutation counts exceed 1e8 everywhere and exhaustive screening is
-out of reach; every instance also carries its own load mix and paired bending-moment cases. The
-old membrane-only strength was order-invariant. The hardened model supplies paired bending
-moments and evaluates both faces of every ply using membrane strain plus depth times curvature,
-so material failure depends on order. Independent anisotropic buckling validation is still
-pending. This calibration does not certify difficulty.
+The runnable witness is a truth-blind seeded permutation-search method with adjacent-exchange
+refinement over the symmetric half stack; the evaluator independently recomputes a stronger
+structured-seed, multi-start full pair-exchange plus iterated-local-search anchor as score one.
+Panels span 36–48 plies (half-stacks of 18–24 plies) with deliberately uneven angle mixes, so
+the half-permutation counts exceed 1e8 everywhere and exhaustive screening is out of reach.
+Every instance carries THREE paired load/moment cases whose optima conflict - an axial case, a
+transverse case and a shear/twisting case - so no single clustered stacking is near-optimal on
+all three; the run limit of two consecutive equal plies further removes tiled block patterns.
+The hardened model evaluates both faces of every ply using membrane strain plus depth times
+curvature, so material failure depends on order. Independent anisotropic buckling validation is
+still pending. This calibration does not certify difficulty.
 
 `moment_cases_n` has shape `[number_of_load_cases,3]`, with `[Mx,My,Mxy]` in N·m (moment per unit panel width), paired with `load_cases_n_per_m`. The symmetric laminate uses `strain=A^-1*N`, `curvature=D^-1*M` and global ply-face stress `Qbar*(strain+z*curvature)` before material-axis Tsai-Hill evaluation. The current Navier screening expression still neglects anisotropic mode coupling in buckling; external finite-element review is required.
 

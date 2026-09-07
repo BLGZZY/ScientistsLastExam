@@ -61,7 +61,7 @@ def _baseline(problem):
     average = max(float(np.mean(demand))/float(problem["pump_capacity_m3_h"])*1.14, 0.1)
     return np.full(HOURS, min(0.94, average))
 
-def _continuous_schedule(problem, on):
+def _continuous_schedule(problem, on, warm=None):
     from scipy.optimize import minimize, LinearConstraint, Bounds
     demand = np.asarray(problem["demand_forecast_m3_h"])
     prices = np.asarray(problem["electricity_usd_kwh"])
@@ -93,11 +93,14 @@ def _continuous_schedule(problem, on):
     def jac(z):
         return np.r_[factor*(h0+3*h2*z[:HOURS]**2), np.full(HOURS-1,.035)] / 100.0
     start = _baseline(problem)
+    if warm is not None:
+        start = np.clip(np.asarray(warm, dtype=float).copy(),
+                        on * float(problem["minimum_operating_speed"]), on.astype(float))
     result = minimize(objective, np.r_[start,np.abs(np.diff(start))], jac=jac,
                       method="SLSQP", bounds=Bounds(np.r_[on * problem["minimum_operating_speed"],np.zeros(HOURS-1)],
                                     np.r_[on.astype(float),np.ones(HOURS-1)]),
                       constraints=[LinearConstraint(np.vstack(matrices),lb,ub)],
-                      options={"maxiter":200,"ftol":1e-10})
+                      options={"maxiter":150,"ftol":1e-10})
     speeds = result.x[:HOURS]
     if (not result.success or not _simulate(problem,speeds,high)["feasible"]
             or not _simulate(problem,speeds,low)["feasible"]):
@@ -107,9 +110,10 @@ def _continuous_schedule(problem, on):
 def _reference(problem):
     """Public-demand-band convex dispatch on a conservative all-on commitment.
 
-    This is a competent feasible fixed-mask method.  The oracle's wider block-mask
-    search is the score-one anchor, leaving discrete commitment optimization as
-    explicit, reproducible headroom.
+    This is a competent feasible fixed-mask method.  The oracle's repeated warm-started
+    block-exchange search is the score-one anchor, leaving discrete commitment optimization
+    as explicit, reproducible headroom; the measured gap to a two-block commitment family is
+    thin and is recorded as an owner-decision risk in references/known_best.md.
     """
     key = repr(problem)
     if key in _REFERENCE_CACHE:

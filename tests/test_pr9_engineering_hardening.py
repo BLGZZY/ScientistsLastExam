@@ -122,13 +122,13 @@ def _laminate_lp_guided(problem, evaluator):
         for xi2 in np.linspace(-.9,.9,9):
             remaining=dict(counts); half=[]
             for k in range(n_half-1,-1,-1):
-                cap=1 if k==0 else 3
+                cap=1 if k==0 else 2
                 positions_left=k+1
                 choice,choice_cost=None,None
                 for a in angles:  # evaluator order (-45, 0, 45, 90), matching the measured probe
                     if remaining[a]<=0: continue
                     others=sum(v for b,v in remaining.items() if b!=a)
-                    if remaining[a]-1>3*math.ceil(positions_left/4)+others: continue
+                    if remaining[a]-1>2*math.ceil(positions_left/3)+others: continue
                     run=0
                     for item in reversed(half):
                         if item!=a: break
@@ -146,7 +146,7 @@ def _laminate_lp_guided(problem, evaluator):
                         for item in reversed(half):
                             if item!=a: break
                             run+=1
-                        if remaining[a]>0 and run<max(cap,3):
+                        if remaining[a]>0 and run<max(cap,2):
                             choice=a; break
                     if choice is None:
                         choice=max(remaining,key=lambda a:remaining[a])
@@ -193,7 +193,7 @@ def test_laminate_shortcut_families_stay_pinned():
             lp_cache[key]=seq
         return {'ply_angles_deg':list(lp_cache[key])}
     lp_score=ev.evaluate(lp)['combined_score']
-    assert .55<lp_score<.68,lp_score            # measured 0.615927
+    assert .28<lp_score<.48,lp_score            # measured 0.372152
     block_cache={}
     def block(problem):
         key=(problem['ply_count'],tuple(sorted(problem['required_angle_counts'].items())))
@@ -205,10 +205,13 @@ def test_laminate_shortcut_families_stay_pinned():
             block_cache[key]=best
         return {'ply_angles_deg':list(block_cache[key])}
     block_score=ev.evaluate(block)['combined_score']
-    # The structured block family nearly closes the anchor gap and beats the ten-start
-    # adjacency witness: a disclosed pre-merge risk (known_best.md section 4), pinned so any
-    # instance or anchor change re-measures it. The anchor must still bound it below 1.
-    assert .9<block_score<.995,block_score      # measured 0.992897
+    # Admission bar: the structured block family must sit at least 0.15 below the reference
+    # (measured 0.557119 against the 0.740840 witness after the run-limit-2 constraint and
+    # the shear/twisting third load case; it was 0.992897 above the witness before them).
+    ref=load('Engineering','CompositeLaminateStacking','verification/reference.py')
+    witness_score=ev.evaluate(ref.design_laminate)['combined_score']
+    assert .48<block_score<.64,block_score
+    assert witness_score-block_score>=.15,(witness_score,block_score)
 
 
 def _pump_constant_speeds(ev,problem,on):

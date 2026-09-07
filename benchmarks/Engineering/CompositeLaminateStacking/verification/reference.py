@@ -7,10 +7,10 @@ import copy
 import numpy as np
 
 ANGLES=(-45,0,45,90)
-MAX_RUN=3
+MAX_RUN=2
 _REFERENCE_CACHE={}
-RANDOM_STARTS = 10
-ADJACENT_REFINEMENT_PASSES = 1
+RANDOM_STARTS = 13
+ADJACENT_REFINEMENT_PASSES = 8
 
 def _qbar(material, angle):
     e1, e2, g, nu12 = (float(material[k]) for k in ("e1_pa", "e2_pa", "g12_pa", "nu12"))
@@ -161,8 +161,8 @@ def _reference(problem):
             continue
         q = _laminate(problem, trial)
         if q > best_q: best, best_q = trial, q
-    # Retain a real local-refinement capability, but deliberately bound it to one
-    # adjacent-exchange sweep.  The oracle's wider pair-exchange search is the
+    # Retain a real local-refinement capability, bounded to adjacent-exchange sweeps
+    # until convergence.  The oracle's wider pair-exchange plus ILS search is the
     # reproducible score-one anchor.
     for _pass in range(ADJACENT_REFINEMENT_PASSES):
         improved = False

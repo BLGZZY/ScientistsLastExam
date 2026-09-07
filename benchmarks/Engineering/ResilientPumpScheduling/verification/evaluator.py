@@ -9,6 +9,10 @@ import numpy as np
 
 DIFFICULTY = "hard"
 HOURS = 24
+# Score-one anchor: block-exchange commitment sweeps (widths 2-4) repeated until a full
+# sweep stops improving, warm-started dispatch, bounded so the twelve-instance sweep stays
+# inside the evaluation budget on slower hosts.
+ANCHOR_MAX_PASSES = 4
 _REFERENCE_CACHE = {}
 PROFILE = np.array([.72,.68,.65,.64,.68,.82,1.08,1.28,1.32,1.18,1.05,.98,
                     .96,.98,1.02,1.10,1.22,1.30,1.18,1.02,.92,.86,.80,.76])
@@ -134,7 +138,7 @@ def _baseline(problem):
     return np.full(HOURS, min(0.94, average))
 
 
-def _continuous_schedule(problem, on):
+def _continuous_schedule(problem, on, warm=None):
     from scipy.optimize import minimize, LinearConstraint, Bounds
     demand = np.asarray(problem["demand_forecast_m3_h"])
     prices = np.asarray(problem["electricity_usd_kwh"])
@@ -165,12 +169,18 @@ def _continuous_schedule(problem, on):
         return float(np.sum(factor*(h0*x+h2*x**3)) + .035*np.sum(z[HOURS:])) / 100.0
     def jac(z):
         return np.r_[factor*(h0+3*h2*z[:HOURS]**2), np.full(HOURS-1,.035)] / 100.0
+    # Deterministic warm start from the incumbent schedule when a compatible one exists;
+    # masks differing in one block converge from the incumbent much faster than from cold.
     start = _baseline(problem)
+    if warm is not None:
+        start = np.asarray(warm, dtype=float).copy()
+        start = np.clip(start, on * float(problem["minimum_operating_speed"]),
+                        on.astype(float))
     result = minimize(objective, np.r_[start,np.abs(np.diff(start))], jac=jac,
                       method="SLSQP", bounds=Bounds(np.r_[on * problem["minimum_operating_speed"],np.zeros(HOURS-1)],
                                     np.r_[on.astype(float),np.ones(HOURS-1)]),
                       constraints=[LinearConstraint(np.vstack(matrices),lb,ub)],
-                      options={"maxiter":200,"ftol":1e-10})
+                      options={"maxiter":150,"ftol":1e-10})
     speeds = result.x[:HOURS]
     if (not result.success or not _simulate(problem,speeds,high)["feasible"]
             or not _simulate(problem,speeds,low)["feasible"]):
@@ -182,39 +192,40 @@ def _continuous_schedule(problem, on):
 def _reference(problem):
     """Mixed commitment/local continuous dispatch search using public demand bands.
 
-    Fixed masks have convex dispatch subproblems. Block exchanges change commitment;
-    this is a feasible heuristic, not a certificate of global mixed-integer optimality.
+    Fixed masks have convex dispatch subproblems. Commitment blocks of width 2-4 are
+    exchanged from the incumbent mask until a full sweep finds no improvement (at most
+    ANCHOR_MAX_PASSES), with each dispatch warm-started from the incumbent schedule.
+    This is a feasible heuristic, not a certificate of global mixed-integer optimality.
     """
     key = repr(problem)
     if key in _REFERENCE_CACHE:
         return _REFERENCE_CACHE[key].copy()
     demand = np.asarray(problem["demand_forecast_m3_h"])
     cache = {}
-    def solve(on):
+    def solve(on, warm=None):
         key = tuple(on)
         if key not in cache:
             edges = np.diff(np.r_[False,on,False].astype(int))
             if np.any(np.flatnonzero(edges == -1)-np.flatnonzero(edges == 1) < problem["minimum_run_hours"]):
                 cache[key] = (float('inf'),None)
             else:
-                speeds = _continuous_schedule(problem,on)
+                speeds = _continuous_schedule(problem,on,warm=warm)
                 cache[key] = (float('inf'),None) if speeds is None else (_simulate(problem,speeds,demand)["cost"],speeds)
         return cache[key]
     on = np.ones(HOURS,dtype=bool)
     cost, best = solve(on)
     if best is None:
         raise RuntimeError("no feasible public pumping reference")
-    # One full block-exchange sweep (widths 2-4 over every start) keeps the anchor a real
-    # commitment search while holding the whole twelve-instance sweep well inside the
-    # evaluation budget on slower hosts; the sweep is deterministic and cache-aware.
-    next_mask, next_best, next_cost = on, best, cost
-    for width in (2,3,4):
-        for start in range(HOURS-width+1):
-            trial = on.copy(); trial[start:start+width] = ~trial[start:start+width]
-            value, speeds = solve(trial)
-            if value < next_cost - 1e-8:
-                next_mask, next_best, next_cost = trial, speeds, value
-    if next_cost < cost - 1e-8:
+    for _sweep in range(ANCHOR_MAX_PASSES):
+        next_mask, next_best, next_cost = on, best, cost
+        for width in (2,3,4):
+            for start in range(HOURS-width+1):
+                trial = on.copy(); trial[start:start+width] = ~trial[start:start+width]
+                value, speeds = solve(trial, warm=best)
+                if value < next_cost - 1e-8:
+                    next_mask, next_best, next_cost = trial, speeds, value
+        if next_cost >= cost - 1e-8:
+            break
         on,best,cost = next_mask,next_best,next_cost
     _REFERENCE_CACHE[key] = best.copy()
     return best

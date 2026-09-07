@@ -1,7 +1,9 @@
-> Version note (2026-09-07, third local hardening): twelve systems (eight development, four held
-> out) with varied tariff windows, two demand shapes, tank sizes, pump capacities and hidden
-> two-frequency demand ripples whose phase constants no longer derive from the visible forecast
-> phase. The anchor is one deterministic block-exchange sweep. Earlier sections describe the
+> Version note (2026-09-07, third local hardening + admission-bar fix): twelve systems (eight
+> development, four held out) with varied tariff windows, two demand shapes, tank sizes, pump
+> capacities and hidden two-frequency demand ripples whose phase constants no longer derive from
+> the visible forecast phase. The anchor is repeated warm-started block-exchange sweeps to
+> convergence; the witness remains all-on convex dispatch. A thin witness-to-probe gap (0.022)
+> remains and is flagged below as an owner-decision risk. Earlier sections describe the
 > six-system set and are retained as history.
 
 # Reference and admission record — ResilientPumpScheduling
@@ -25,25 +27,27 @@ EOF
 `verification/reference.py` is standalone and uses only public inputs and charged interfaces. It
 solves public-demand-band convex dispatch on a conservative all-on commitment with linear
 storage/pressure/ramp constraints and a switching epigraph. The evaluator's score-one anchor is
-one deterministic block-exchange sweep (commitment blocks of width 2-4 flipped from all-on at
-every start, convex dispatch per mask, cache-aware). No invented fallback anchor is used when the
-reference fails; an invalid anchor is an infrastructure error. This remains a single-tank
-surrogate, not a pipe-network solver.
+repeated block-exchange sweeps (commitment blocks of width 2-4 flipped from the incumbent mask)
+until a full sweep finds no improvement, with every fixed-mask dispatch warm-started from the
+incumbent schedule and a mask cache shared across sweeps. No invented fallback anchor is used
+when the reference fails; an invalid anchor is an infrastructure error. This remains a
+single-tank surrogate, not a pipe-network solver.
 
 ## 2. Baseline and normalization (2026-09-07 twelve-system re-derivation)
 
 | entry | development | held-out policy |
 |---|---|---|
 | shipped baseline (`solution.py`) | **0.000000** (valid=1) | 0.000 |
-| runnable witness (`verification/reference.py`) | **0.640556** | 0.596813 |
+| runnable witness (`verification/reference.py`) | **0.629968** | 0.566628 |
 
-Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 62.1 s for the
-baseline entry (includes all twelve anchor searches, cached thereafter) and 0.5 s for the
-witness. The metadata envelope is 150 s and the wrapper timeout 300 s. On the previous
-six-system set the 2026-09-07 maintainer-method retest measured 34.8 s baseline / 32.1 s
-reference with witness 0.569407; the maintainer's host ran the baseline at 79 s (2.3x slower),
-which is why the anchor was reduced from two block-exchange passes to one when the instance
-count doubled. Two consecutive in-process evaluations of the witness are JSON-identical.
+Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 41.1 s for the
+baseline entry (includes all twelve repeated-sweep anchor searches, cached thereafter) and
+0.2 s for the witness; warm-starting every dispatch from the incumbent schedule is what makes
+the repeated sweeps affordable. The metadata envelope is 150 s and the wrapper timeout 300 s.
+On the previous six-system set the 2026-09-07 maintainer-method retest measured 34.8 s
+baseline / 32.1 s reference with witness 0.569407; the maintainer's host ran the baseline at
+79 s (2.3x slower), which is why the declared envelope anticipates slower machines. Two
+consecutive in-process evaluations of the witness are JSON-identical.
 
 The true demand is now the public forecast times a hidden two-frequency ripple
 (a1 sin(f1 t + seed) + a2 cos(f2 t + 1.7 seed)) with per-instance amplitudes, frequencies and
@@ -58,8 +62,11 @@ verify on the hidden realization).
 Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json`.
 Historical: on the six-system set the convex all-on dispatch scored 0.569407 development /
 0.493703 held out and the historical coordinate-move method was invalid on every development
-instance. Current: the all-on witness scores 0.640556 development / 0.596813 held out on the
-twelve-system set against the one-sweep anchor; discrete commitment is the measured headroom.
+instance. Current: the all-on witness scores 0.629968 development / 0.566628 held out on the
+twelve-system set against the repeated-sweep anchor; discrete commitment is the measured
+headroom. A commitment ladder measured against the strengthened anchor: all-on dispatch
+0.629968, best single width-2 flip 0.853, best single width-3 flip 0.914, best widths-2-4 flip
+0.974300, full multi-sweep anchor 1.0 by definition.
 
 ## 4. Shortcut probes
 
@@ -69,17 +76,28 @@ Three families were implemented and run (`tmp/probe_pump.py` on the builder tree
 
 | family | development | held-out policy | valid |
 |---|---|---|---|
-| fixed-price-window charging (k cheapest hours, constant speed, k swept 12-22) | 0.000000 | 0.580927 | 0 |
-| threshold commitment (run iff price < tau, constant speed, tau swept) | 0.000000 | 0.311717 | 0 |
-| two-block commitment + public-band convex dispatch (widths 6-12, starts step 4) | **0.629644** | 0.783692 | 1 |
-| runnable witness (all-on convex dispatch) | 0.640556 | 0.596813 | 1 |
+| fixed-price-window charging (k cheapest hours, constant speed, k swept 12-22) | 0.000000 | 0.531225 | 0 |
+| threshold commitment (run iff price < tau, constant speed, tau swept) | 0.000000 | 0.264491 | 0 |
+| two-block commitment + public-band convex dispatch (widths 6-12, starts step 4) | **0.607706** | 0.735082 | 1 |
+| runnable witness (all-on convex dispatch) | 0.629968 | 0.566628 | 1 |
 
 The constant-speed families fail closed on development: no member is simultaneously tank-,
 pressure- and terminal-feasible on every development system, which is itself a measured result
-(scoring requires feasibility, not just cheap hours). The two-block commitment family comes
-within 0.011 of the all-on witness on development but remains below it and well below the
-anchor, so discrete commitment is genuine search headroom rather than a two-parameter shortcut.
-These values are local diagnostics, not frozen benchmark evidence.
+(scoring requires feasibility, not just cheap hours).
+
+**KNOWN RISK, owner decision required before admission: the two-block commitment family sits
+only 0.022 below the witness on development.** An honest widening attempt was made: the anchor
+was strengthened from one block-exchange sweep to repeated warm-started sweeps (which lowered
+the probe from 0.629644 to 0.607706), and witness designs between all-on dispatch and one
+commitment flip were measured - best single width-2 flip 0.853, width-3 flip 0.914,
+widths-2-4 flip 0.974, tariff-window flips 0.944-0.970. The commitment landscape is a cliff:
+every bounded-commitment witness lands at 0.85-0.97, far above the 0.8 admission ceiling, and
+the all-on witness lands at 0.63, so no reference design reaches the suggested 0.70 target
+band while staying under 0.8. The gap cannot honestly exceed ~0.05 by witness or anchor
+design; widening it further would require redesigning the cost structure (for example
+instance-specific startup costs that make single flips much less effective), which is an
+owner decision, not a unilateral builder change. These values are local diagnostics, not
+frozen benchmark evidence.
 
 ## 5. Frontier-model calibration
 
@@ -90,12 +108,16 @@ remain required.
 
 ## 6. Construction errors and revisions
 
-2026-09-07 hardening: hidden two-frequency demand ripple decoupled from the visible phase
-(previously seed = visible phase 0/3/7/11, offline-derivable); instances expanded from six to
-twelve with four tariff-window structures, two demand shapes, and varied tank sizes, pump
-capacities and ripple shapes; anchor reduced to one deterministic block-exchange sweep to keep
-the twelve-instance runtime inside the evaluation budget; Task.md spoiler paragraph describing
-the anchor heuristic deleted; price-window, threshold and two-block probes measured and pinned.
+2026-09-07 hardening (first pass): hidden two-frequency demand ripple decoupled from the
+visible phase (previously seed = visible phase 0/3/7/11, offline-derivable); instances expanded
+from six to twelve with four tariff-window structures, two demand shapes, and varied tank
+sizes, pump capacities and ripple shapes; Task.md spoiler paragraph describing the anchor
+heuristic deleted; price-window, threshold and two-block probes measured and pinned.
+2026-09-07 admission-bar fix: anchor strengthened to repeated warm-started block-exchange
+sweeps to convergence (runtime held at 41.1 s by warm starts); witness deliberately kept at
+all-on dispatch after measuring that every bounded-commitment witness lands at 0.85-0.97,
+outside the admission band; the 0.022 witness-to-two-block gap documented above as an explicit
+owner-decision risk.
 One held-out system (heldout_growth) was resized (tank maximum 1950 -> 1650 m3) after its
 baseline failed the remote-pressure gate by 0.35 m.
 2026-09-05 hardening: replaces tariff coordinate moves with constrained convex optimization. No

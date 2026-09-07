@@ -11,18 +11,18 @@ oracle:
   deterministic: true
 normalization:
   baseline: Conservative constant-speed schedule sized above mean public demand.
-  reference: Convex public-band dispatch on a conservative all-on commitment; it scores 0.641
-    against the oracle's one-sweep block-exchange commitment anchor on the twelve-system set.
+  reference: Convex public-band dispatch on a conservative all-on commitment; it scores 0.630
+    against the oracle's repeated warm-started block-exchange commitment anchor.
   score: Development energy-cost savings are uncapped above the block-search anchor; held-out
     networks, demand growth and four-hour outage resilience remain separate.
 evaluation_budget: 150 s expected evaluation time (frontier_eval/metadata.yaml) and a
   300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py). A direct local
-  evaluation on 2026-09-07 with the twelve-system set took 62.1 s for the baseline entry
-  (including every anchor search, cached thereafter) and 0.5 s for the runnable reference.
-  The anchor was reduced from two block-exchange passes to one deterministic sweep (widths 2-4)
-  to hold that cost down when the instance count doubled; the maintainer previously observed a
-  2.3x slower host (79 s vs 34.8 s on the six-system set), so the declared envelope anticipates
-  slower machines while the 300 s wrapper still leaves well over half the budget to the candidate.
+  evaluation on 2026-09-07 with the twelve-system set took 41.1 s for the baseline entry
+  (including every anchor search, cached thereafter) and 0.2 s for the runnable reference;
+  warm-starting every fixed-mask dispatch from the incumbent schedule is what holds the
+  repeated-sweep anchor inside that cost. The maintainer previously observed a 2.3x slower
+  host (79 s vs 34.8 s on the six-system set), so the declared envelope anticipates slower
+  machines while the 300 s wrapper still leaves well over half the budget to the candidate.
 citations:
 - id: url:https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10113EM.TXT
   title: EPANET 2.2 User Manual
@@ -44,10 +44,14 @@ known_shortcuts: 'Measured 2026-09-07 on the twelve-system set: the conservative
   and threshold commitment (run iff price < tau, constant speed, tau swept) both fail closed on
   development (0.0, valid=0: no member is simultaneously tank-, pressure- and terminal-feasible
   on every development system). Two-block commitment with public-band convex dispatch on each
-  mask reaches 0.629644 development, just below the 0.640556 all-on witness but not the anchor,
-  so discrete commitment remains genuine search headroom. Single-pump/single-tank fidelity and
-  global optimality remain limited; clean Linux replay and independent water-network review are
-  pending.'
+  mask reaches 0.607706 development against the strengthened repeated-sweep anchor, only 0.022
+  below the 0.629968 all-on witness: a first-shot commitment searcher nearly ties the reference.
+  KNOWN RISK (owner decision required before admission): every measured bounded-commitment
+  method between one and many block flips scores 0.85-0.97, so no witness design lands in the
+  0.5-0.8 band between the all-on dispatch and the single-flip cliff; widening the gap beyond
+  0.05 was attempted and failed. The task is kept with this thin gap explicitly flagged.
+  Single-pump/single-tank fidelity and global optimality remain limited; clean Linux replay and
+  independent water-network review are pending.'
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending

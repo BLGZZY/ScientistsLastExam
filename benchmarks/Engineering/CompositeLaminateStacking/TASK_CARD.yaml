@@ -13,17 +13,17 @@ oracle:
 normalization:
   baseline: Quasi-isotropic largest-remaining-first interleaved sequence satisfying every
     manufacturing rule.
-  reference: Ten seeded permutation starts followed by one adjacent-exchange refinement pass; it
-    scores 0.769 development against the oracle's tiled-block-seeded, multi-start full
-    pair-exchange plus iterated-local-search anchor recomputed by the oracle.
+  reference: Thirteen seeded permutation starts followed by adjacent-exchange refinement to
+    convergence; it scores 0.741 development against the oracle's tiled-block-seeded,
+    multi-start full pair-exchange plus iterated-local-search anchor recomputed by the oracle.
   score: Development reserve improvement is uncapped above the stronger search anchor; held-out
     panels and sealed material/load degradation remain separate.
 evaluation_budget: 300 s candidate timeout (frontier_eval/run_eval.py) with the evaluator's own
-  anchor sweep measured at 72.3 s for all six instances on the 2026-09-07 builder machine
-  (in-process baseline entry; metadata declares a 90 s envelope), leaving the candidate roughly
-  225 s of search room. The 2026-09-07 instance scale-up (36-48 plies, half-permutation counts
-  above 1e8 everywhere) forced the old 900-start random-screening anchor to be replaced by the
-  cheaper but stronger structured-seed anchor above.
+  anchor sweep measured at 20.4 s for all six instances on the 2026-09-07 builder machine
+  (in-process baseline entry; metadata declares a 45 s envelope), leaving the candidate over
+  250 s of search room. The 2026-09-07 revisions (36-48 plies, run limit 2, three conflicting
+  load/moment cases per panel, half-permutation counts above 1e8 everywhere) forced the old
+  900-start random-screening anchor to be replaced by the structured-seed anchor above.
 citations:
 - id: doi:10.2514/3.11710
   title: Optimization of laminate stacking sequence for buckling load maximization by genetic algorithm
@@ -36,19 +36,18 @@ invariants:
 - Malformed, asymmetric, unbalanced, composition-changing and over-consecutive sequences score zero without
   escaping the evaluator.
 - Held-out and degradation metrics never control combined_score.
-known_shortcuts: 'Measured 2026-09-07 on the 36-48-ply panels: the quasi-isotropic baseline scores 0.
-  A lamination-parameter-guided greedy family (81 bending-parameter targets, greedy outer-to-inner
-  assembly) reaches 0.615927 development, below the 0.768732 witness. HOWEVER the block/clustered
-  family (contiguous same-angle blocks of width 1-3 tiled over all 24 angle orders, a few hundred
-  patterns per panel) reaches 0.992897 development and 0.947302 held-out: a textbook structured
-  pattern enumeration nearly closes the anchor gap and EXCEEDS the ten-start adjacency witness.
-  This is the primary open difficulty risk: before admission the witness must be strengthened or
-  the panels made hostile to clustered stacks, or the task risks the same first-shot textbook
-  solution that led to PermutationFlowShop being withdrawn. The anchor now seeds itself with the
-  block families so the normalization bound dominates them, but that does not repair the
-  witness-relative shortcut. Fixed ply counts remove composition optimization, and the CLT/Navier
-  surrogate still omits holes, delamination, postbuckling and anisotropic mode coupling; clean
-  Linux replay and independent FEA remain required.'
+known_shortcuts: 'Measured 2026-09-07 on the 36-48-ply run-limit-2 panels with three conflicting
+  load/moment cases: the quasi-isotropic baseline scores 0. The lamination-parameter-guided
+  greedy family (81 bending-parameter targets, greedy outer-to-inner assembly) reaches about
+  0.38 development. The block/clustered family (contiguous same-angle blocks of width 1-3 tiled
+  over all 24 angle orders) reaches 0.557119 development against the 0.740840 witness: 0.184
+  below the reference, satisfying the admission rule after the run-limit-2 constraint and the
+  shear/twisting third load case removed the near-ceiling clustering shortcut this task
+  previously carried (0.992897 on the pre-revision two-case run-limit-3 panels). The witness
+  score is sensitive to its start count (0.616 at ten starts, 0.784 at fourteen); the pinned
+  regression keeps the thirteen-start configuration honest. Fixed ply counts remove composition
+  optimization, and the CLT/Navier surrogate still omits holes, delamination, postbuckling and
+  anisotropic mode coupling; clean Linux replay and independent FEA remain required.'
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending

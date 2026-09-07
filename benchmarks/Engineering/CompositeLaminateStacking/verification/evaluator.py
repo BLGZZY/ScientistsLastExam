@@ -15,50 +15,58 @@ import numpy as np
 
 DIFFICULTY = "hard"
 ANGLES = (-45, 0, 45, 90)
-MAX_RUN = 3
+MAX_RUN = 2
 # Score-one anchor: a witness-level adjacency warm start, multi-start permutation sampling
 # with full pair-exchange refinement to convergence, then iterated local search (random
 # three-swap perturbations re-converged by full pair exchange). The ILS phase walks out of
 # the pair-exchange basins a narrow adjacency witness can also reach. The anchor is a search
 # bound, not a proof of optimality, sized to keep the six-instance sweep near half a minute
 # on this builder machine and leave the candidate most of the evaluation budget.
-ANCHOR_STARTS = 12
-ANCHOR_ILS_ROUNDS = 16
+ANCHOR_STARTS = 8
+ANCHOR_ILS_ROUNDS = 12
 ANCHOR_SEED = 91000
 _REFERENCE_CACHE = {}
 
 
 INSTANCE_SPECS = (
-    # Every development and held-out panel carries its own load mix and its own paired
-    # bending-moment cases; no two instances share a moment vector. Half-stacks are 18-24 plies
-    # with deliberately uneven angle mixes: the multinomial half-permutation counts are
-    # 3.1e8 (dev_axial_long), 5.6e9 (dev_biaxial_square), 1.3e11 (dev_shear_panel),
-    # 3.0e11 (dev_transverse), 8.2e9 (heldout_orthotropic) and 5.5e11 (heldout_balanced_load),
-    # so exhaustive or near-exhaustive screening of the half-stack is out of reach and the
-    # balance/symmetry/run constraints remove whole further families.
+    # Every development and held-out panel carries THREE paired load/moment cases whose
+    # optima conflict: an axial case (0-dominant), a transverse case (90-dominant) and a
+    # shear/twist case (interleaved +/-45 dominant through the D16/D26 coupling that a
+    # clustered stack cannot zero). No single clustered pattern is near-optimal on all
+    # three. Half-stacks are 18-24 plies with deliberately uneven angle mixes; the
+    # multinomial half-permutation counts are 3.1e8 (dev_axial_long), 5.6e9
+    # (dev_biaxial_square), 1.3e11 (dev_shear_panel), 3.0e11 (dev_transverse),
+    # 8.2e9 (heldout_orthotropic) and 5.5e11 (heldout_balanced_load), so exhaustive or
+    # near-exhaustive screening of the half-stack is out of reach.
     {"name": "dev_axial_long", "split": "development", "plies": 36, "half_counts": (5, 6, 5, 2),
-     "a": 1.20, "b": 0.72, "loads": ((6.8e4, 2.04e4, 0.68e4), (5.58e4, 3.54e4, -0.95e4)),
-     "moments": ((550.0, 121.0, 209.0), (-192.5, 522.5, -154.0)),
+     "a": 1.20, "b": 0.72,
+     "loads": ((6.8e4, 2.0e4, 0.6e4), (2.2e4, 6.6e4, -1.0e4), (2.8e4, 2.8e4, 7.3e4)),
+     "moments": ((550.0, 121.0, 209.0), (-180.0, 500.0, -150.0), (85.0, 85.0, 940.0)),
      "material": (132e9, 9.2e9, 4.8e9, 0.29), "strength": (1.45e9, 1.05e9, 55e6, 185e6, 72e6)},
     {"name": "dev_biaxial_square", "split": "development", "plies": 40, "half_counts": (5, 7, 5, 3),
-     "a": 0.92, "b": 0.92, "loads": ((5.40e4, 4.95e4, 2.25e4), (4.50e4, 7.20e4, -1.80e4)),
-     "moments": ((680.0, 360.0, -200.0), (-440.0, 600.0, 320.0)),
+     "a": 0.92, "b": 0.92,
+     "loads": ((5.4e4, 4.9e4, 2.2e4), (4.0e4, 8.6e4, -1.8e4), (3.6e4, 3.6e4, 9.0e4)),
+     "moments": ((680.0, 360.0, -200.0), (-440.0, 640.0, 300.0), (105.0, 105.0, 1100.0)),
      "material": (145e9, 8.5e9, 5.2e9, 0.27), "strength": (1.60e9, 1.10e9, 48e6, 170e6, 68e6)},
     {"name": "dev_shear_panel", "split": "development", "plies": 44, "half_counts": (6, 6, 6, 4),
-     "a": 1.05, "b": 0.66, "loads": ((9.75e4, 4.50e4, 10.50e4), (6.30e4, 9.00e4, -7.50e4)),
-     "moments": ((605.0, 330.0, 858.0), (-462.0, 968.0, -605.0)),
+     "a": 1.05, "b": 0.66,
+     "loads": ((9.7e4, 4.5e4, 1.0e5), (5.2e4, 9.6e4, -7.5e4), (4.7e4, 4.7e4, 1.4e5)),
+     "moments": ((605.0, 330.0, 858.0), (-462.0, 968.0, -605.0), (130.0, 130.0, 1330.0)),
      "material": (126e9, 10.4e9, 5.0e9, 0.31), "strength": (1.35e9, 0.98e9, 62e6, 205e6, 78e6)},
     {"name": "dev_transverse", "split": "development", "plies": 48, "half_counts": (7, 8, 7, 2),
-     "a": 0.78, "b": 1.18, "loads": ((6.08e4, 12.92e4, 2.28e4), (13.68e4, 8.36e4, -5.32e4)),
-     "moments": ((1050.0, 1350.0, -450.0), (-720.0, 930.0, 1080.0)),
+     "a": 0.78, "b": 1.18,
+     "loads": ((5.0e4, 1.4e4, 0.5e4), (1.9e4, 1.35e5, -0.9e4), (4.5e4, 4.5e4, 9.7e4)),
+     "moments": ((950.0, 300.0, -260.0), (-520.0, 1250.0, 420.0), (150.0, 150.0, 1450.0)),
      "material": (138e9, 9.7e9, 4.5e9, 0.28), "strength": (1.52e9, 1.02e9, 58e6, 190e6, 70e6)},
     {"name": "heldout_orthotropic", "split": "heldout", "plies": 40, "half_counts": (4, 6, 4, 6),
-     "a": 1.32, "b": 0.81, "loads": ((6.51e4, 1.82e4, -2.73e4), (2.03e4, 7.00e4, 3.01e4)),
-     "moments": ((782.0, 212.0, -382.0), (-255.0, 833.0, 297.0)),
+     "a": 1.32, "b": 0.81,
+     "loads": ((6.5e4, 1.8e4, -2.7e4), (2.6e4, 6.4e4, 3.0e4), (3.2e4, 3.2e4, 7.7e4)),
+     "moments": ((782.0, 212.0, -382.0), (-255.0, 833.0, 297.0), (115.0, 115.0, 970.0)),
      "material": (119e9, 11.2e9, 4.2e9, 0.30), "strength": (1.28e9, 0.92e9, 66e6, 215e6, 74e6)},
     {"name": "heldout_balanced_load", "split": "heldout", "plies": 48, "half_counts": (6, 9, 6, 3),
-     "a": 0.86, "b": 1.04, "loads": ((9.30e4, 10.85e4, 7.75e4), (-1.09e4, 13.95e4, 6.20e4)),
-     "moments": ((1040.0, 1152.0, 880.0), (-960.0, 1280.0, -608.0)),
+     "a": 0.86, "b": 1.04,
+     "loads": ((9.3e4, 1.08e5, 7.7e4), (7.5e4, 1.42e5, -1.1e4), (4.2e4, 4.2e4, 1.0e5)),
+     "moments": ((1040.0, 1152.0, 880.0), (-960.0, 1280.0, -608.0), (145.0, 145.0, 1500.0)),
      "material": (151e9, 8.1e9, 5.5e9, 0.26), "strength": (1.70e9, 1.18e9, 45e6, 165e6, 65e6)},
 )
 
@@ -271,9 +279,9 @@ def _reference(problem):
     for seed_seq in _block_patterns(problem):
         q = _laminate(problem, seed_seq)
         if q > best_q: best, best_q = seed_seq, q
-    # Warm start: the witness-shape adjacency sweep, so the anchor is never weaker
-    # than a ten-start adjacency witness on any instance.
-    for _ in range(10):
+    # Warm start: a wider witness-shape adjacency sweep with the anchor's own seed,
+    # so the anchor is never weaker than the thirteen-start adjacency witness.
+    for _ in range(24):
         trial_half = list(rng.permutation(half)); trial = trial_half + trial_half[::-1]
         try:
             trial = _validate(problem, trial)
