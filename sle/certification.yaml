@@ -10,6 +10,12 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
+  ProductionSystems/PermutationFlowShop:
+    status: candidate
+    reason: uncapped makespan record chase on fresh-seeded Taillard-style permutation flow shops (20x5 to 50x10) with exact integer verification, an NEH zero anchor and a frozen 3000-iteration ILS witness; the runnable one-cycle ILS reference reaches 0.636/0.773, while 2 and 20 iterations rise monotonically to 0.849/0.805 and 0.929/0.957; pending clean Linux calibration, independent operations-research review and a frozen frontier-model draw
+    citation_ids:
+      - doi:10.1016/0377-2217(93)90182-M
+      - doi:10.1287/ijoc.2022.1193
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.

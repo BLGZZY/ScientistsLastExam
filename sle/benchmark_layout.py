@@ -72,6 +72,7 @@ DISCIPLINE_DOMAINS: dict[str, tuple[str, ...]] = {
         "Superconductivity",
     ),
     "Engineering": (
+        "ProductionSystems",
         "AcousticMetamaterials",
         "Acoustics",
         "Astrodynamics",
