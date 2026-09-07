@@ -1,8 +1,12 @@
-"""Pinned invariants for the 2026-09-05 round-four candidate tasks.
+"""Pinned package contracts for the surviving 2026-09 earth candidate tasks.
 
-Each class pins the construction errors recorded in the task's known_best.md and
-the repo-wide baseline/reference/bad-candidate contract. Tests load evaluators
-directly; sandbox-dependent behaviour is out of scope here.
+The 2026-09-07 internal difficulty audit withdrew ChronologyAssimilation,
+IceObservationNetworkDesign and MineralMixtureXRD from this PR; their pinned
+invariants were removed with them (see the git history and
+.research/pr9_frontier_eng_overlap_2026-09-06.md). What remains are the
+repo-wide baseline/reference/bad-candidate contracts for the two retained
+packages. Tests load evaluators directly; sandbox-dependent behaviour is out
+of scope here.
 """
 
 
@@ -24,8 +28,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-TASKS = {'Mineralogy/MineralMixtureXRD': ('benchmarks/EarthScience/MineralMixtureXRD',
-                                  'identify_minerals')}
+TASKS = {'WavePropagation/ActiveFullWaveformInversion':
+         ('benchmarks/EarthScience/ActiveFullWaveformInversion', 'invert_velocity_model'),
+         'Hydrology/GroundwaterRemediationDesign':
+         ('benchmarks/EarthScience/GroundwaterRemediationDesign', 'design_remediation')}
 
 
 def _load(path: Path, name: str):
@@ -36,7 +42,7 @@ def _load(path: Path, name: str):
     return module
 
 
-class RoundFourPackageTests(unittest.TestCase):
+class EarthPackageContractTests(unittest.TestCase):
     def test_baselines_valid_zero_and_deterministic(self):
         for task_id, (directory, entrypoint) in TASKS.items():
             evaluator = _load(ROOT / directory / "verification" / "evaluator.py",
@@ -71,27 +77,6 @@ class RoundFourPackageTests(unittest.TestCase):
                 result = evaluator.evaluate(candidate)
                 self.assertEqual(result["valid"], 0.0, task_id)
                 self.assertEqual(result["combined_score"], 0.0, task_id)
-
-
-class MineralMixturePins(unittest.TestCase):
-    def test_library_peaks_are_observable(self):
-        ev = _load("benchmarks/EarthScience/MineralMixtureXRD/verification/evaluator.py",
-                   "r4_xrd")
-        low, high = ev.TWO_THETA_GRID[0], ev.TWO_THETA_GRID[-1]
-        for name, peaks in ev.MINERAL_LIBRARY.items():
-            for center, _weight in peaks:
-                self.assertGreaterEqual(center, low - 1e-9, name)
-                self.assertLessEqual(center, high + 1e-9, name)
-
-    def test_amorphous_hump_is_broad(self):
-        ev = _load("benchmarks/EarthScience/MineralMixtureXRD/verification/evaluator.py",
-                   "r4_xrd")
-        world = ev._world((36029, "supported", True))
-        hump = ev._amorphous_pattern(world)
-        half = 10
-        contrast = max(hump[i] - 0.5 * (hump[i - half] + hump[i + half])
-                       for i in range(half, len(hump) - half))
-        self.assertLess(contrast, 2.0)
 
 
 if __name__ == "__main__":

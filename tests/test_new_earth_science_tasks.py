@@ -15,12 +15,8 @@ EARTH = ROOT / "benchmarks" / "EarthScience"
 TASKS = {
     "WavePropagation/ActiveFullWaveformInversion":
         ("ActiveFullWaveformInversion", "invert_velocity_model", "discovery"),
-    "Paleoclimate/ChronologyAssimilation":
-        ("ChronologyAssimilation", "reconstruct_climate", "discovery"),
     "Hydrology/GroundwaterRemediationDesign":
         ("GroundwaterRemediationDesign", "design_remediation", "optimization"),
-    "Cryosphere/IceObservationNetworkDesign":
-        ("IceObservationNetworkDesign", "design_ice_observation_network", "optimization"),
 }
 
 
@@ -33,15 +29,15 @@ def _load(path: Path, name: str):
 
 
 class NewEarthSciencePackageTests(unittest.TestCase):
-    def test_inventory_has_two_discovery_and_two_optimization_tasks(self):
+    def test_inventory_has_one_discovery_and_one_optimization_task(self):
         roles = []
         for task_id, (_, _, role) in TASKS.items():
             spec = find_task(task_id, include_uncertified=True)
             self.assertEqual(spec.discipline, "EarthScience")
             self.assertEqual(spec.metadata["scientific_role"], role)
             roles.append(role)
-        self.assertEqual(roles.count("discovery"), 2)
-        self.assertEqual(roles.count("optimization"), 2)
+        self.assertEqual(roles.count("discovery"), 1)
+        self.assertEqual(roles.count("optimization"), 1)
 
     def test_baselines_are_valid_zero_and_deterministic(self):
         for task_id, (directory, entrypoint, _) in TASKS.items():
@@ -97,27 +93,10 @@ class NewEarthScienceInvariantTests(unittest.TestCase):
         zeros = np.zeros((fwi.N_TIME, len(fwi.RECEIVER_INDICES)))
         self.assertEqual(fwi._waveform_relative_l2(zeros, zeros), 0.0)
 
-        chronology = _load(EARTH / "ChronologyAssimilation" / "verification" / "evaluator.py",
-                           "new_earth_numpy_chronology_metric")
-        ce, rmse = chronology._climate_field_metrics(chronology.TIME_GRID,
-                                                     chronology.TIME_GRID)
-        self.assertAlmostEqual(ce, 1.0)
-        self.assertAlmostEqual(rmse, 0.0)
-
         self.assertAlmostEqual(fwi._waveform_relative_l2(2 * np.ones_like(zeros),
                                                         np.ones_like(zeros)), 1.0)
         with self.assertRaises(ValueError):
             fwi._waveform_relative_l2(zeros[:, :1], zeros)
-        with self.assertRaises(ValueError):
-            chronology._climate_field_metrics([0.0], chronology.TIME_GRID)
-        ice = _load(EARTH / "IceObservationNetworkDesign/verification/evaluator.py",
-                    "new_earth_numpy_ice_metric")
-        errors = np.array([[3., 4., 0.], [-3., -4., 0.]])
-        rmse, crps = ice._ensemble_forecast_metrics(errors, np.array([[1000., 100., .3]] * 2))
-        np.testing.assert_allclose(rmse, [3., 4., 0.])
-        self.assertAlmostEqual(crps, 1.)
-        with self.assertRaises(ValueError):
-            ice._ensemble_forecast_metrics(errors, [[1000., 100., .3]])
 
     def test_difficulty_ladders_change_scientific_regimes(self):
         fwi = _load(EARTH / "ActiveFullWaveformInversion" / "verification" / "evaluator.py",
@@ -131,16 +110,6 @@ class NewEarthScienceInvariantTests(unittest.TestCase):
         self.assertGreater(hard_fwi["noise"], easy_fwi["noise"])
         self.assertFalse(np.array_equal(hard_fwi["velocity"], easy_fwi["velocity"]))
 
-        chronology = _load(EARTH / "ChronologyAssimilation" / "verification" / "evaluator.py",
-                           "new_earth_chronology_ladder")
-        chronology.DIFFICULTY = 1
-        easy_chronology = chronology._world(chronology.DEVELOPMENT_SPECS[0])
-        chronology.DIFFICULTY = 3
-        hard_chronology = chronology._world(chronology.DEVELOPMENT_SPECS[0])
-        self.assertGreater(hard_chronology["date_noise"], easy_chronology["date_noise"])
-        self.assertGreater(np.max(np.abs(hard_chronology["offsets"])),
-                           np.max(np.abs(easy_chronology["offsets"])))
-
         groundwater = _load(
             EARTH / "GroundwaterRemediationDesign" / "verification" / "evaluator.py",
             "new_earth_groundwater_ladder",
@@ -151,17 +120,6 @@ class NewEarthScienceInvariantTests(unittest.TestCase):
         hard_groundwater = groundwater._public_problem(groundwater.DEVELOPMENT_SPECS[0])
         self.assertLess(hard_groundwater["concentration_limit_kg_m3"],
                         easy_groundwater["concentration_limit_kg_m3"])
-
-        ice = _load(EARTH / "IceObservationNetworkDesign" / "verification" / "evaluator.py",
-                    "new_earth_ice_ladder")
-        ice.DIFFICULTY = 1
-        easy_ice = ice._world(ice.DEVELOPMENT_SEEDS[0])
-        ice.DIFFICULTY = 3
-        hard_ice = ice._world(ice.DEVELOPMENT_SEEDS[0])
-        self.assertGreater(hard_ice["catalog"][0]["noise_std"],
-                           easy_ice["catalog"][0]["noise_std"])
-        self.assertGreater(np.linalg.norm(hard_ice["exact_h"] - hard_ice["proxy_h"]),
-                           np.linalg.norm(easy_ice["exact_h"] - easy_ice["proxy_h"]))
 
     def test_fwi_exact_model_has_unit_structure_and_waveform_scores(self):
         evaluator = _load(EARTH / "ActiveFullWaveformInversion" / "verification" / "evaluator.py",
@@ -195,40 +153,11 @@ class NewEarthScienceInvariantTests(unittest.TestCase):
         self.assertNotAlmostEqual(proxy, exact, places=10)
 
     def test_optimization_reference_normalization_is_uncapped(self):
-        for directory in ("GroundwaterRemediationDesign", "IceObservationNetworkDesign"):
-            evaluator = _load(EARTH / directory / "verification" / "evaluator.py",
-                              "new_earth_uncapped_" + directory)
-            self.assertAlmostEqual(evaluator._normalize(1.0, 0.0, 1.0), 1.0)
-            self.assertGreater(evaluator._normalize(1.5, 0.0, 1.0), 1.0)
-            self.assertEqual(evaluator._normalize(-1.0, 0.0, 1.0), 0.0)
-
-    def test_ice_additional_observation_reduces_public_posterior_trace(self):
-        evaluator = _load(EARTH / "IceObservationNetworkDesign" / "verification" / "evaluator.py",
-                          "new_earth_ice_invariant")
-        world = evaluator._world(evaluator.DEVELOPMENT_SEEDS[0])
-        first = evaluator._plan_metrics(world, np.asarray((0, 1, 2)))
-        second = evaluator._plan_metrics(world, np.asarray((0, 1, 2, 3)))
-        self.assertLessEqual(second["posterior_trace"], first["posterior_trace"] + 1e-9)
-
-    def test_ice_designs_share_one_osse_ensemble_per_world(self):
-        evaluator = _load(EARTH / "IceObservationNetworkDesign" / "verification" / "evaluator.py",
-                          "new_earth_ice_common_random_numbers")
-        world = evaluator._world(evaluator.DEVELOPMENT_SEEDS[0])
-        shift = {"sensitivity": 1.0, "noise": 1.0, "dynamics": 1.0}
-        states_a, errors_a = evaluator._osse_draws(world, shift)
-        states_b, errors_b = evaluator._osse_draws(world, shift)
-        np.testing.assert_array_equal(states_a, states_b)
-        np.testing.assert_array_equal(errors_a, errors_b)
-        self.assertEqual(errors_a.shape[1], evaluator.N_OBSERVATIONS)
-
-    def test_paleoclimate_crps_is_finite_and_sharp_at_truth(self):
-        evaluator = _load(EARTH / "ChronologyAssimilation" / "verification" / "evaluator.py",
-                          "new_earth_paleoclimate_invariant")
-        truth = np.asarray((-1.0, 0.0, 1.0))
-        sharp = evaluator._crps_normal(truth, np.full(3, 0.1), truth)
-        broad = evaluator._crps_normal(truth, np.full(3, 1.0), truth)
-        self.assertTrue(np.all(np.isfinite(sharp)))
-        self.assertTrue(np.all(sharp < broad))
+        evaluator = _load(EARTH / "GroundwaterRemediationDesign" / "verification" / "evaluator.py",
+                          "new_earth_uncapped_GroundwaterRemediationDesign")
+        self.assertAlmostEqual(evaluator._normalize(1.0, 0.0, 1.0), 1.0)
+        self.assertGreater(evaluator._normalize(1.5, 0.0, 1.0), 1.0)
+        self.assertEqual(evaluator._normalize(-1.0, 0.0, 1.0), 0.0)
 
 
 if __name__ == "__main__":

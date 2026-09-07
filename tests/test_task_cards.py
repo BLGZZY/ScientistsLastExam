@@ -14,11 +14,8 @@ RECORDED_LINEAGE = {
     "Ecology/OccupancyDetectionDesign",
     "Physics/CriticalPhenomenaLab",
     "WavePropagation/ActiveFullWaveformInversion",
-    "Paleoclimate/ChronologyAssimilation",
     "Geophysics/FocalMechanismStressInversion",
     "Hydrology/GroundwaterRemediationDesign",
-    "Cryosphere/IceObservationNetworkDesign",
-    "Mineralogy/MineralMixtureXRD",
 
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",

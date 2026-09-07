@@ -21,7 +21,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from scripts.check_task_contribution import check_task
 
-TASKS = {'EarthScience': ['ActiveFullWaveformInversion', 'ChronologyAssimilation', 'GroundwaterRemediationDesign', 'IceObservationNetworkDesign']}
+TASKS = {'EarthScience': ['ActiveFullWaveformInversion', 'GroundwaterRemediationDesign']}
 
 def load(path):
     spec=importlib.util.spec_from_file_location('diagnostic_'+path.parent.parent.name+'_'+path.stem,path)
@@ -99,15 +99,6 @@ def main():
                     speeds=evaluator._continuous_schedule(p,np.ones(24,dtype=bool))
                     return {'pump_speed':speeds}
                 row['without_commitment_search']=summary(evaluator.evaluate(always_on))
-            if name=='ChronologyAssimilation':
-                def curves_collapsed(grid,catalog,lab,budget):
-                    answer=dict(reference(grid,catalog,lab,budget))
-                    if not answer['abstain']:
-                        curves=np.asarray(answer.pop('sample_ages_years'))
-                        nominal=np.array([r['nominal_age_years'] for r in catalog])
-                        answer['age_offsets_years']=np.clip(np.median(curves-nominal,axis=1),-300,300)
-                    return answer
-                row['collapse_age_curve_artifact']=summary(evaluator.evaluate(curves_collapsed))
             if name=='GroundwaterRemediationDesign':
                 def source(p):
                     x,y=p['source_location_m']
