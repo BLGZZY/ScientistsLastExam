@@ -97,11 +97,10 @@ error, and its refusal world is an information decision about a pendant duplicat
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only:
-weighted least-squares adjustment, dominant-outlier drop-and-refit, coherent
-same-direction class testing with one confirming cross-check, pendant triage, and
-underdetermined refusal. Local shortcut and ablation diagnostics are recorded in
-`references/known_best.md`; they do not replace clean Linux sandbox replay, independent
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes and ablation diagnostics
+are recorded in the maintainer-facing `references/known_best.md`, which is not served
+to candidates. They do not replace clean Linux sandbox replay, independent
 thermochemistry review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)

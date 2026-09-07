@@ -48,8 +48,8 @@ noise level. Overspending or malformed calls invalidate the world even when caug
   baseline: geometric mean of the true family probability, active-parameter recovery
   (normalized by public bounds) and a sealed extrapolation of the transient to
   t = 12 and 20 s at a sealed potential, multiplied by an evidence-efficiency factor
-  `1 - 0.50 * budget_used / 6` on supported discoveries. Accurate identification with fewer potential steps
-  therefore retains measurable room above the three-step reference.
+  `1 - 0.50 * budget_used / 6` on supported discoveries. Accurate identification
+  with fewer potential steps therefore retains more score.
 - Anomalous and drift worlds score refusal only; abstaining scores one and claiming a
   family scores zero. Refusal credit is not multiplied by evidence efficiency, preventing
   evidence-backed refusal from scoring below blind abstention.
@@ -93,12 +93,11 @@ sealed time extrapolation that separates diffusion tails from kinetic saturation
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only:
-three potential steps, per-family bounded least squares with an Akaike-style freedom
-penalty, a chi-square misfit gate and a variable-projection test for a shared linear
-drift. Local shortcut and ablation diagnostics are recorded in
-`references/known_best.md`; they do not replace clean Linux sandbox replay,
-independent electrochemistry review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes and ablation diagnostics
+are recorded in the maintainer-facing `references/known_best.md`, which is not served
+to candidates. They do not replace clean Linux sandbox replay, independent
+electrochemistry review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

@@ -111,13 +111,11 @@ precursor and a co-isolated isobar — must be refused rather than explained.
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only:
-four energy scans plus one precursor-window zoom, CHNO mass decomposition, flat-background
-filtering, greedy loss-library attachment, and refusal when the precursor never survives
-or two precursor ions with different isotope ratios share the window. Local shortcut and
-ablation diagnostics are recorded in `references/known_best.md`; they do not replace
-clean Linux sandbox replay, independent mass-spectrometry review or a frozen
-frontier-model calibration draw.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes and ablation diagnostics
+are recorded in the maintainer-facing `references/known_best.md`, which is not served
+to candidates. They do not replace clean Linux sandbox replay, independent
+mass-spectrometry review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 
