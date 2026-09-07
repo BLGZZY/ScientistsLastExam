@@ -53,13 +53,9 @@ The public proxy and hidden exact simulator report:
 - the Pareto hypervolume for maximizing cleanup and minimizing lifecycle cost.
 
 `combined_score` is normalized development exact-model hypervolume, floored at zero and uncapped.
-The shipped truth-blind reference sweeps a coarse two-rate transect grid, returns a compact
-five-plan Pareto archive and scores `0.647861`; the oracle recomputes a wider sixteen-plan greedy
-archive from a denser rate/encounter search as score one. That anchor is compute-type headroom,
-not secret physics: it runs the same public transport model over a denser rate/encounter grid,
-so reaching it takes a denser search of the same plan family, and exceeding it above one takes an
-archive that dominates the evaluator's greedy archive under the hidden exact transport. The
-remaining space is therefore additional cleanup/cost coverage, not a constant score rescale.
+A reproducible oracle archive defines score one; its construction and calibration are documented
+in the maintainer-facing `references/known_best.md`. Scores above one remain possible for archives
+that achieve greater cleanup/cost coverage under the hidden exact transport.
 Regulatory compliance is a hard gate: a cheap plan cannot compensate
 for receptor exceedance. The evaluator separately
 retains proxy hypervolume, false promotion, held-out aquifers and the worst hidden velocity,
@@ -97,15 +93,14 @@ ResilientPumpScheduling operates a tank and RadiativeTransferFit fits a forward 
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
 The surrogate advects each initial Gaussian component at the declared velocity. At every internal step, extraction is local `Q*C` evaluated at the current well coordinates and moving plume center. Remaining component mass is advanced with an exponential combined extraction/decay hazard; extracted plus decayed plus remaining mass equals initial mass. Spread variances grow by `16*t` and `4.4*t` m² with time in days. This replaces the obsolete capture-at-start approximation.
-
-### Current reference and remaining difficulty
-
-Public moving-plume mass-balance search over single wells and treatment transects, greedily selecting a compact five-plan hypervolume archive from a coarse two-rate (380/650 m³/day) transect sweep. Local extraction uses Q*C at the evolving plume position, with activation-aware integration and an extracted/decayed/remaining mass ledger. Three public initial plume components replace the spatially collapsed capture-at-start model. Against the independently recomputed sixteen-plan dense-search anchor, the runnable reference scores `0.647861` development / `0.636191` robustness.
-
-The anchor deserves to be stated plainly: the evaluator's internal `_reference_archive` greedily recomputes a sixteen-plan archive from a denser rate/encounter grid than the public witness sweeps, using the same public transport model. The headroom above the runnable reference is therefore compute — searching the same plan family more densely — and a score above one requires an archive that dominates that dense greedy archive under the hidden exact transport. Expanding the public coarse-greedy construction from five to all sixteen allowed plans reaches `0.929416` and stops short of one for exactly this reason: that expansion is deliberate reference headroom, not evidence of model difficulty. This calibration does not certify difficulty.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

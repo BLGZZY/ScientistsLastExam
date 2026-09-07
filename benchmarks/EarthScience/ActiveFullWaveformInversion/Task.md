@@ -83,11 +83,12 @@ GravityInversion fits a potential field and RadialVelocityPlanets infers orbital
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
-
-### Current reference and remaining difficulty
-
-Coarse-to-fine grid-continuation least squares over 3x5 then 5x8 velocity correction grids with cubic-spline interpolation, fitted against smoothed-then-raw waveforms (development `0.615339`, robustness `0.427110`). The 2026-09-07 shortcut re-audit measured the no-inversion families at `0.327769` (background return), `0.379232` (constant lens) and `0.068824` (travel-time only); the previous single-pass 3x5 reference sat below the constant lens and was replaced. Source design, richer parameter families and more complete inversion remain open. A discovery reference is evaluated against the fixed recovery ceiling; that fact does not certify difficulty.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

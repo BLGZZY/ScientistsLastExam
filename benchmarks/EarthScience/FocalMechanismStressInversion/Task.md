@@ -92,13 +92,11 @@ catalogs, which no single-tensor fit can honestly explain.
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only:
-multi-start plane-choice initialization, alternating linear least-squares tensor fits
-with per-event plane swaps, budgeted re-analysis of the worst-misfit events, and
-refusal when the converged misfit distribution is too broad or heavy-tailed. Local
-shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do
-not replace clean Linux sandbox replay, independent seismology review or a frozen
-frontier-model calibration draw.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes and ablation diagnostics
+are recorded in the maintainer-facing `references/known_best.md`, which is not served
+to candidates. They do not replace clean Linux sandbox replay, independent seismology
+review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 
