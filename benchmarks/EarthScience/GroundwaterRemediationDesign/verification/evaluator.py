@@ -261,13 +261,15 @@ def _reference_archive(problem):
     source_x, source_y = problem["source_location_m"]
     velocity = problem["groundwater_velocity_m_day"]
     candidates = _baseline_archive(problem)
-    for rate in np.linspace(80.0, 950.0, 16):
+    for rate in np.linspace(80.0, 950.0, 32):
         candidates.append(np.asarray([[source_x, source_y, 0.0, rate]]))
     # Build treatment transects intercepting different moving plume components.
+    # The score-one anchor searches a denser rate/encounter grid than the public
+    # witness, so filling intermediate cleanup/cost trade-offs stays real headroom.
     components = np.asarray(problem["plume_components"])
     for count in (1, 2, 3, 4, 5):
-        for encounter in (1.0, 4.0, 8.0, 12.0):
-            for rate in (160., 380., 650., 950.):
+        for encounter in (0.5, 1.0, 2.0, 4.0, 6.0, 8.0, 10.0, 12.0):
+            for rate in (160., 250., 380., 500., 650., 800., 950.):
                 component = np.arange(count) % len(components)
                 x = source_x + components[component, 0] + velocity * 365.25 * encounter
                 y = source_y + components[component, 1] + 100.0 * (np.arange(count) // len(components))

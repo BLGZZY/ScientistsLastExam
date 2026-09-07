@@ -99,10 +99,13 @@ def _reference_archive(problem):
     for rate in np.linspace(80.0, 950.0, 16):
         candidates.append(np.asarray([[source_x, source_y, 0.0, rate]]))
     # Build treatment transects intercepting different moving plume components.
+    # The public witness sweeps only a coarse two-rate transect grid; the oracle
+    # anchors score one on a denser rate/encounter search, so filling the missing
+    # low-rate and intermediate trade-offs is real, checkable headroom.
     components = np.asarray(problem["plume_components"])
     for count in (1, 2, 3, 4, 5):
         for encounter in (1.0, 4.0, 8.0, 12.0):
-            for rate in (160., 380., 650., 950.):
+            for rate in (380., 650.):
                 component = np.arange(count) % len(components)
                 x = source_x + components[component, 0] + velocity * 365.25 * encounter
                 y = source_y + components[component, 1] + 100.0 * (np.arange(count) // len(components))

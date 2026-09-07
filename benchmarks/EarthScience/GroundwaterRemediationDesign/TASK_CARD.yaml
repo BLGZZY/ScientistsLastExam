@@ -18,9 +18,9 @@ difficulty_ladder:
     3: 30 percent tighter compliance, 55 percent stronger discrepancy and 38 percent stronger stresses
 normalization:
   baseline: four low-intensity single-well plans recomputed for every aquifer
-  reference: Public moving-plume mass-balance search over single wells and treatment transects, greedily
-    selecting a compact five-plan hypervolume archive; it scores 0.743 against the oracle's
-    reproducible sixteen-plan greedy anchor.
+  reference: Public moving-plume mass-balance search over single wells and treatment transects on a
+    coarse two-rate (380/650 m3/day) sweep, greedily selecting a compact five-plan hypervolume
+    archive; it scores 0.648 against the oracle's reproducible sixteen-plan dense-search greedy anchor.
   score: exact-model cleanup-versus-lifecycle-cost Pareto hypervolume above baseline, floored at zero
     and uncapped above the wider archive anchor; feasibility, proxy promotion, held-out transfer and worst-shift
     robustness remain separate
@@ -36,10 +36,11 @@ invariants:
 - exact and proxy transport agree when all hidden shift multipliers are one
 - exact evaluation applies an evaluator-only model-discrepancy shift, composed with each robustness stress
 - the shipped reference archive exceeds the weak baseline on development aquifers
-known_shortcuts: 'A 16-rate source-centred single-well sweep scores 0.030994 development and
-  0 robustness; the historical plume-aligned archive scores 0.408240/0.202947. Extending the
-  current five-plan greedy witness to all sixteen allowed archive entries reaches the score-one
-  anchor by construction, so 0.742776 is headroom calibration rather than proof of model difficulty.
+known_shortcuts: 'A 16-rate source-centred single-well sweep scores 0.030574 development and
+  0 robustness; the historical plume-aligned archive scores 0.402759/0.200312. Extending the
+  coarse two-rate witness to all sixteen allowed archive entries reaches only 0.929416 because
+  the score-one anchor searches a denser rate/encounter grid, so 0.647861 is headroom calibration
+  rather than proof of model difficulty.
   The reduced Gaussian-plume model still requires clean Linux replay, server-held aquifers, MODFLOW
   replication and independent hydrogeology review.'
 licensing:

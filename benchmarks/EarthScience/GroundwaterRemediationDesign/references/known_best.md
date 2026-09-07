@@ -2,32 +2,34 @@
 
 ## 1. Reference method
 
-`verification/reference_solver.py` is standalone and uses only public inputs and charged interfaces. Public moving-plume mass-balance search over single wells and treatment transects, greedily selecting a hypervolume archive.
+`verification/reference_solver.py` is standalone and uses only public inputs and charged interfaces. Public moving-plume mass-balance search over single wells and treatment transects on a coarse two-rate (380/650 m³/day) sweep, greedily selecting a hypervolume archive.
 It is a method witness, not independent high-fidelity verification. Local extraction uses Q*C at the evolving plume position, with activation-aware integration and an extracted/decayed/remaining mass ledger. Three public initial plume components replace the spatially collapsed capture-at-start model.
 
 ## 2. Baseline and normalization
 
 The shipped `solution.py` is the zero baseline. The runnable public reference deliberately
-returns the first five plans of its greedy archive and scores `0.742776` development /
-`0.724797` robustness. The evaluator independently recomputes the full sixteen-plan greedy
-archive as score one. Wider or better Pareto coverage remains visible above one.
+searches only the coarse two-rate transect grid, returns the first five plans of its greedy
+archive and scores `0.647861` development / `0.636191` robustness. The evaluator independently
+recomputes a sixteen-plan greedy archive from a denser rate/encounter search as score one. Wider
+or better Pareto coverage remains visible above one.
 Changed oracle versions must not be compared as if their score differences were model improvements.
 
 ## 3. Capability comparisons and ablations
 
 Run `python scripts/diagnose_pr9_earth.py --output tmp/hardening/diagnostics.json --sweeps`.
-On the current dirty macOS tree, the five-plan reference scores `0.742776` development and
-`0.724797` robustness. Replaying the historical public archive on the current oracle scores
-`0.408240` / `0.202947`. A source-centred, single-well rate sweep scores `0.030994` / `0.000000`.
+On the current dirty macOS tree, the five-plan coarse-grid reference scores `0.647861` development
+and `0.636191` robustness. Replaying the historical public archive on the current oracle scores
+`0.402759` / `0.200312`. A source-centred, single-well rate sweep scores `0.030574` / `0.000000`.
 These are method comparisons rather than isolated causal ablations because the transport oracle
 also changed during hardening.
 
 ## 4. Shortcut probes
 
 The 16-point source-centred rate sweep is the measured low-dimensional probe and reaches only
-`0.030994`. The historical plume-aligned archive reaches `0.408240`, below the current reference.
-However, extending the same greedy construction from five to all sixteen allowed archive entries
-reaches the score-one anchor by construction. That is deliberate reference headroom, not evidence
+`0.030574`. The historical plume-aligned archive reaches `0.402759`, below the current reference.
+Extending the same coarse-greedy construction from five to all sixteen allowed archive entries
+reaches `0.929416`, still short of the score-one anchor because the anchor searches a denser
+rate/encounter grid. That is deliberate reference headroom, not evidence
 of model difficulty, and must be tested by a clean frontier draw before admission. All values in
 this section are local diagnostics, not frozen benchmark evidence.
 
