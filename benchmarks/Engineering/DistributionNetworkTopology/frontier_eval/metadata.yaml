@@ -7,7 +7,7 @@ oracle_type: analytical
 score_mode: clipped
 gpu_required: false
 eval_time_seconds: 60
-science_metric: hydraulic topology recovery from injection scenarios with alias and sensor-fault refusal
-reference_baseline: one scenario followed by abstention
-reference_sota: truth-blind flow-consistency edge elimination with redundancy checks; runnable witness
+science_metric: broken-pipe localization from boolean pass/fail route probes under a 26-unit budget, with structural twin-alias refusal, at the level-3 default of up to three breaks under seven-percent report flips
+reference_baseline: probe one route and blame its first pipe, never refusing
+reference_sota: truth-blind likelihood-tracked hypothesis search with information-splitting route choice, margin-settled claims and structural-twin refusal; runnable witness at 0.600 on the level-3 default
 citation: Ostfeld et al. 2008 J Water Resour Plan Manage doi:10.1061/(ASCE)0733-9496(2008)134:6(556)

@@ -15,6 +15,15 @@ import importlib.util
 import json
 
 
+import subprocess
+
+
+import sys
+
+
+import tempfile
+
+
 import unittest
 
 
@@ -98,6 +107,45 @@ class DistributionNetworkPins(unittest.TestCase):
             world = ev._world(spec)
             if world["kind"] == "supported":
                 self.assertTrue(ev._identifiable(world["broken"], 3), spec)
+
+
+class RunEvalIntegrationTests(unittest.TestCase):
+    """The frontier_eval runner must execute end-to-end on a plain local host.
+
+    run_eval.py loads the oracle in the same process (no sandbox dependency), so
+    unlike sandboxed runners this subprocess invocation runs wherever the
+    evaluator does, macOS included. It pins the eval_command.txt contract:
+    exit 0, a summary line on stdout, and the full metrics file with the task's
+    real score keys.
+    """
+
+    def test_reference_candidate_runs_through_run_eval(self):
+        task = ROOT / "benchmarks/Engineering/DistributionNetworkTopology"
+        with tempfile.TemporaryDirectory() as tmp:
+            metrics_path = Path(tmp) / "metrics.json"
+            completed = subprocess.run(
+                [sys.executable,
+                 str(task / "frontier_eval" / "run_eval.py"),
+                 "--candidate",
+                 str(task / "verification" / "reference_solver.py"),
+                 "--metrics-out", str(metrics_path)],
+                cwd=str(ROOT), capture_output=True, text=True, timeout=300,
+            )
+            self.assertEqual(completed.returncode, 0, completed.stderr)
+            summary = json.loads(completed.stdout)
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        self.assertEqual(set(summary), {"combined_score", "valid"})
+        self.assertEqual(summary["valid"], 1.0)
+        self.assertEqual(summary["combined_score"], metrics["combined_score"])
+        for key in ("combined_score", "valid", "feasibility_rate",
+                    "mechanism_score", "development_set_f1",
+                    "development_correct_refusal_rate", "robustness_score",
+                    "per_world"):
+            self.assertIn(key, metrics)
+        self.assertEqual(metrics["valid"], 1.0)
+        # The reference measures 0.600 on the level-3 default (known_best.md);
+        # require the documented neighbourhood, not the exact float.
+        self.assertGreaterEqual(metrics["combined_score"], 0.5)
 
 
 if __name__ == "__main__":
