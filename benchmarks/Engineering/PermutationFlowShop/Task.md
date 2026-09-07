@@ -39,10 +39,9 @@ transfers, and memorization cannot help.
   order is so weak that any competent construction closes over ninety percent of the
   gap, which would flatten the scale) and the frozen witness search:
   progress = (neh_makespan − achieved) / (neh_makespan − witness_makespan).
-- The frozen witness is the shipped truth-blind reference run at 3000 iterations
-  (see `references/known_best.md` for the table and the reproduction command) and
-  defines score one. The runnable reference performs one full perturb-and-descent
-  ILS cycle and scores `0.636364` development / `0.773495` held-out.
+- A frozen truth-blind witness defines score one. Its construction, numeric anchors
+  and reproduction procedure are recorded in the maintainer-facing
+  `references/known_best.md`.
 - Beating the frozen witness scores above one — the record is open and that is the point.
   A malformed permutation (missing job, repeat, wrong length) scores zero.
 - `robustness_score` repeats the audit on the held-out instances.
@@ -78,19 +77,12 @@ registry task covers production scheduling.
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference is NEH construction plus
-seeded iterated local search with accelerated insertion evaluation (prefix/suffix
-tables, O(m) per candidate position). Local shortcut and ablation diagnostics are
-recorded in `references/known_best.md`; they do not replace clean Linux sandbox
-replay, independent operations-research review or a frozen frontier-model calibration
-draw.
-
-The former 400-iteration default took 236 seconds on the maintainer's host. The
-runnable reference now uses one complete ILS cycle, while the 3000-iteration results
-remain frozen numeric record anchors in the trusted evaluator. The package declares
-5 seconds expected evaluation time and keeps a 300-second candidate timeout; a local
-direct reference evaluation took 0.93 seconds on 2026-09-06. The search budget is
-intentional rather than an accidental unlimited run.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Reference methods, calibration measurements, shortcut probes, runtime measurements
+and ablation diagnostics are recorded in the maintainer-facing
+`references/known_best.md`, which is not served to candidates. They do not replace
+clean Linux sandbox replay, independent operations-research review or a frozen
+frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-07)
 
