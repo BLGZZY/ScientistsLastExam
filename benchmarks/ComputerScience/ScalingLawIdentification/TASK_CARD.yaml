@@ -48,8 +48,9 @@ licensing:
     publications are not redistributed.
 contamination:
   status: cannot_be_ruled_out
-  rationale: The class family is textbook; seeded scales and refusal regimes are
-    procedural.
+  rationale: Fixed seeds and generated worlds are repository-visible. Procedural
+    origin does not rule out memorization or benchmark-specific fingerprinting;
+    server-held fresh worlds are required for generalization claims.
 review:
   domain: pending_external_algorithms
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending

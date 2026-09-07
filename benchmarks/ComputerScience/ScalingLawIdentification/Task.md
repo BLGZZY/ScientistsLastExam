@@ -32,6 +32,12 @@ refusal_note             branching runtimes and jitter floors must be refused
 Repeated sizes are allowed and draw fresh noise. Overspending or malformed calls
 invalidate the world even when caught.
 
+Sizes must be integers; strings, booleans and fractional sizes are invalid.
+`class_probabilities` must contain exactly the six named classes with finite
+scalar probabilities in `[0, 1]` summing to one within `1e-6`. This mapping is
+required on abstention too. Return `scale: None` when abstaining, otherwise a
+finite scale in `[1e-12, 1e12]`; confidence must be finite and in `[0, 1]`.
+
 ## Evaluation
 
 - `combined_score` is development mechanism recovery above the always-abstain
@@ -87,3 +93,11 @@ sandbox replay, independent review or a frozen frontier-model calibration draw.
 See `.research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md`
 for the task-specific comparison against the pinned paper and available repository
 catalog. Independent algorithms review and maintainer acceptance remain pending.
+
+## Metric interpretation
+
+Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
+including a correct refusal. Its diagnostic is one minus squared error against
+that quality, before any evidence-cost adjustment. Invalid submissions do not
+count as discovery attempts. Both splits publish attempt, false-discovery and
+refusal counts with their denominators. These diagnostics remain evaluator-only.

@@ -22,6 +22,8 @@ import unittest
 
 
 from pathlib import Path
+from _sandbox_tools import skip_unless_sandbox
+from unittest.mock import patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -124,6 +126,7 @@ class ScalingLawPins(unittest.TestCase):
                 self.assertIn(world["family"], ev.CLASSES)
 
 
+@skip_unless_sandbox("bwrap")
 class ScalingLawRunnerIntegration(unittest.TestCase):
     """Launch frontier_eval/run_eval.py exactly as eval_command.txt does.
 
@@ -156,6 +159,65 @@ class ScalingLawRunnerIntegration(unittest.TestCase):
             self.assertNotIn("error_message", metrics)
             reported = json.loads(completed.stdout.strip().splitlines()[-1])
             self.assertEqual(reported["combined_score"], metrics["combined_score"])
+
+
+
+class ReviewContractRegressions(unittest.TestCase):
+    def test_invalid_rows_are_not_discovery_attempts(self):
+        ev = _load(ROOT / "benchmarks/ComputerScience/ScalingLawIdentification/verification/evaluator.py", "review_invalid")
+        result = ev.evaluate(lambda *args: {})
+        self.assertEqual(result["valid"], 0.0)
+        self.assertEqual(result["combined_score"], 0.0)
+        self.assertEqual(result["development_discovery_attempt_count"], 0)
+        self.assertEqual(result["development_discovery_coverage"], 0.0)
+        self.assertEqual(result["heldout_discovery_attempt_count"], 0)
+        self.assertEqual(result["heldout_discovery_coverage"], 0.0)
+        self.assertGreater(result["heldout_unsupported_world_count"], 0)
+        self.assertEqual(result["heldout_false_discovery_count"], 0)
+
+    def test_runner_routes_through_trusted_harness_without_importing_candidate(self):
+        import contextlib
+        import io
+        import tempfile
+        import subprocess
+        runner = _load(ROOT / "benchmarks/ComputerScience/ScalingLawIdentification/frontier_eval/run_eval.py", "review_runner")
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp) / "candidate.py"
+            candidate.write_text("raise AssertionError('must never import here')\n")
+            metrics = Path(tmp) / "metrics.json"
+            completed = subprocess.CompletedProcess([], 0, '{"combined_score": 0.2, "valid": 1.0}', '')
+            with patch.object(sys, "argv", ["run_eval.py", "--candidate", str(candidate), "--metrics-out", str(metrics)]), patch.object(runner.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(runner.main(), 0)
+            command = run.call_args.args[0]
+            self.assertEqual(command[1:4], ["-m", "sle", "eval"])
+            self.assertEqual(command[command.index("--task") + 1], "Algorithm/ScalingLawIdentification")
+            self.assertEqual(command[command.index("--candidate") + 1], str(candidate.resolve()))
+            self.assertEqual(json.loads(metrics.read_text())["combined_score"], 0.2)
+
+
+class ProfilingContractRegressions(unittest.TestCase):
+    def setUp(self):
+        self.ev = _load(ROOT / "benchmarks/ComputerScience/ScalingLawIdentification/verification/evaluator.py", "review_profiling")
+
+    def test_fractional_sizes_fail_closed_even_if_candidate_catches(self):
+        for value in (16.5, "16", True):
+            profiler = self.ev._Profiler(self.ev._world((30011, "supported", "constant")))
+            with self.assertRaises(ValueError):
+                profiler.time_run(value)
+            self.assertTrue(profiler.violated)
+            self.assertEqual(profiler.used, 0)
+
+    def test_probability_values_must_be_scalars_with_exact_vector_shape(self):
+        probabilities = {name: [1.0 / len(self.ev.CLASSES)] for name in self.ev.CLASSES}
+        with self.assertRaises(ValueError):
+            self.ev._validate({"class_probabilities": probabilities, "scale": 1.0, "abstain": False, "confidence": 0.5})
+
+    def test_wrong_law_is_not_awarded_perfect_confidence(self):
+        def wrong(*args):
+            return {"class_probabilities": {name: float(name == "exponential") for name in self.ev.CLASSES}, "scale": 1.0, "abstain": False, "confidence": 1.0}
+        row = self.ev._evaluate_world(wrong, (30011, "supported", "constant"), "development", 0)
+        self.assertTrue(row["valid"])
+        self.assertLess(row["confidence_score"], 0.01)
 
 
 if __name__ == "__main__":

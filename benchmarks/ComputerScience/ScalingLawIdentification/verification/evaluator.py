@@ -10,6 +10,7 @@ refused rather than forced onto the nearest class.
 from __future__ import annotations
 
 import math
+from numbers import Integral
 
 import numpy as np
 
@@ -122,6 +123,8 @@ class _Profiler:
 
     def time_run(self, size):
         try:
+            if isinstance(size, (bool, np.bool_)) or not isinstance(size, Integral):
+                raise ValueError("size must be an integer")
             value = int(size)
             if not SIZE_BOUNDS[0] <= value <= SIZE_BOUNDS[1]:
                 self.violated = True
@@ -156,8 +159,9 @@ def _validate(submission):
     if not isinstance(probabilities, dict) or set(probabilities) != set(CLASSES):
         raise ValueError("class_probabilities must cover exactly the six classes")
     probs = np.asarray([probabilities[name] for name in CLASSES], dtype=float)
-    if np.any(~np.isfinite(probs)) or np.any(probs < 0.0) or \
-            not np.isclose(probs.sum(), 1.0, atol=1e-6):
+    if probs.shape != (len(CLASSES),) or np.any(~np.isfinite(probs)) or \
+            np.any(probs < 0.0) or np.any(probs > 1.0) or \
+            not np.isclose(probs.sum(), 1.0, atol=1e-6, rtol=0.0):
         raise ValueError("class probabilities must be nonnegative and sum to one")
     if bool(abstain):
         if submission.get("scale") is not None:
@@ -213,7 +217,9 @@ def _evaluate_world(candidate, spec, split, index):
             correct = bool(abstain)
             class_probability = scale_score = extrapolation = mechanism = \
                 1.0 if correct else 0.0
-        target = 1.0 if (supported != abstain or (not supported and abstain)) else 0.0
+        # Confidence predicts the intrinsic quality of the submitted response,
+        # including correct refusal; a wrong supported claim is not rewarded.
+        target = mechanism
         evidence_efficiency = 1.0 - MAX_EVIDENCE_COST_PENALTY * (
             profiler.used / BUDGET_UNITS)
         # Efficiency adjusts supported discovery only. Refusal quality remains a
@@ -244,6 +250,7 @@ def _summary(rows, specs):
     return {
         "normalized": float(np.clip((raw - abstain_base) / (1.0 - abstain_base), 0.0, 1.0)),
         "raw": raw,
+        "confidence": float(np.mean([r["confidence_score"] for r in rows])),
         "valid_count": sum(r["valid"] for r in rows),
         "evidence_efficiency": float(np.mean([r["evidence_efficiency_score"] for r in rows])),
         "class_probability": float(np.mean([r["class_probability"] for r in supported])) if supported else 0.0,
@@ -251,7 +258,7 @@ def _summary(rows, specs):
         "extrapolation_score": float(np.mean([r["extrapolation_score"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -269,6 +276,8 @@ def evaluate(identify_scaling_law):
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "development_confidence_score": dev["confidence"],
+        "development_discovery_attempt_count": dev["attempt_count"],
         "development_evidence_efficiency_score": dev["evidence_efficiency"],
         "development_class_probability": dev["class_probability"],
         "development_scale_score": dev["scale_score"],
@@ -282,6 +291,13 @@ def evaluate(identify_scaling_law):
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
         "heldout_evidence_efficiency_score": hold["evidence_efficiency"],
+        "heldout_confidence_score": hold["confidence"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],

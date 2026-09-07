@@ -138,3 +138,19 @@ runner invocations for interface fixes only).
   part comes from the disclosed invalidation contract claiming worlds that
   probe aggressively. This is a proxy draw run on macOS; the sandboxed
   frozen-frontier draw required for certification is still pending.
+
+## 2026-09-08 evaluator review
+
+The convenience runner now delegates to the trusted Linux sandbox. Fractional,
+boolean and string profiling sizes fail closed instead of silently truncating;
+probabilities must be six scalar values rather than arrays. Invalid submissions
+do not count as discovery attempts, and held-out rate denominators are public
+in the evaluator report. Confidence reflects intrinsic response quality rather
+than rewarding any confident claim on a supported world.
+
+A fresh local direct reference run still measures 0.7107855521 development and
+0.7029931042 held out. The intrinsic recovery is near saturation; the difference
+from one is substantially the explicitly disclosed 25% full-budget evidence
+cost penalty. This is an accuracy-versus-query-cost benchmark, and the reduced
+combined score alone does not establish increased scientific difficulty. Earlier
+macOS first-proposal runs remain historical diagnostics, not frozen model evidence.
