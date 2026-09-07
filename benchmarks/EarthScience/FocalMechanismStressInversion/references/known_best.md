@@ -35,6 +35,23 @@ plane-assignment local optimum observed during construction under an earlier con
 schedule) and the refusal gates carry most of the score. These are local debugging
 numbers, not frozen benchmark evidence.
 
+### 2026-09-07 paid re-analysis probe at difficulty levels 2–3
+
+The free path (identical solver with the re-analysis spend disabled) was compared with the
+full reference at coarse mechanism noise 4.0°/6.0°/8.5° (levels 1/2/3, the same public
+ladder):
+
+| level | full reference dev/rob | free path dev/rob |
+|---:|---:|---:|
+| 1 | 0.6983 / 0.7307 | 0.7195 / 0.6874 |
+| 2 | 0.5293 / 0.6130 | 0.6304 / 0.6270 |
+| 3 | 0.6226 / 0.5730 | 0.4811 / 0.1395 |
+
+The paid re-analysis is not uniformly necessary: at levels 1–2 the free path matches or beats
+it, so "paid precision matters" would be an overstatement at the shipped default. It becomes
+decisive only at level 3 (8.5° coarse noise), where the free path loses 0.14 development and
+0.43 robustness. Recorded honestly; no oracle or reference change was made.
+
 ## 4. Shortcut probes
 
 - Constant-regime family (twelve fixed azimuths, R = 0.5, plane-a everywhere):
@@ -75,7 +92,11 @@ explicitly declared synthetic catalog is not certified by those publications.
 
 ```bash
 python scripts/measure_reference.py \
-  --task Geophysics/FocalMechanismStressInversion \
+  --task EarthScience/FocalMechanismStressInversion \
   --reference verification/reference_solver.py \
   --entry infer_stress_orientation
 ```
+
+`--task` takes the on-disk path under `benchmarks/`, not the logical id
+`Geophysics/FocalMechanismStressInversion` (the fine-grained domain stays in `metadata.yaml`);
+the pre-2026-09-07 command passed the logical id and resolved to no directory.

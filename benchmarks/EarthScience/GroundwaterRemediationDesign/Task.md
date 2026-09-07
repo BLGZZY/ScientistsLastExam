@@ -55,7 +55,10 @@ The public proxy and hidden exact simulator report:
 `combined_score` is normalized development exact-model hypervolume, floored at zero and uncapped.
 The shipped truth-blind reference sweeps a coarse two-rate transect grid, returns a compact
 five-plan Pareto archive and scores `0.647861`; the oracle recomputes a wider sixteen-plan greedy
-archive from a denser rate/encounter search as score one. The
+archive from a denser rate/encounter search as score one. That anchor is compute-type headroom,
+not secret physics: it runs the same public transport model over a denser rate/encounter grid,
+so reaching it takes a denser search of the same plan family, and exceeding it above one takes an
+archive that dominates the evaluator's greedy archive under the hidden exact transport. The
 remaining space is therefore additional cleanup/cost coverage, not a constant score rescale.
 Regulatory compliance is a hard gate: a cheap plan cannot compensate
 for receptor exceedance. The evaluator separately
@@ -90,7 +93,7 @@ Deschaine, Lillys & Pintér (2013), DOI `10.1186/2193-2697-2-6`.
 
 ## 关系与区别 / Relationship to nearby tasks
 
-ResilientPumpScheduling operates a tank, IceObservationNetworkDesign selects observations, and RadiativeTransferFit fits a forward model. This task selects wells, start times and pumping rates for a multi-component moving plume, returning a cost/cleanup Pareto archive.
+ResilientPumpScheduling operates a tank and RadiativeTransferFit fits a forward model. This task selects wells, start times and pumping rates for a multi-component moving plume, returning a cost/cleanup Pareto archive.
 
 ## Admission and reference scope
 
@@ -100,7 +103,9 @@ The surrogate advects each initial Gaussian component at the declared velocity. 
 
 ### Current reference and remaining difficulty
 
-Public moving-plume mass-balance search over single wells and treatment transects, greedily selecting a compact five-plan hypervolume archive from a coarse two-rate (380/650 m³/day) transect sweep. Local extraction uses Q*C at the evolving plume position, with activation-aware integration and an extracted/decayed/remaining mass ledger. Three public initial plume components replace the spatially collapsed capture-at-start model. Against the independently recomputed sixteen-plan dense-search anchor, the runnable reference scores `0.647861` development / `0.636191` robustness. Better Pareto coverage remains visible above one. This calibration does not certify difficulty.
+Public moving-plume mass-balance search over single wells and treatment transects, greedily selecting a compact five-plan hypervolume archive from a coarse two-rate (380/650 m³/day) transect sweep. Local extraction uses Q*C at the evolving plume position, with activation-aware integration and an extracted/decayed/remaining mass ledger. Three public initial plume components replace the spatially collapsed capture-at-start model. Against the independently recomputed sixteen-plan dense-search anchor, the runnable reference scores `0.647861` development / `0.636191` robustness.
+
+The anchor deserves to be stated plainly: the evaluator's internal `_reference_archive` greedily recomputes a sixteen-plan archive from a denser rate/encounter grid than the public witness sweeps, using the same public transport model. The headroom above the runnable reference is therefore compute — searching the same plan family more densely — and a score above one requires an archive that dominates that dense greedy archive under the hidden exact transport. Expanding the public coarse-greedy construction from five to all sixteen allowed plans reaches `0.929416` and stops short of one for exactly this reason: that expansion is deliberate reference headroom, not evidence of model difficulty. This calibration does not certify difficulty.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

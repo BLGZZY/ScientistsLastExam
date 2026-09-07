@@ -87,7 +87,7 @@ This package remains **candidate**. The metadata difficulty is a target, not a c
 
 ### Current reference and remaining difficulty
 
-Bounded two-stage smoothed/full-waveform least squares over a 3x5 velocity correction grid. The reference now optimizes signed spatial velocity corrections instead of drawing a fixed negative lens. A finer grid, source design and more complete inversion remain open. The optimization reference defines 1 by construction; a discovery reference is evaluated against the fixed recovery ceiling. Neither fact certifies difficulty.
+Coarse-to-fine grid-continuation least squares over 3x5 then 5x8 velocity correction grids with cubic-spline interpolation, fitted against smoothed-then-raw waveforms (development `0.615339`, robustness `0.427110`). The 2026-09-07 shortcut re-audit measured the no-inversion families at `0.327769` (background return), `0.379232` (constant lens) and `0.068824` (travel-time only); the previous single-pass 3x5 reference sat below the constant lens and was replaced. Source design, richer parameter families and more complete inversion remain open. A discovery reference is evaluated against the fixed recovery ceiling; that fact does not certify difficulty.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

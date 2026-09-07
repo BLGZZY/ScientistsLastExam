@@ -35,6 +35,14 @@ def _simulate(velocity, source_index, spacing_m, time_s):
     return traces
 
 
+# Coarse-to-fine correction-grid continuation: (shape, time-axis smoothing, iterations).
+# The 2026-09-07 shortcut re-audit showed a constant lens reaching 0.379 development
+# against the previous single-pass 3x5 fit, so the reference now walks a 3x5 -> 5x8
+# ladder (upsampling the previous stage's solution) and interpolates with cubic
+# splines, which is what actually separates it from the no-spatial-inversion families.
+_STAGES = (((3, 5), 5.0, 12), ((5, 8), 2.0, 12), ((5, 8), 0.0, 14))
+
+
 def invert_velocity_model(
     grid_shape, spacing_m, background_velocity_m_s, velocity_bounds_m_s,
     source_indices, receiver_x_m, time_s, acquire, budget_units,
@@ -55,27 +63,34 @@ def invert_velocity_model(
     energy_ratio = np.linalg.norm(observed) / max(np.linalg.norm(background_traces), 1e-12)
     if relative < .006 or energy_ratio < .95:
         return {"velocity_m_s": [], "confidence": .1, "abstain": True}
-    shape = (3, 5)
-    scale = np.asarray(grid_shape) / np.asarray(shape)
-    def velocity(parameters):
-        correction = zoom(parameters.reshape(shape), scale, order=1)
-        return np.clip(background + 900.0 * correction, *velocity_bounds_m_s)
-    parameters = np.zeros(np.prod(shape))
     normalization = max(float(np.linalg.norm(observed)), 1e-12)
-    for smoothing, iterations in ((3.0, 8), (0.0, 10)):
+    current_shape, _, _ = _STAGES[0]
+    parameters = np.zeros(int(np.prod(current_shape)))
+    for stage_shape, smoothing, iterations in _STAGES:
+        scale = np.asarray(grid_shape) / np.asarray(stage_shape)
+        def velocity(values):
+            correction = zoom(values.reshape(stage_shape), scale, order=3)
+            return np.clip(background + 900.0 * correction, *velocity_bounds_m_s)
+        if parameters.shape[0] != int(np.prod(stage_shape)):
+            parameters = zoom(parameters.reshape(current_shape),
+                              np.asarray(stage_shape) / np.asarray(current_shape), order=1).ravel()
+        current_shape = stage_shape
         target = gaussian_filter1d(observed, smoothing, axis=1) if smoothing else observed
         def residual(values):
             prediction = forward(velocity(values))
             if smoothing:
                 prediction = gaussian_filter1d(prediction, smoothing, axis=1)
-            data = ((prediction - target) / normalization).ravel()[::3]
-            grid = values.reshape(shape)
-            regularizer = .0005 * np.r_[np.diff(grid,axis=0).ravel(),np.diff(grid,axis=1).ravel()]
+            data = ((prediction - target) / normalization).ravel()
+            grid = values.reshape(stage_shape)
+            regularizer = .0005 * np.r_[np.diff(grid, axis=0).ravel(), np.diff(grid, axis=1).ravel()]
             return np.r_[data, regularizer]
-        result = least_squares(residual, parameters, bounds=(-1.5,1.5), max_nfev=iterations,
+        result = least_squares(residual, parameters, bounds=(-1.5, 1.5), max_nfev=iterations,
                                diff_step=.002, ftol=1e-5, xtol=1e-5, gtol=1e-6)
         parameters = result.x
-    prediction = velocity(parameters)
+    final_shape = _STAGES[-1][0]
+    scale = np.asarray(grid_shape) / np.asarray(final_shape)
+    prediction = np.clip(background + 900.0 * zoom(parameters.reshape(final_shape), scale, order=3),
+                         *velocity_bounds_m_s)
     misfit = np.linalg.norm(forward(prediction) - observed) / normalization
     if misfit > .12:
         return {"velocity_m_s": [], "confidence": .1, "abstain": True}

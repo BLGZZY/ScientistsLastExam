@@ -7,21 +7,26 @@ It is a method witness, not independent high-fidelity verification. Local extrac
 
 ## 2. Baseline and normalization
 
-The shipped `solution.py` is the zero baseline. The runnable public reference deliberately
-searches only the coarse two-rate transect grid, returns the first five plans of its greedy
-archive and scores `0.647861` development / `0.636191` robustness. The evaluator independently
-recomputes a sixteen-plan greedy archive from a denser rate/encounter search as score one. Wider
-or better Pareto coverage remains visible above one.
+The shipped `solution.py` is the zero baseline (measured `0.000000` development and held-out on
+the current tree, 2026-09-07). The runnable public reference deliberately searches only the
+coarse two-rate transect grid, returns the first five plans of its greedy archive and scores
+`0.647861` development / `0.636191` robustness. The evaluator's internal `_reference_archive`
+recomputes a sixteen-plan greedy archive from a denser rate/encounter search (7 pumping rates
+x 8 encounter offsets x 1-5 well transects, plus a 32-point single-well rate sweep) on the same
+public transport model; that archive's exact-model hypervolume is score one. The anchor is
+compute-type headroom, not hidden physics: matching it takes a denser search of the same public
+plan family, and scoring above one takes an archive that dominates the evaluator's greedy archive
+under the hidden exact transport. Wider or better Pareto coverage remains visible above one.
 Changed oracle versions must not be compared as if their score differences were model improvements.
 
 ## 3. Capability comparisons and ablations
 
 Run `python scripts/diagnose_pr9_earth.py --output tmp/hardening/diagnostics.json --sweeps`.
-On the current dirty macOS tree, the five-plan coarse-grid reference scores `0.647861` development
-and `0.636191` robustness. Replaying the historical public archive on the current oracle scores
-`0.402759` / `0.200312`. A source-centred, single-well rate sweep scores `0.030574` / `0.000000`.
-These are method comparisons rather than isolated causal ablations because the transport oracle
-also changed during hardening.
+On the 2026-09-07 tree the five-plan coarse-grid reference scores `0.647861` development
+and `0.636191` robustness, the shipped baseline `0.000000` / `0.000000`. Replaying the historical
+public archive on the current oracle scores `0.402759` / `0.200312`. A source-centred, single-well
+rate sweep scores `0.030574` / `0.000000`. These are method comparisons rather than isolated
+causal ablations because the transport oracle also changed during hardening.
 
 ## 4. Shortcut probes
 
@@ -29,9 +34,13 @@ The 16-point source-centred rate sweep is the measured low-dimensional probe and
 `0.030574`. The historical plume-aligned archive reaches `0.402759`, below the current reference.
 Extending the same coarse-greedy construction from five to all sixteen allowed archive entries
 reaches `0.929416`, still short of the score-one anchor because the anchor searches a denser
-rate/encounter grid. That is deliberate reference headroom, not evidence
-of model difficulty, and must be tested by a clean frontier draw before admission. All values in
-this section are local diagnostics, not frozen benchmark evidence.
+rate/encounter grid: the remaining gap is search density over the same public plan family, not
+unexplained science. That is deliberate reference headroom, not evidence of model difficulty —
+what exceeding the reference actually requires is either sweeping the public transect family at
+the anchor's density (compute), or submitting plans outside that family which dominate the
+evaluator's greedy archive under the hidden exact transport — and it must be tested by a clean
+frontier draw before admission. All values in this section are local diagnostics, not frozen
+benchmark evidence.
 
 ## 5. Frontier-model calibration
 
@@ -93,7 +102,11 @@ three levels reliably.
 
 ```bash
 python scripts/measure_reference.py \
-  --task Hydrology/GroundwaterRemediationDesign \
+  --task EarthScience/GroundwaterRemediationDesign \
   --reference verification/reference_solver.py \
   --entry design_remediation
 ```
+
+`--task` takes the on-disk path under `benchmarks/`, not the logical id
+`Hydrology/GroundwaterRemediationDesign` (the fine-grained domain stays in `metadata.yaml`);
+the pre-2026-09-07 command passed the logical id and resolved to no directory.

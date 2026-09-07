@@ -18,7 +18,8 @@ difficulty_ladder:
     3: 65 percent more observation noise and two additional anomalies
 normalization:
   baseline: one central shot followed by abstention on every world
-  reference: Bounded two-stage smoothed/full-waveform least squares over a 3x5 velocity correction grid.
+  reference: Coarse-to-fine grid-continuation least squares (3x5 then 5x8 velocity correction grids,
+    cubic-spline interpolation, smoothed-to-unsmoothed waveform stages).
   score: depth-weighted structure and sealed-frequency waveform recovery normalized above always abstaining;
     refusal, calibration and held-out transfer remain separate
 citations:
@@ -32,9 +33,11 @@ invariants:
 - no-anomaly and attenuating responses reward refusal instead of fabricated structure
 - every acquisition consumes budget and overspending fails closed
 - held-out shots, frequencies, worlds and mechanism metrics remain evaluator-only
-known_shortcuts: 'The historical smooth-lens method scores 0.249539 development against the current
-  0.356670 reference, but this is a cross-version comparison rather than a broad shortcut sweep.
-  Constant-lens, source-only and travel-time-only families remain unmeasured. The reduced acoustic
+known_shortcuts: 'The 2026-09-07 shortcut re-audit measured three first-shot no-inversion families against
+  the shipped evaluator: zero-inversion background return 0.327769, a constant single-amplitude lens
+  0.379232 and a straight-ray travel-time-only update 0.068824 development, each with zero false
+  discoveries and full refusal; the historical smooth-lens method reaches 0.249539. The grid-continuation
+  reference measures 0.615339 development, clearly above the best probe. The reduced acoustic
   model omits elastic, anisotropic and attenuation physics; server-held worlds, clean Linux replay
   and independent seismology review remain required.'
 licensing:
@@ -70,7 +73,11 @@ lineage:
   calibration_evidence_status: missing
   edits_triggered_by_model: No frontier-model draw has been run. Local code review replaced the fixed
     negative lens with signed spatial velocity corrections and added contract and regression checks;
-    the historical method comparison is retained as non-causal diagnostic evidence.
+    the historical method comparison is retained as non-causal diagnostic evidence. The 2026-09-07
+    revision measured the three first-shot no-inversion families, found a constant lens above the
+    single-pass 3x5 reference, and replaced that reference with a coarse-to-fine 3x5-to-5x8
+    grid-continuation fit (0.615339 development) whose margins over the probes are pinned in
+    tests/test_pr9_earth_hardening.py.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
