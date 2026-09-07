@@ -2,14 +2,12 @@
 
 ## Scientific setting
 
-An elliptic curve y^2 = x^3 + ax + b is constrained by its point counts modulo
-primes: each count leaves a finite set of compatible pairs (a mod p, b mod p),
-and the Chinese remainder theorem combines enough residue sets to isolate a pair
-in the bounded integer window. The budget makes
-prime selection an information decision — small primes are cheap but occasionally
-leave twin curves, one more prime resolves them — and two worlds break the
-elliptic premise: a singular cubic and a genus-two quartic whose counts no pair
-(a, b) reproduces.
+An elliptic curve y^2 = x^3 + ax + b with integer coefficients is studied through
+its reduction modulo primes: for a chosen prime p, the exact number of points on
+the reduced curve over the finite field F_p is an obtainable measurement.
+Coefficients live in a bounded integer window. Not every world is such a curve:
+two break the elliptic premise — a singular cubic and a genus-two quartic — and
+their measurements are not reproducible by any admissible pair (a, b).
 
 ## Your task
 
@@ -38,8 +36,8 @@ caught.
 
 - `combined_score` is development coefficient recovery above the always-abstain
   baseline: exp(-6 x normalized total absolute error of a and b), multiplied on
-  supported curves by `1 - 0.25 * budget_used / 8`. Exact recovery with a smaller prime certificate
-  can therefore score above the full-budget reference.
+  supported curves by `1 - 0.25 * budget_used / 8`. Recovery that spends less
+  budget therefore retains more score.
 - Singular and genus-two worlds score refusal only; abstaining scores one and any
   coefficient claim scores zero. Refusal credit is not efficiency-weighted, so an
   evidence-backed refusal is not penalized relative to blind abstention.
@@ -68,18 +66,16 @@ Reference: Silverman, *The Arithmetic of Elliptic Curves*, ISBN `9780387094939`.
 
 SequenceLawRecovery infers recurrences from integer terms; ExactIdentityEvidence
 certifies identities from purchasable digits. This task inverts exact arithmetic
-objects — point counts over finite fields — with prime-selection economics, CRT
-lifting into a bounded window, and refusal worlds that break the curve family
-itself.
+objects — point counts over finite fields — under a prime-query budget, with
+refusal worlds that break the curve family itself.
 
 ## Admission and reference scope
 
 This package remains **candidate**. The runnable reference uses public inputs
-only: ascending small-prime queries within the budget, per-prime residue enumeration
-by direct Legendre sums, incremental CRT with coefficient-window pruning across
-the wide +-1200 window, and refusal when no nonsingular lift survives. Local shortcut and ablation diagnostics are recorded in
-`references/known_best.md`; they do not replace clean Linux sandbox replay,
-independent review or a frozen frontier-model calibration draw.
+only; its method is recorded in `references/known_best.md`, which is
+maintainer-facing and not served to candidates. Local shortcut and ablation
+diagnostics there do not replace clean Linux sandbox replay, independent review
+or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-07)
 

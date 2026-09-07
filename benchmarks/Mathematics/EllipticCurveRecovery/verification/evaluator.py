@@ -66,11 +66,16 @@ def _legendre_count_cubic(prime, a, b):
 
 
 def _legendre_count_quartic(prime, coefficients):
-    """Affine point count of y^2 = quartic(x) over F_p.
+    """Affine point count of y^2 = quartic(x) over F_p, plus the two points at
+    infinity on the smooth (genus-two) model.
 
-    A genus-two curve carries roughly twice as many points as an elliptic curve;
-    the count sits far outside the Hasse interval of every elliptic pair, so no
-    (a, b) can reproduce it and the world must be refused.
+    A smooth genus-two curve averages p + 1 points over F_p, exactly like an
+    elliptic curve; Hasse-Weil gives |#C - (p + 1)| <= 4*sqrt(p) for genus two
+    against |#E - (p + 1)| <= 2*sqrt(p) for elliptic, and the two intervals
+    [p+1-4*sqrt(p), p+1+4*sqrt(p)] and [p+1-2*sqrt(p), p+1+2*sqrt(p)] overlap
+    heavily. Count magnitude therefore does NOT certify refusal on its own: the
+    refusal path relies on the empirical fact that, on the frozen seeds, no
+    admissible (a, b) in the window reproduces the returned counts.
     """
     total = 0
     for x in range(prime):

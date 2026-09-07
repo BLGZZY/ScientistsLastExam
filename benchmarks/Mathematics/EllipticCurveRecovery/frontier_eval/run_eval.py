@@ -32,10 +32,10 @@ def main():
         result = oracle.evaluate(candidate)
         metrics.update(result)
         metrics["raw_score"] = result.get("combined_score")
-    except Exception as exc:
-        metrics["error_message"] = f"{{type(exc).__name__}}: {{exc}}"
+    except Exception as exc:  # noqa: BLE001 - a broken evaluation is reported, not raised
+        metrics["error_message"] = "%s: %s" % (type(exc).__name__, exc)
     Path(args.metrics_out).write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
-    print(json.dumps({{key: metrics.get(key) for key in ("combined_score", "valid")}}))
+    print(json.dumps({key: metrics.get(key) for key in ("combined_score", "valid")}))
     return 0
 
 

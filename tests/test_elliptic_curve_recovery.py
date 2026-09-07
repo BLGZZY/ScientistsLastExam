@@ -15,6 +15,15 @@ import importlib.util
 import json
 
 
+import subprocess
+
+
+import sys
+
+
+import tempfile
+
+
 import unittest
 
 
@@ -106,6 +115,53 @@ class EllipticCurvePins(unittest.TestCase):
             world = ev._world(spec)
             if world["kind"] == "singular":
                 self.assertEqual(4 * world["a"] ** 3 + 27 * world["b"] ** 2, 0)
+
+
+class RunnerIntegrationTests(unittest.TestCase):
+    """The black-box entrypoint must survive a real subprocess launch.
+
+    Pins the 2026-09-07 fix for the unrendered-template artifacts: an f-string
+    with literal ``{{...}}`` braces and a set-literal ``{{key: ...}}`` print that
+    crashed the runner with ``TypeError: unhashable type: 'dict'`` *after* the
+    metrics file was already written, so exit code 1 hid a completed evaluation.
+    """
+
+    SCORE_KEYS = ("combined_score", "raw_score", "robustness_score", "valid",
+                  "development_evidence_efficiency_score",
+                  "heldout_evidence_efficiency_score")
+
+    def _run_entrypoint(self, candidate: str) -> tuple[int, dict, dict]:
+        task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
+        with tempfile.TemporaryDirectory() as tmp:
+            metrics_path = Path(tmp) / "metrics.json"
+            completed = subprocess.run(
+                [sys.executable, str(task / "frontier_eval" / "run_eval.py"),
+                 "--candidate", str(task / candidate),
+                 "--metrics-out", str(metrics_path)],
+                cwd=ROOT, capture_output=True, text=True, timeout=120)
+            stdout = json.loads(completed.stdout.strip().splitlines()[-1])
+            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+        return completed.returncode, stdout, metrics
+
+    def test_reference_exits_zero_and_reports_score_keys(self):
+        returncode, stdout, metrics = self._run_entrypoint(
+            "verification/reference_solver.py")
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stdout, {"combined_score": 0.75, "valid": 1.0})
+        for key in self.SCORE_KEYS:
+            self.assertIn(key, metrics)
+        self.assertEqual(metrics["valid"], 1.0)
+        self.assertAlmostEqual(metrics["combined_score"], 0.75)
+        self.assertAlmostEqual(metrics["robustness_score"], 0.75)
+        self.assertNotIn("error_message", metrics)
+
+    def test_baseline_exits_zero_with_a_written_metrics_file(self):
+        returncode, stdout, metrics = self._run_entrypoint("solution.py")
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stdout["valid"], 1.0)
+        for key in self.SCORE_KEYS:
+            self.assertIn(key, metrics)
+        self.assertAlmostEqual(metrics["combined_score"], 0.0)
 
 
 if __name__ == "__main__":

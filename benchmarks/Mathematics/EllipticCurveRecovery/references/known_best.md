@@ -1,5 +1,11 @@
 # Reference and admission record — EllipticCurveRecovery
 
+Maintainer-facing. `frontier_eval/agent_files.txt` serves only `Task.md`,
+`solution.py` and `frontier_eval/constraints.txt` (and `sle.spec`'s
+`agent_visible_text()` composes the agent context from `Task.md` plus
+`constraints.txt` only), so nothing in this file reaches candidates by
+construction.
+
 ## 1. Reference method
 
 `verification/reference_solver.py` is standalone: ascending small primes queried
@@ -11,6 +17,25 @@ exploding over the cartesian product), singular lift filtering, and refusal when
 zero or multiple lifts survive. It deliberately lacks quadratic-form acceleration
 and Hasse-interval reasoning.
 
+## 1a. Solution-family notes (maintainer-facing — never serve to candidates)
+
+The intended strategy family, removed from the agent-visible `Task.md` on
+2026-09-07 after a clean-room solver written from the old wording tied the
+reference (0.750/0.750) in 0.4 s. `Task.md` now states phenomenon and interface
+only; the recipe lives here:
+
+- Each per-prime point count leaves a finite set of compatible pairs
+  (a mod p, b mod p), and the Chinese remainder theorem combines enough residue
+  sets to isolate a unique pair in the bounded integer window.
+- The budget makes prime selection an information decision — small primes are
+  cheap but occasionally leave twin curves, and one more prime resolves them.
+- The reference realizes this as ascending small-prime queries within the
+  budget, per-prime residue enumeration by direct Legendre sums, incremental CRT
+  with coefficient-window pruning across the wide +-1200 window, and refusal
+  when no nonsingular lift survives. Exact recovery from a smaller prime
+  certificate can score above the full-budget reference under the efficiency
+  multiplier.
+
 ## 2. Baseline and normalization
 
 The shipped `solution.py` queries one prime and guesses (0, 1): `0.000000`. Supported
@@ -21,14 +46,22 @@ with zero false discoveries and full refusal.
 
 ## 3. Capability comparisons and ablations
 
-| variant | development |
-|---|---:|
-| full reference (budgeted ascending primes) | 0.750 |
-| six primes in the wide window | 0.000 |
+Re-measured on 2026-09-07 by truncating the reference's `QUERY_PRIMES` to the
+first six small primes (11, 13, 17, 19, 23, 29; six budget units) and running
+`verification/evaluator.py` directly, double-run deterministic:
 
-The wide window makes the prime ladder load-bearing: six primes leave twin curves
-sharing all counts, the budget buys eight. Local debugging numbers, not frozen
-benchmark evidence.
+| variant | development | held-out robustness |
+|---|---:|---:|
+| full reference (budgeted ascending primes) | 0.750 | 0.750 |
+| six primes in the wide window | 0.4875 | 0.2708 |
+
+Six primes do not collapse the score to zero: most supported worlds still lift
+uniquely, but two development worlds (and two held-out worlds) leave twin curves
+sharing all six counts, and the reference abstains on them — 0.4875 development
+/ 0.2708 robustness with refusals intact and zero false discoveries. An earlier
+record of `0.000` here was wrong (never reproducible); the wide window makes the
+prime ladder load-bearing, not decisive on its own. Local debugging numbers, not
+frozen benchmark evidence.
 
 ## 4. Shortcut probes
 
@@ -54,7 +87,7 @@ against the classical 12) — corrected in both the oracle and the reference, an
 pinned against the classical value. (v) The difficulty audit judged the +-40
 window knowledge-gated with budget to spare — the window widened to +-1200 and
 primes repriced so the residue-then-CRT strategy now has to manage a real
-information budget. All pinned in `tests/test_round4_new_tasks.py`.
+information budget. All pinned in `tests/test_elliptic_curve_recovery.py`.
 
 ## 7. Robustness and reproducibility
 

@@ -31,7 +31,7 @@ invariants:
 - the CRT modulus of six small primes exceeds the coefficient window twice over
 - singular lifts are filtered before claiming
 - a full abstention scores exactly zero after normalization
-known_shortcuts: A fixed (0, 1) guess scores 0.000; the full-budget reference reaches 0.750/0.750 development/robustness with zero false discoveries, and the smaller-prime ablation collapses through twin-curve ambiguity. Formal clean Linux calibration and independent review remain pending.
+known_shortcuts: A fixed (0, 1) guess scores 0.000; the full-budget reference reaches 0.750/0.750 development/robustness with zero false discoveries, and the six-prime ablation degrades to 0.4875/0.2708 through twin-curve abstentions (two development worlds stay ambiguous at six primes). Formal clean Linux calibration and independent review remain pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
