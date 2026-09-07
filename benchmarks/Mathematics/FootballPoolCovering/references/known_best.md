@@ -97,8 +97,9 @@ it is historical context, not a reproducible reference for this revision.
 
 ## 5. Frontier-model draw
 
-Not run. No clean Linux run, first-proposal comparison, strong truth-blind search
-reference or model calibration exists for this revision. Remain candidate.
+Not run. No maintainer-controlled formal freeze, first-proposal comparison, strong
+truth-blind search reference or model calibration exists for this revision.
+Development tests and Linux sandbox diagnostics do not establish these. Remain candidate.
 
 ## 6. Construction errors and corrections
 
@@ -115,8 +116,8 @@ Tests compare coverage with an independent Hamming-distance implementation, chec
 the core Hamming code and products, reverify the shipped public constructions,
 check asset hashes and per-call greedy determinism, and exercise malformed values.
 Published lower-bound arguments and n9/n10 record artifacts are external; no
-independent proof replay is claimed. No expert review, sandbox/Linux evidence,
-frontier draw, global evidence refresh or measured two-hour headroom is claimed.
+independent proof replay is claimed. No expert review, maintainer-controlled formal
+freeze, frontier draw, global evidence refresh or measured two-hour headroom is claimed.
 The score is meaningful bound-gap progress, not proof that every unearned point
 is attainable. Public-data contamination is explicitly present.
 

@@ -223,7 +223,7 @@ CHINESE_BRIEFS = {
     "Mathematics/HeilbronnTrianglePacking": (
         "在单位正方形内放 n 个点,让任意 3 点构成的三角形最小面积尽量大——经典的 Heilbronn 三角形问题",
         "对 Erich's Packing Center 维护的记录表的平均进度;n=8 已证明最优(硬上限,已披露),n=10、n=11、n=12 仅是最好已知记录,真实无上限"),
-    'Mathematics/FootballPoolCovering': ('用尽量少的 ternary 码字覆盖半径 1 球(足球彩票问题,1948 年提出,纪录 37 年未破)', 'Hamming直积为零、所引覆盖规模下界为理想满分;全部3^n词逐一复核'),
+    'Mathematics/FootballPoolCovering': ('用尽量少的三元码字,保证每个可能词都在某个码字的 Hamming 半径 1 内(足球彩票覆盖问题)', 'Hamming直积为零、所引覆盖规模下界为理想满分;全部3^n词逐一复核'),
     "Mathematics/HeavyTailEvidence": (
         "在已知 xmin 下判断样本是幂律还是对数正态;指数截断或样本过短须拒答",
         "家族恢复 + 截断/小样本拒答;不是质量窗口的 look-elsewhere,也不是不相容常数调和"),
@@ -407,7 +407,7 @@ CHINESE_BRIEFS = {
 FORM_TITLES = OrderedDict([("optimization", "Optimization"), ("discovery", "Discovery")])
 ANALOGUE_TITLES = OrderedDict([
     ("engineering_design", "工程设计(engineering_design)"),
-    ("combinatorial", "开放组合纪录(combinatorial,无上限)"),
+    ("combinatorial", "组合构造(combinatorial)"),
     ("molecular_design", "分子与大分子设计(molecular_design)"),
 ])
 KIND_TITLES = OrderedDict([
