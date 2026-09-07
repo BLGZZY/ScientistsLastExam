@@ -58,12 +58,6 @@ Every candidate-visible key is listed here: `schema_version`, `gravity_mps2`,
 `diagnosis_values`, `measurement_model`, `abstain_when`, and `records`; each record key is
 `record_id`, `temperature_c`, `orientation`, and `accel_mps2`.
 
-## Relationship to nearby tasks
-
-`Sensors/QuartzCrystalMicrobalanceLab` infers thin-film deposition from complex QCM admittance and
-resonance shifts. This task instead calibrates triaxial inertial measurements against known gravity
-orientations and attributes sensor faults; it has no resonance, deposition or complex-I/Q contract.
-
 ## References
 
 Woodman, *An introduction to inertial navigation*, University of Cambridge, 2007. The affine bias,

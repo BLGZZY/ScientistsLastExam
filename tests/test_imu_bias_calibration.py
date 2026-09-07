@@ -28,7 +28,13 @@ class IMUBiasCalibrationTests(unittest.TestCase):
         first = oracle.evaluate(ref)
         second = oracle.evaluate(ref)
         self.assertEqual(first, second)
-        self.assertGreater(first["combined_score"], 0.4)
+        self.assertGreater(first["combined_score"], 0.98)
+        self.assertGreater(first["heldout_combined_score"], 0.98)
+        unsupported = [row for row in first["per_instance"] if row["kind"] != "supported"]
+        supported = [row for row in first["per_instance"] if row["kind"] == "supported"]
+        self.assertTrue(all(row["correct_refusal"] for row in unsupported))
+        self.assertTrue(all(not row["false_discovery"] for row in unsupported))
+        self.assertTrue(all(not row["abstained"] for row in supported))
 
         baseline = _load("imu_baseline", TASK / "solution.py")
         base = oracle.evaluate(baseline.infer_imu)

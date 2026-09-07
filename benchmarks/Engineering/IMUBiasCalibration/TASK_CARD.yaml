@@ -2,7 +2,7 @@ schema_version: 2
 scientific_question: Can an agent recover triaxial inertial-sensor bias and temperature drift from static gravity observations while refusing nonlinear thermal response, cross-axis misalignment and motion contamination?
 artifact: Three bias components, three temperature-drift components, a sealed-temperature acceleration prediction, a fault diagnosis, confidence and immutable record evidence.
 oracle:
-  proxy: ordinary least-squares affine bias/drift fit with residual and temperature-pattern diagnostics
+  proxy: ordinary least-squares affine bias/drift fit with sparse-outlier, quadratic-temperature and orientation-coupling diagnostics
   nominal: deterministic six-orientation, four-temperature accelerometer generator with Gaussian measurement noise and three unsupported fault families
   feasibility: exact finite vectors, bounded confidence, one allowed diagnosis, complete unique evidence IDs and finite values
   deterministic: true
@@ -34,7 +34,7 @@ provenance:
   class: procedural
   target_source: Repository-visible deterministic inertial measurement generator with development and held-out supported and fault worlds.
   task_contract_public_before_evaluation: true
-  fresh_confirmation_status: not_completed
+  fresh_confirmation_status: local_model_calibration_completed
 novelty_risk:
   level: medium
   rationale: Sensors/QuartzCrystalMicrobalanceLab reconstructs complex QCM admittance and deposition from resonance sweeps. This task uses triaxial accelerometer gravity vectors, temperature regression and inertial fault attribution; it shares a calibration theme but not the sensor physics, observation representation, artifact or score.
@@ -44,10 +44,19 @@ lineage:
   - codex-science-benchmark-construction
   builder_scaffolds:
   - deterministic_static_sensor_discovery
-  calibrator_model_ids: []
-  calibration_runs: []
-  calibration_evidence_status: missing
-  edits_triggered_by_model: Initial task design; DeepSeek calibration evidence will be added after the authorized server run.
+  calibrator_model_ids:
+  - deepseek-v4-flash
+  - deepseek-v4-pro
+  calibration_runs:
+  - experiments/imu_bias_calibration_deepseek_calibration_2026-09-07.json
+  calibration_evidence_status: current_or_migration_replayed
+  edits_triggered_by_model: >-
+    An initial Flash proposal exceeded the first reference on overly conspicuous fault worlds, so
+    the unsupported effects were reduced and the truth-blind diagnostics were strengthened before
+    the final oracle freeze. After commit ab207d8, fresh thinking-disabled first proposals reached
+    0.462/0.647 development/held-out for Flash and 0.599/0.733 for Pro, below the
+    0.989/0.988 reference but above the zero baseline. No oracle or public-contract change followed
+    these frozen-source runs.
   shortcut_discoverer: builder_self_audit
   frozen_before_eval: false
   freeze_timestamp: null
@@ -61,6 +70,6 @@ construction_audit:
   author_domain: inertial_sensing
   reviewer_domain: pending_external
   expert_hours: null
-  red_team_rounds: 1
+  red_team_rounds: 2
   oracle_disagreement_status: not_quantified
   independent_recomputation_status: reference and malformed-candidate checks are runnable from this package
