@@ -136,3 +136,7 @@ The task now specifies the acquisition wavelet, source/receiver depth and numeri
 boundary damping so candidates can implement the stated public forward family without
 reading a hidden reference recipe. The inversion method and refusal thresholds remain
 maintainer-only.
+
+The 2026-09-08 baseline now makes a legal confident background-velocity claim after
+one shot. It does not classify null or misspecified responses; the always-abstain policy
+remains a separate zero-score regression rather than the baseline program.

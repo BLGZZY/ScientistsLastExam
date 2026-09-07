@@ -144,3 +144,21 @@ def test_complete_groundwater_archive_retains_useful_pareto_coverage():
     prefix, _ = oracle._hypervolume(problem, plans[:5])
     assert len(plans) == problem["archive_size_bounds"][1]
     assert full > prefix
+
+
+
+def test_fwi_zero_baseline_makes_claims_while_full_refusal_is_separate():
+    oracle = load("ActiveFullWaveformInversion")
+    baseline = load("ActiveFullWaveformInversion", "solution.py")
+    for level in (1, 2, 3):
+        oracle.DIFFICULTY = level
+        result = oracle.evaluate(baseline.invert_velocity_model)
+        assert result["valid"] == 1.0
+        assert result["combined_score"] == 0.0
+        assert result["robustness_score"] == 0.0
+        assert result["development_discovery_coverage"] == 1.0
+        assert result["development_false_discovery_rate"] == 1.0
+    refusal = oracle.evaluate(lambda *args: {"velocity_m_s": [], "confidence": 0., "abstain": True})
+    assert refusal["valid"] == 1.0
+    assert refusal["combined_score"] == 0.0
+    assert refusal["discovery_attempt_count"] == 0

@@ -17,7 +17,7 @@ difficulty_ladder:
     2: 30 percent more observation noise and one additional anomaly
     3: 65 percent more observation noise and two additional anomalies
 normalization:
-  baseline: one central shot followed by abstention on every world
+  baseline: one central shot followed by a confident background-velocity claim on every world
   reference: Coarse-to-fine grid-continuation least squares (3x5 then 5x8 velocity correction grids,
     cubic-spline interpolation, smoothed-to-unsmoothed waveform stages).
   score: depth-weighted structure and sealed-frequency waveform recovery normalized above always abstaining;

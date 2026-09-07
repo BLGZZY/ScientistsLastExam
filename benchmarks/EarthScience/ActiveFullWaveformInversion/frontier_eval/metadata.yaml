@@ -9,7 +9,7 @@ gpu_required: false
 eval_time_seconds: 150
 science_metric: charged-shot acoustic velocity mechanism recovery with sealed waveform transfer and calibrated
   model-inadequacy refusal
-reference_baseline: one central shot followed by abstention on every world
+reference_baseline: one central shot followed by a confident background-velocity claim on every world
 reference_sota: Coarse-to-fine grid-continuation least squares (3x5 then 5x8 velocity correction grids,
   cubic-spline interpolation, smoothed-to-unsmoothed waveform stages). This is a runnable witness, not
   a published SoTA claim.
