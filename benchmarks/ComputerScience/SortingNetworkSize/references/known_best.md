@@ -70,13 +70,15 @@ A strong independent search reference and proper capability ablations are missin
 Public network transcription is an intentional recorded shortcut. It previously
 scored 1 under insertion-to-record normalization; it now scores 0.5572727273.
 This change fixes the meaning of the anchors, not contamination or model difficulty.
-These are reproducible local smoke checks, not formal Linux/calibration evidence.
+These are reproducible development checks, not a maintainer-controlled formal freeze
+or model calibration.
 No exhaustive low-dimensional search sweep is claimed.
 
 ## 5. Frontier-model draw
 
-Not run. No calibration run IDs, no first-proposal comparison and no admissible
-clean Linux evidence exist for this revision. Remain candidate.
+Not run. No calibration run IDs, first-proposal comparison or maintainer-controlled
+formal freeze exist for this revision. Development tests and Linux sandbox
+diagnostics do not establish these. Remain candidate.
 
 ## 6. Construction errors and corrections
 
@@ -92,7 +94,7 @@ Score1 now means attaining a cited bound, not copying a published construction.
 Tests compare bit-mask simulation with independent Boolean simulation, reverify
 baseline/public constructions, check attributed asset hashes, malformed outputs,
 determinism and target/record separation. No lower-bound proof certificate,
-independent domain review, Linux sandbox rerun, model calibration, two-hour search
+independent domain review, maintainer-controlled formal freeze, model calibration, two-hour search
 headroom or global evidence refresh is claimed. A positive gap to L does not prove
 an improvement exists. Scores below 1 cannot establish available scientific headroom.
 

@@ -97,7 +97,7 @@ A runnable, attributed reconstruction and its exact data hashes are supplied und
 search reference. Reweighting stops public record lookup from scoring 1; it does
 not demonstrate research difficulty or remove contamination. No frontier-model
 calibration, strong independent search reference, capability ablation ladder or
-clean Linux evidence is claimed. The task remains a candidate.
+maintainer-controlled formal freeze is claimed. The task remains a candidate.
 
 ## Rules
 

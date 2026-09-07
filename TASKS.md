@@ -36,7 +36,7 @@
 | [`MultilayerThinFilm`](benchmarks/Physics/MultilayerThinFilm/)<br>多层减反射膜 | Physics | Photonics | clipped | physical_sim | certified | design a broadband antireflection coating | 设计可见光全谱段的多层宽带减反射膜 | 宽带减反射质量;物理下界为零平均反射 |
 | [`SuperconductorTcRecord`](benchmarks/Physics/SuperconductorTcRecord/)<br>超导临界温度纪录搜索 | Physics | Superconductivity | uncapped | allen_dynes_formula_solved_to_real_anchors | candidate | beat the published record by computing where Allen-Dynes says to look | 在真实设备压力上限下,用 Allen-Dynes 公式在五个真实超导体系间搜索已确认临界温度最高的(体系,压力)组合,并避开一个从未被实现的理论预测(隐含电子-声子耦合超过物理合理上限) | 真实Tc除以已发表记录250K的直接比值;无上限,可超过已发表记录 |
 
-### 开放组合纪录(combinatorial,无上限) — 18
+### 组合构造(combinatorial) — 18
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|

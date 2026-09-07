@@ -407,7 +407,7 @@ CHINESE_BRIEFS = {
 FORM_TITLES = OrderedDict([("optimization", "Optimization"), ("discovery", "Discovery")])
 ANALOGUE_TITLES = OrderedDict([
     ("engineering_design", "工程设计(engineering_design)"),
-    ("combinatorial", "开放组合纪录(combinatorial,无上限)"),
+    ("combinatorial", "组合构造(combinatorial)"),
     ("molecular_design", "分子与大分子设计(molecular_design)"),
 ])
 KIND_TITLES = OrderedDict([
