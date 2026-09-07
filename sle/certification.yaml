@@ -10,6 +10,11 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
+  Algorithm/ScalingLawIdentification:
+    status: candidate
+    reason: deterministic asymptotic-class identification from budgeted seven-percent-noise timings bounded at size 384, with the public mod-3 branch predicate, sixty-percent-jitter refusal worlds and a sealed size-700 extrapolation; the profiling-efficiency-weighted reference reaches 0.711/0.703, a reconstructed minimal first-shot ladder reaches 0.364/0.030, and disabling the jitter gate gives 0.544/0.370; pending clean Linux calibration, independent algorithms review and a frozen frontier-model draw
+    citation_ids:
+      - isbn:9780262033848
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.
