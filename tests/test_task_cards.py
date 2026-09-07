@@ -20,6 +20,7 @@ RECORDED_LINEAGE = {
     "ClimateScience/ForcedSignalAttribution",
     "StructuralEngineering/ModalDamageAttribution",
     "Mathematics/BlackBoxGroupIdentification",
+    "Mathematics/EllipticCurveRecovery",
     "Spectroscopy/CrowdedSpectrumAssignment",
     "Mathematics/RamseyLowerBound",
     "Mathematics/KissingNumber",
