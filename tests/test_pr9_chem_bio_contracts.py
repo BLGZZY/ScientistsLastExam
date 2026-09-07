@@ -39,8 +39,6 @@ TASKS = {'Electrochemistry/ChronoamperometryLawID': ('benchmarks/Chemistry/Chron
 RUNNERS = {
     "Electrophysiology/HodgkinHuxleyCurrentID":
         "benchmarks/Biology/HodgkinHuxleyCurrentID",
-    "SyntheticBiology/OrthogonalDNACodewords":
-        "benchmarks/Biology/OrthogonalDNACodewords",
     "Electrochemistry/ChronoamperometryLawID":
         "benchmarks/Chemistry/ChronoamperometryLawID",
     "Spectroscopy/MassFragmentationTree":

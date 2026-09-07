@@ -35,7 +35,6 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 # directory name is the identifier and never changes; this is what a Chinese reader scans for.
 CHINESE_NAMES = {
     "Electrophysiology/HodgkinHuxleyCurrentID": "电压钳通道参数恢复",
-    "SyntheticBiology/OrthogonalDNACodewords": "正交 DNA 密码词库",
     "Electrochemistry/ChronoamperometryLawID": "计时电流法律辨识",
     "Spectroscopy/MassFragmentationTree": "多碰撞能碎裂树恢复",
     "ChemicalProcess/ThermochemicalCycleAudit": "热化学闭环审计",
@@ -132,9 +131,6 @@ CHINESE_BRIEFS = {
     "Electrophysiology/HodgkinHuxleyCurrentID": (
         "自选电压钳协议恢复八参数通道模型,A 型或整流额外电流须拒答",
         "参数恢复+密封协议预测几何均值;失配门拒答,全面弃权为零"),
-    "SyntheticBiology/OrthogonalDNACodewords": (
-        "在 GC/汉明/全位移交叉二聚/均聚物约束下建更大的正交寡核苷酸词库",
-        "相对冻结贪心见证的规模进度;无上限,验证与构造方法无关"),
     "Electrochemistry/ChronoamperometryLawID": (
         "在电位阶跃预算下辨识六条计时电流律,反常扩散或基线漂移须拒答",
         "类概率+参数+密封外推几何均值;χ² 门与共享线性项变量投影拒答分列"),

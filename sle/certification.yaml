@@ -15,13 +15,6 @@ tasks:
     reason: deterministic voltage-clamp channel-parameter recovery over the public 1952 gating equations in closed form, with sealed-protocol prediction and A-type/rectifying extra-current refusal; the multistart least-squares witness reaches 0.718/0.594 with zero false discoveries, leaving parameter-recovery headroom; pending clean Linux calibration, independent electrophysiology review and server-held membranes
     citation_ids:
       - doi:10.1113/jphysiol.1952.sp004764
-  SyntheticBiology/OrthogonalDNACodewords:
-    status: candidate
-    reason: uncapped orthogonal DNA word library record under exact GC, Hamming, all-shift reverse-complement cross-dimer and homopolymer constraints with a frozen seeded greedy witness (dna16 28, dna12 27 words) and a trivial-pair zero anchor; different-seed probes reach 0.864 so the search carries the difficulty; pending clean Linux calibration, independent review against the DNA-word-design literature and stronger-search headroom measurement
-    citation_ids:
-      - doi:10.1089/10665270152530818
-      - doi:10.1038/s43588-024-00646-z
-      - url:https://www.combinatorics.org/ojs/index.php/eljc/article/view/v10i1r33
   Electrochemistry/ChronoamperometryLawID:
     status: candidate
     reason: deterministic multi-potential chronoamperometric law identification with Akaike-penalized family fits, chi-square and variable-projection drift gates, anomalous-transport refusal and charged evidence efficiency; the three-step truth-blind witness reaches 0.722/0.661 with zero false discoveries, while removing the model-selection penalty lowers development to 0.657 and disabling the chi-square gate lowers robustness to 0.328; pending clean Linux calibration, independent electrochemistry review and server-held transients
