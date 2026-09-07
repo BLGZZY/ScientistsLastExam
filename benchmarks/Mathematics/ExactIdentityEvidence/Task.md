@@ -57,7 +57,8 @@ calls invalidate the world even when caught.
 - `combined_score` is the development mean above the all-undecided auditor (the
   passive floor), which scores exactly zero after normalization.
 - Intrinsic and efficiency-adjusted audit means, evidence efficiency, false
-  discovery rate and discovery coverage are reported with their denominators.
+  discovery rate, correct refusal rate and discovery coverage are reported with
+  their denominators.
 - `robustness_score` repeats the audit on held-out values, epsilons and caps.
 
 The aggregate efficiency diagnostics are `development_evidence_efficiency_score` and

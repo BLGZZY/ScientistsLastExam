@@ -343,7 +343,8 @@ def _empty(split, index):
             "intrinsic_raw": 0.0, "normalized": 0.0, "exact_hits": 0,
             "false_hits": 0, "refusal_hits": 0, "false_discovery": False,
             "attempt_count": 0, "claim_count": 0, "budget_used": 0,
-            "passive_raw": 0.0, "evidence_efficiency_score": 0.0}
+            "passive_raw": 0.0, "evidence_efficiency_score": 0.0,
+            "undecidable_claim_count": 0}
 
 
 def _evaluate_world(candidate, spec, split, index):
@@ -394,6 +395,8 @@ def _evaluate_world(candidate, spec, split, index):
             "attempt_count": sum(1 for entry in world["claims"]
                                  if verdicts[entry["id"]] != "undecidable"),
             "claim_count": len(world["claims"]),
+            "undecidable_claim_count": sum(1 for entry in world["claims"]
+                                           if entry["kind"] == "undecidable"),
             "budget_used": library.used,
         })
     except Exception:
@@ -407,12 +410,16 @@ def _summary(rows):
     passive = _mean([r.get("passive_raw", 0.0) for r in rows])
     normalized = (raw - passive) / (1.0 - passive) if passive < 1.0 else 0.0
     claims = sum(r["claim_count"] for r in rows if r["valid"])
+    refusals = sum(r["refusal_hits"] for r in rows)
+    refusal_denominator = sum(r["undecidable_claim_count"] for r in rows)
     return {
         "raw": raw, "intrinsic": intrinsic, "passive": passive,
         "normalized": float(max(0.0, normalized)),
         "valid_count": sum(r["valid"] for r in rows),
         "evidence_efficiency": _mean([r["evidence_efficiency_score"]
                                       for r in rows]),
+        "correct_refusal_rate": (refusals / refusal_denominator
+                                 if refusal_denominator else 0.0),
         "false_discovery_count": sum(r["false_discovery"] for r in rows),
         "attempt_count": sum(r["attempt_count"] for r in rows if r["valid"]),
         "claim_count": claims,
@@ -438,12 +445,14 @@ def evaluate(audit_identity_claims):
         "development_false_discovery_rate": (
             dev["false_discovery_count"] / dev["claim_count"]
             if dev["claim_count"] else 0.0),
+        "development_correct_refusal_rate": dev["correct_refusal_rate"],
         "development_discovery_coverage": (
             dev["attempt_count"] / dev["claim_count"] if dev["claim_count"] else 0.0),
         "false_discovery_count": dev["false_discovery_count"],
         "claim_count": dev["claim_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
         "heldout_evidence_efficiency_score": hold["evidence_efficiency"],
+        "heldout_correct_refusal_rate": hold["correct_refusal_rate"],
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": (
             hold["false_discovery_count"] / hold["claim_count"]

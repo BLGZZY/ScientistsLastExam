@@ -117,6 +117,18 @@ class ExactIdentityEvidenceTests(unittest.TestCase):
         self.assertAlmostEqual(result["combined_score"], 0.675)
         self.assertAlmostEqual(result["development_evidence_efficiency_score"], 0.75)
         self.assertEqual(result["development_false_discovery_rate"], 0.0)
+        self.assertEqual(result["development_correct_refusal_rate"], 1.0)
+
+    def test_discovery_axes_are_reported(self):
+        # The contribution gate requires mechanism, false-discovery, refusal and
+        # coverage axes with development/heldout prefixes on every discovery task.
+        result = self.ev.evaluate(self.sol.audit_identity_claims)
+        for key in ("mechanism_score", "development_false_discovery_rate",
+                    "development_correct_refusal_rate",
+                    "development_discovery_coverage",
+                    "heldout_false_discovery_rate",
+                    "heldout_correct_refusal_rate"):
+            self.assertIn(key, result)
 
     def test_zero_purchase_audit_keeps_full_credit(self):
         # A candidate that answers attempted verdicts without spending any of the
