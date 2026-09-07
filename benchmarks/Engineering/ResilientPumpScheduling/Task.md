@@ -13,11 +13,44 @@ pressure above 20 m; terminal storage must recover to its published target. Subm
 rejected rather than clipped or repaired.
 
 `combined_score` is development energy-cost savings above a conservative constant-speed schedule,
-normalized by the savings of a stronger reproducible oracle commitment-dispatch search. The scale
+normalized by the savings of a stronger reproducible feasible commitment-dispatch witness. The scale
 is floored at zero and uncapped. Held-out systems, 12% demand growth and a four-hour peak-period
 pump outage are reported separately and cannot be selected against. The true demand differs from
 the published forecast by a small hidden realization; a schedule robust to the published demand
 band stays feasible on it.
+
+## Complete nominal model
+
+Each hourly actual demand lies in `[0.955, 1.045]` times the corresponding public
+`demand_forecast_m3_h` value. The realization is hidden; this bound is part of the
+contract. For hour `h`, speed `s_h` gives flow `q_h = pump_capacity_m3_h * s_h`
+in m³/h. With one-hour intervals, the end-of-hour storage is
+`V_h = V_(h-1) + q_h - demand_h`. At that end-of-hour storage, the reduced pressure
+model is:
+
+```
+tank_head_m = 43 + 10 * (V_h - tank_minimum_volume_m3)
+                        / (tank_maximum_volume_m3 - tank_minimum_volume_m3)
+remote_pressure_m = tank_head_m - 20 - 0.00023 * demand_h**2
+```
+
+The oracle requires storage within its public bounds and `remote_pressure_m >= 20`
+at every hour, and terminal storage at least `terminal_minimum_volume_m3`.
+The head-loss coefficient is a synthetic reduced-model coefficient, with units
+chosen for demand in m³/h; there is no hidden pipe-network solve.
+
+```
+pump_head_m = pump_static_head_m + pump_speed_head_coefficient_m * s_h**2
+power_kw = 9.81 * q_h * pump_head_m / (3600 * wire_to_water_efficiency)
+```
+
+While running, add `running_auxiliary_power_kw`. Total cost is the sum of hourly
+electricity cost, plus `0.035 * sum(abs(s_h - s_(h-1)))` over the 23 within-horizon
+transitions, plus `startup_cost_usd` for every off-to-on event, including the initial
+start from off. The variation coefficient is USD per unit speed change. The hidden
+demand-growth and outage checks are separate diagnostics and do not affect this
+nominal objective. These equations specify the score's physical abstraction; they
+do not prescribe a scheduling algorithm.
 
 This compact model preserves the storage, tariff, pressure and outage couplings needed for a local
 benchmark. It is not an EPANET hydraulic certification. Engineering claims require replay in a
@@ -33,7 +66,8 @@ References: EPA, *EPANET 2.2 User Manual*, EPA/600/R-20/133 (2020); Guidolin et 
 ## Complete public input contract
 
 Numeric values below are the first public example; per-instance arrays and coefficients vary.
-All keys and shapes are part of the contract; forecasts contain exactly `horizon_steps` samples.
+All keys and shapes are part of the contract; the demand and tariff arrays each contain
+exactly `horizon_hours` samples at the supplied one-hour time step.
 
 | Key | Type, shape or meaning |
 |---|---|

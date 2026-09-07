@@ -12,7 +12,7 @@ def design_laminate(problem):
 Choose the order of a fixed multiset of unidirectional plies. The number of plies, permitted
 angles and exact count of every angle are supplied in `problem`. The returned laminate must be
 symmetric and balanced and may not contain more than the published number of consecutive equal
-plies (two on every shipped panel, a standard matrix-cracking limit). Values are checked
+plies (two on every shipped panel, a synthetic manufacturing constraint). Values are checked
 exactly; the oracle never repairs a submission.
 
 The public model is classical laminate theory. The trusted evaluator assembles the `A` and `D`
@@ -40,7 +40,8 @@ doi:10.1016/j.compstruct.2016.01.052.
 ## Complete public input contract
 
 Numeric values below are the first public example; per-instance arrays and coefficients vary.
-All keys and shapes are part of the contract; forecasts contain exactly `horizon_steps` samples.
+All keys and shapes are part of the contract; load and moment arrays have one paired
+row per load case.
 
 | Key | Type, shape or meaning |
 |---|---|
@@ -95,7 +96,28 @@ The hardened model evaluates both faces of every ply using membrane strain plus 
 curvature, so material failure depends on order. Independent anisotropic buckling validation is
 still pending. This calibration does not certify difficulty.
 
-`moment_cases_n` has shape `[number_of_load_cases,3]`, with `[Mx,My,Mxy]` in N·m (moment per unit panel width), paired with `load_cases_n_per_m`. The symmetric laminate uses `strain=A^-1*N`, `curvature=D^-1*M` and global ply-face stress `Qbar*(strain+z*curvature)` before material-axis Tsai-Hill evaluation. The current Navier screening expression still neglects anisotropic mode coupling in buckling; external finite-element review is required.
+`moment_cases_n` has shape `[number_of_load_cases,3]`, with `[Mx,My,Mxy]` in N
+(N·m per metre of panel width), paired with `load_cases_n_per_m` in N/m. The
+symmetric laminate uses `strain=A^-1*N`, `curvature=D^-1*M` and global ply-face stress
+`Qbar*(strain+z*curvature)` before material-axis Tsai-Hill evaluation.
+
+For clarity, the buckling screen for `x=m*pi/panel_length_m` and
+`y=n*pi/panel_width_m`, with `m,n` from 1 through 4, is exactly
+
+```
+[D11*x**4 + 2*(D12 + 2*D66)*x*x*y*y + D22*y**4]
+/ max(Nx*x*x + Ny*y*y + 2*abs(Nxy)*x*y, 1e-12)
+```
+
+Take the minimum over modes and load cases. This is a Navier-inspired screen with
+an added absolute-shear term, not an exact anisotropic shear-buckling solution: it
+omits mode coupling and `D16/D26` from buckling. Those terms still enter the full
+`D` solve for bending stress. For material-axis stresses `(s1,s2,t12)`, the
+first-ply index is `(s1/X)**2 - s1*s2/X**2 + (s2/Y)**2 + (t12/S)**2`, where `X` and
+`Y` select the supplied tensile or compressive allowable by stress sign and `S` is
+`s_pa`. The reserve is the inverse square root of the maximum index over both faces
+and all plies. The quality is the minimum of that reserve and the buckling screen.
+External finite-element review remains required.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

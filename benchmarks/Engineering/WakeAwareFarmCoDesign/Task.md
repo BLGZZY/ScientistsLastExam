@@ -60,7 +60,8 @@ doi:10.1088/1742-6596/1618/2/022028; NREL FLORIS documentation.
 ## Complete public input contract
 
 Numeric values below are the first public example; per-instance arrays and coefficients vary.
-All keys and shapes are part of the contract; forecasts contain exactly `horizon_steps` samples.
+All keys and shapes are part of the contract; the wind direction, speed and probability
+arrays have the same length, which also fixes the number of yaw rows.
 
 | Key | Type, shape or meaning |
 |---|---|

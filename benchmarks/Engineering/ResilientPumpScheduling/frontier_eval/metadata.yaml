@@ -10,7 +10,8 @@ eval_time_seconds: 150
 science_metric: development tariff cost savings with exact storage and pressure feasibility plus held-out
   demand and outage resilience
 reference_baseline: conservative constant-speed pumping with terminal storage recovery
-reference_sota: Repeated warm-started block-exchange sweeps (widths 2-4) until convergence over
-  an all-on commitment with convex public-band dispatch on each mask. Runnable search anchor,
-  not a published SoTA claim.
+reference_sota: Feasible global-commitment witness from deterministic mixed-integer
+  tangent-relaxation search plus exact convex dispatch. No relaxation lower bound is
+  used for scoring; the bounded two-sweep reference scores approximately 0.977/0.989.
+  This is a procedural search anchor, not a published SoTA claim.
 citation: EPA EPANET 2.2 User Manual, EPA/600/R-20/133

@@ -11,18 +11,23 @@ oracle:
   deterministic: true
 normalization:
   baseline: Conservative constant-speed schedule sized above mean public demand.
-  reference: Convex public-band dispatch on a conservative all-on commitment; it scores 0.630
-    against the oracle's repeated warm-started block-exchange commitment anchor.
-  score: Development energy-cost savings are uncapped above the block-search anchor; held-out
-    networks, demand growth and four-hour outage resilience remain separate.
+  reference: Two complete width-2/3/4 commitment sweeps with convex public-band dispatch
+    and warm starts; the current local score is approximately 0.977067 development /
+    0.989029 heldout against an independent mixed-integer global-commitment feasible
+    witness. The anchor refines the chosen mask with exact convex dispatch and scores
+    its actual cost, never the relaxation bound. The older all-on 0.630 method is historical
+    and omitted the task's central commitment dimension.
+  score: Development energy-cost savings are uncapped above the feasible global-commitment anchor; held-out
+    systems, demand growth and four-hour outage resilience remain separate.
 evaluation_budget: 150 s expected evaluation time (frontier_eval/metadata.yaml) and a
   300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py). A direct local
   evaluation on 2026-09-07 with the twelve-system set took 41.1 s for the baseline entry
   (including every anchor search, cached thereafter) and 0.2 s for the runnable reference;
   warm-starting every fixed-mask dispatch from the incumbent schedule is what holds the
-  repeated-sweep anchor inside that cost. The maintainer previously observed a 2.3x slower
-  host (79 s vs 34.8 s on the six-system set), so the declared envelope anticipates slower
-  machines while the 300 s wrapper still leaves well over half the budget to the candidate.
+  repeated-sweep anchor inside that cost. These are historical in-process measurements,
+  not a clean Linux budget guarantee. The maintainer previously observed a 2.3x slower
+  host (79 s vs 34.8 s on the six-system set); current sandbox replay must verify the
+  whole-evaluation envelope on the target host.
 citations:
 - id: url:https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10113EM.TXT
   title: EPANET 2.2 User Manual
@@ -39,19 +44,20 @@ invariants:
   reconstructible from the public problem (the visible phase no longer seeds it), and its peak
   stays inside the +-4.5% band the public-band reference dispatches against, so band-robust
   public schedules remain feasible on actual demand.
-known_shortcuts: 'Measured 2026-09-07 on the twelve-system set: the conservative constant-speed
-  baseline scores 0. Fixed-price-window charging (k cheapest hours, constant speed, k swept 12-22)
-  and threshold commitment (run iff price < tau, constant speed, tau swept) both fail closed on
-  development (0.0, valid=0: no member is simultaneously tank-, pressure- and terminal-feasible
-  on every development system). Two-block commitment with public-band convex dispatch on each
-  mask reaches 0.607706 development against the strengthened repeated-sweep anchor, only 0.022
-  below the 0.629968 all-on witness: a first-shot commitment searcher nearly ties the reference.
-  KNOWN RISK (owner decision required before admission): every measured bounded-commitment
-  method between one and many block flips scores 0.85-0.97, so no witness design lands in the
-  0.5-0.8 band between the all-on dispatch and the single-flip cliff; widening the gap beyond
-  0.05 was attempted and failed. The task is kept with this thin gap explicitly flagged.
-  Single-pump/single-tank fidelity and global optimality remain limited; clean Linux replay and
-  independent water-network review are pending.'
+known_shortcuts: >-
+  Historical constant-speed price-window and threshold families failed closed, while
+  two-block commitment with convex dispatch scored 0.607706 development. The old
+  0.629968 all-on reference omitted commitment search and was too weak. The 2026-09-08
+  capability ladder gives 0.974300/0.944775 for one complete block-exchange sweep and
+  1.000/1.000 for two, matching the historical four-sweep anchor. The runnable reference
+  now performs two sweeps. Independent global commitment search improves five systems
+  and supplies a feasible stronger anchor, against which the reference remains near
+  saturation at approximately 0.977067/0.989029. The public-band feasible costs lie
+  within 0.0016 USD of tangent-relaxation lower bounds; these are scoped diagnostics,
+  not a real-network or unrestricted nominal optimum certificate. No score formula
+  or physical coefficient was changed to force the reference below the ceiling. Standard-search saturation remains an unresolved expert-
+  difficulty issue, not an admission result. These are local diagnostics, not frozen
+  Linux model calibration; independent water-systems review is pending.
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
@@ -81,6 +87,10 @@ lineage:
     phase, expanded the set to twelve systems, reduced the anchor to one block-exchange sweep for
     runtime, deleted the Task.md anchor-heuristic spoiler paragraph, and measured price-window,
     threshold and two-block shortcut probes.
+    The 2026-09-08 review restored full commitment search to the reference, exposed
+    two-sweep saturation at 1.0 under the old anchor, restored missing public-model
+    equations and bounds, and added an independent feasible global-commitment anchor
+    that lowers the current reference to approximately 0.977/0.989.
   shortcut_discoverer: local_deterministic_probe_only
   frozen_before_eval: false
   freeze_timestamp: null
@@ -91,7 +101,7 @@ construction_audit:
   expert_hours: null
   red_team_rounds: 2
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: standalone_public_model_references_high_fidelity_replication_pending
+  independent_recomputation_status: standalone_local_and_global_public_model_witnesses_high_fidelity_replication_pending
 long_horizon:
   status: not_tested
   measurement_health_passed: false
@@ -109,8 +119,10 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model
     calibration before certification
-  remaining_risk: Discrete stable-speed/minimum-run commitment and auxiliary/start costs are active. Single-pump/single-tank
-    fidelity and global optimality remain limited.
+  remaining_risk: Two standard commitment-search sweeps match the old four-sweep
+    anchor and nearly match an independent global feasible witness; larger or stronger
+    task design and clean model calibration
+    are required; the single-pump/single-tank model and global optimality remain limited.
 
 frontier_eng_overlap_review:
   date: '2026-09-06'

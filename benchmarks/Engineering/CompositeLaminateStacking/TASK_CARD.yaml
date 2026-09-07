@@ -3,8 +3,9 @@ scientific_question: Can a structure-general policy order a fixed composite ply 
   and first-ply reserve while transferring across aspect ratios, load mixtures and orthotropic materials?
 artifact: A symmetric balanced discrete ply-angle sequence with fixed composition and manufacturing constraints.
 oracle:
-  exact: Classical laminate A and D matrices, Navier simply-supported buckling modes 1 through 4, and
-    Tsai-Hill first-ply reserve.
+  exact: Classical laminate A and D assembly and both-face Tsai-Hill first-ply calculation.
+    Buckling is a Navier-inspired screening formula over modes 1 through 4 with an added
+    absolute-shear denominator term; it is not an exact anisotropic shear-buckling solution.
   feasibility: Exact ply count and multiset, allowed angles, symmetry, balance, and maximum consecutive
     equal plies; malformed values fail closed.
   deterministic: true

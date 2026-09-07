@@ -1,15 +1,14 @@
-> Version note (2026-09-07, third local hardening + admission-bar fix): twelve systems (eight
-> development, four held out) with varied tariff windows, two demand shapes, tank sizes, pump
-> capacities and hidden two-frequency demand ripples whose phase constants no longer derive from
-> the visible forecast phase. The anchor is repeated warm-started block-exchange sweeps to
-> convergence; the witness remains all-on convex dispatch. A thin witness-to-probe gap (0.022)
-> remains and is flagged below as an owner-decision risk. Earlier sections describe the
-> six-system set and are retained as history.
+> Current version (2026-09-08): the standalone reference performs two complete
+> commitment-search sweeps. It scores approximately **0.977067/0.989029** against
+> the new independently runnable global-commitment feasible witness. The older
+> all-on reference omitted the central discrete decision; its 0.630 score was not
+> evidence of headroom. Physical constants and the score formula are unchanged.
+> The current standard-method near-saturation remains a difficulty blocker.
 
 # Reference and admission record — ResilientPumpScheduling
 
-Every number in the 2026-09-07 sections is produced by running code in this directory on this
-tree. Reproduce the headline numbers with
+The 2026-09-07 sections below are historical local diagnostics. Reproduce the
+current reference through the current evaluator with
 
 ```
 python3 - <<'EOF'
@@ -24,21 +23,52 @@ EOF
 
 ## 1. Reference method
 
-`verification/reference.py` is standalone and uses only public inputs and charged interfaces. It
-solves public-demand-band convex dispatch on a conservative all-on commitment with linear
-storage/pressure/ramp constraints and a switching epigraph. The evaluator's score-one anchor is
-repeated block-exchange sweeps (commitment blocks of width 2-4 flipped from the incumbent mask)
-until a full sweep finds no improvement, with every fixed-mask dispatch warm-started from the
-incumbent schedule and a mask cache shared across sweeps. No invented fallback anchor is used
+`verification/reference.py` is standalone and uses only public inputs; this task has
+no charged observation interface. Starting from all-on convex dispatch, it searches
+commitment blocks of width 2–4, solves each mask with linear storage/pressure/ramp
+constraints and a switching epigraph, and keeps the best strict improvement. It uses
+two complete sweeps, warm starts and a mask cache. The current evaluator anchor instead
+uses binary on/start variables and tangent underestimators of the public convex
+hydraulic-energy function in a mixed-integer linear program. A single-threaded,
+fixed-2000-node HiGHS search chooses a commitment mask; the original exact convex
+dispatch then supplies a feasible schedule. The score normalizes by that schedule's
+recomputed actual cost, never by the relaxation objective or its lower bound.
+`verification/reference_global.py` independently reproduces this stronger witness
+without oracle imports. See the [SciPy MILP API](https://docs.scipy.org/doc/scipy-1.13.1/reference/generated/scipy.optimize.milp.html)
+for the solver interface and bounds terminology. No invented fallback anchor is used
 when the reference fails; an invalid anchor is an infrastructure error. This remains a
 single-tank surrogate, not a pipe-network solver.
 
-## 2. Baseline and normalization (2026-09-07 twelve-system re-derivation)
+## 2. Baseline and normalization
+
+Historical-anchor capability ladder (2026-09-08, same twelve systems, prior four-sweep anchor):
+
+| public method | development | held-out policy |
+|---|---:|---:|
+| all-on convex dispatch (historical reference) | 0.629968 | 0.566628 |
+| one full commitment sweep | 0.974300 | 0.944775 |
+| two sweeps (current reference, historical normalization) | 1.000000 | 1.000000 |
+| four sweeps (unchanged oracle anchor) | 1.000000 | 1.000000 |
+
+All four methods were valid. The two-sweep method already converges to the prior four-sweep anchor on these
+instances. An independent global search improved five systems. Against the stronger
+feasible anchor the two-sweep reference scores approximately **0.977067/0.989029**;
+it was not weakened to make it fit a desired score band. The global witness's
+feasible public-band costs lie within 0.0016 USD of the MILP tangent-relaxation
+lower bounds on all twelve systems. Those are bounds for the public ±4.5% robust
+class, not a certificate for every nominal-only submission or for real hydraulics.
+The relaxation solved at 1–3 branch-and-bound nodes per system (0.07–6.47 local
+seconds in the diagnostic). This independently demonstrates that the current
+single-pump instances are close to standard-method solvability, not expert difficulty.
+The source fixes the iteration budget, not a target score. These local diagnostics
+must not be presented as a frozen Linux model draw.
+
+### Historical 2026-09-07 twelve-system re-derivation
 
 | entry | development | held-out policy |
 |---|---|---|
 | shipped baseline (`solution.py`) | **0.000000** (valid=1) | 0.000 |
-| runnable witness (`verification/reference.py`) | **0.629968** | 0.566628 |
+| historical all-on witness | **0.629968** | 0.566628 |
 
 Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 41.1 s for the
 baseline entry (includes all twelve repeated-sweep anchor searches, cached thereafter) and
@@ -62,7 +92,7 @@ verify on the hidden realization).
 Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json`.
 Historical: on the six-system set the convex all-on dispatch scored 0.569407 development /
 0.493703 held out and the historical coordinate-move method was invalid on every development
-instance. Current: the all-on witness scores 0.629968 development / 0.566628 held out on the
+instance. Historical 2026-09-07: the all-on witness scored 0.629968 development / 0.566628 held out on the
 twelve-system set against the repeated-sweep anchor; discrete commitment is the measured
 headroom. A commitment ladder measured against the strengthened anchor: all-on dispatch
 0.629968, best single width-2 flip 0.853, best single width-3 flip 0.914, best widths-2-4 flip
@@ -70,7 +100,7 @@ headroom. A commitment ladder measured against the strengthened anchor: all-on d
 
 ## 4. Shortcut probes
 
-### 2026-09-07 shortcut re-audit (measured on the current tree)
+### Historical 2026-09-07 shortcut re-audit
 
 Three families were implemented and run (`tmp/probe_pump.py` on the builder tree):
 
@@ -85,8 +115,10 @@ The constant-speed families fail closed on development: no member is simultaneou
 pressure- and terminal-feasible on every development system, which is itself a measured result
 (scoring requires feasibility, not just cheap hours).
 
-**KNOWN RISK, owner decision required before admission: the two-block commitment family sits
-only 0.022 below the witness on development.** An honest widening attempt was made: the anchor
+**Historical failure record: the two-block commitment family sat only 0.022 below
+the deliberately restricted all-on witness.** The reference restriction was removed
+on 2026-09-08; the current two-sweep reference scores 1.0. The following account
+explains the earlier mistaken attempt to select a reference by score band: An honest widening attempt was made: the anchor
 was strengthened from one block-exchange sweep to repeated warm-started sweeps (which lowered
 the probe from 0.629644 to 0.607706), and witness designs between all-on dispatch and one
 commitment flip were measured - best single width-2 flip 0.853, width-3 flip 0.914,
@@ -107,6 +139,24 @@ review is implied by these local code changes. Server-held worlds and independen
 remain required.
 
 ## 6. Construction errors and revisions
+
+2026-09-08 review: restored commitment search to the standalone reference rather than
+keeping an all-on method because it happened to score in the requested 0.5–0.8 band.
+The restored two-sweep reference tied the old four-sweep anchor on every system.
+An independent mixed-integer global search subsequently found better feasible costs
+and now supplies the score-one anchor; the reference remains near-saturated at
+0.977/0.989. The anchor is an executable witness, not an invented score constant. The prior
+in-band score was an omitted capability, not scientific headroom. The task still
+needs stronger instance/model design and clean calibration before expert-difficulty
+claims; no rescaling or arbitrary coefficient changes were made.
+
+The same review restored the complete public physical contract: the actual ±4.5%
+demand bound, pressure equation, hydraulic power, auxiliary electricity, initial
+startup and speed-variation charge. These were already in the evaluator, but their
+absence from the candidate-visible description introduced hidden-model difficulty.
+All equations and scores are unchanged. Historical local runtimes do not guarantee
+the current whole-evaluation Linux budget.
+
 
 2026-09-07 hardening (first pass): hidden two-frequency demand ripple decoupled from the
 visible phase (previously seed = visible phase 0/3/7/11, offline-derivable); instances expanded

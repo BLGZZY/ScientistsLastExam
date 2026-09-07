@@ -7,6 +7,7 @@ import copy
 import numpy as np
 
 HOURS=24
+REFERENCE_MAX_PASSES=2
 _REFERENCE_CACHE={}
 
 def _validate(problem, value):
@@ -108,20 +109,45 @@ def _continuous_schedule(problem, on, warm=None):
     return speeds
 
 def _reference(problem):
-    """Public-demand-band convex dispatch on a conservative all-on commitment.
+    """Mixed commitment/local continuous dispatch search using public demand bands.
 
-    This is a competent feasible fixed-mask method.  The oracle's repeated warm-started
-    block-exchange search is the score-one anchor, leaving discrete commitment optimization
-    as explicit, reproducible headroom; the measured gap to a two-block commitment family is
-    thin and is recorded as an owner-decision risk in references/known_best.md.
+    Fixed masks have convex dispatch subproblems. Commitment blocks of width 2-4 are
+    exchanged from the incumbent mask until a full sweep finds no improvement (at most
+    REFERENCE_MAX_PASSES), with each dispatch warm-started from the incumbent schedule.
+    This truth-blind runnable reference searches the discrete commitment and continuous
+    dispatch dimensions. It has a fixed two-pass CPU budget; the oracle anchor uses
+    four passes. Neither is a certificate of global mixed-integer optimality.
     """
     key = repr(problem)
     if key in _REFERENCE_CACHE:
         return _REFERENCE_CACHE[key].copy()
+    demand = np.asarray(problem["demand_forecast_m3_h"])
+    cache = {}
+    def solve(on, warm=None):
+        key = tuple(on)
+        if key not in cache:
+            edges = np.diff(np.r_[False,on,False].astype(int))
+            if np.any(np.flatnonzero(edges == -1)-np.flatnonzero(edges == 1) < problem["minimum_run_hours"]):
+                cache[key] = (float('inf'),None)
+            else:
+                speeds = _continuous_schedule(problem,on,warm=warm)
+                cache[key] = (float('inf'),None) if speeds is None else (_simulate(problem,speeds,demand)["cost"],speeds)
+        return cache[key]
     on = np.ones(HOURS,dtype=bool)
-    best = _continuous_schedule(problem,on)
+    cost, best = solve(on)
     if best is None:
         raise RuntimeError("no feasible public pumping reference")
+    for _sweep in range(REFERENCE_MAX_PASSES):
+        next_mask, next_best, next_cost = on, best, cost
+        for width in (2,3,4):
+            for start in range(HOURS-width+1):
+                trial = on.copy(); trial[start:start+width] = ~trial[start:start+width]
+                value, speeds = solve(trial, warm=best)
+                if value < next_cost - 1e-8:
+                    next_mask, next_best, next_cost = trial, speeds, value
+        if next_cost >= cost - 1e-8:
+            break
+        on,best,cost = next_mask,next_best,next_cost
     _REFERENCE_CACHE[key] = best.copy()
     return best
 
