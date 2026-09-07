@@ -156,7 +156,7 @@ def infer_stress_orientation(problem, reanalyze, budget_units):
     tail = float(np.mean([m > MISFIT_TAIL_DEG for m in misfits]))
     if mean_misfit > MEAN_MISFIT_DEG or tail > TAIL_FRACTION:
         return {"sigma1": None, "sigma3": None, "R": None,
-                "plane_assignments": None, "abstain": True, "confidence": 0.8}
+                "plane_assignments": None, "abstain": True, "confidence": 0.1}
 
     sigma1, sigma3, ratio = _axes_and_ratio(tensor)
     return {

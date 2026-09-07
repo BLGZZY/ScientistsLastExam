@@ -35,7 +35,7 @@ tasks:
       - arxiv:2003.14181
   Geophysics/FocalMechanismStressInversion:
     status: candidate
-    reason: deterministic focal-mechanism stress inversion behind two-fold nodal-plane ambiguity with charged re-analysis, mixed-regime and incoherent refusal worlds; the truth-blind multi-start Michael witness reaches 0.698/0.731 with near-ceiling axes and 0.46 plane assignment (the genuine combinatorial headroom); pending clean Linux calibration, server-held catalogs, independent seismology review and bootstrapped-confidence replication
+    reason: deterministic level-3 focal-mechanism stress inversion behind two-fold nodal-plane ambiguity with charged re-analysis, mixed-regime and incoherent refusal worlds; the complete Michael witness reaches 0.623/0.573 versus 0.469/0.140 without paid re-analysis, with a valid zero baseline; pending clean Linux calibration, server-held catalogs, independent seismology review and bootstrapped-confidence replication
     citation_ids:
       - doi:10.1029/JB089iB13p11517
       - doi:10.1017/S0016756800059987

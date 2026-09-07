@@ -122,3 +122,17 @@ python scripts/measure_reference.py \
 domain is registered under the `EarthScience` discipline in `sle/benchmark_layout.py`, which is
 the sanctioned pattern). The pre-2026-09-07 command passed the logical id and resolved to no
 directory; it has been corrected here and in the sibling earth tasks' records.
+
+### 2026-09-08 evaluator-contract re-review
+
+The external `frontier_eval/run_eval.py` entrypoint now delegates to the trusted
+`sle eval` sandbox path instead of importing candidate code in the oracle process.
+Malformed submissions no longer count as discovery attempts. Confidence calibration
+uses actual supported-world mechanism recovery as its target, and zero for refusals
+or unsupported worlds; the combined-score normalization is unchanged. These changes
+have targeted local regressions; they do not imply independent domain certification
+or replace clean Linux sandbox replay.
+The task now specifies the acquisition wavelet, source/receiver depth and numerical
+boundary damping so candidates can implement the stated public forward family without
+reading a hidden reference recipe. The inversion method and refusal thresholds remain
+maintainer-only.

@@ -47,8 +47,9 @@ def _scale_shift(shift, strength):
             for key, value in shift.items()}
 
 
-SHIFTS = tuple(_scale_shift(shift, _difficulty_profile()["stress_strength"])
-               for shift in _BASE_SHIFTS)
+def _stress_shifts():
+    return tuple(_scale_shift(shift, _difficulty_profile()["stress_strength"])
+                 for shift in _BASE_SHIFTS)
 
 
 def _exact_shift(spec):
@@ -313,7 +314,7 @@ def _evaluate_problem(candidate, spec, split, index):
         proxy_hv, _ = _hypervolume(problem, plans)
         baseline_hv, _ = _hypervolume(problem, _baseline_archive(problem), exact)
         reference_hv, _ = _hypervolume(problem, _reference_archive(problem), exact)
-        shifted_worlds = [_compose_shift(exact, shift) for shift in SHIFTS]
+        shifted_worlds = [_compose_shift(exact, shift) for shift in _stress_shifts()]
         shifted = [_hypervolume(problem, plans, shift)[0] for shift in shifted_worlds]
         baseline_shifted = [_hypervolume(problem, _baseline_archive(problem), shift)[0]
                             for shift in shifted_worlds]

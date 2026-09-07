@@ -20,7 +20,7 @@ axes, ratio and plane row scores one.
 
 ## 3. Capability comparisons and ablations
 
-Local oracle-direct ablations of the reference, measured 2026-09-05:
+Historical level-1 oracle-direct ablations, measured 2026-09-05 (no longer the shipped default):
 
 | variant | development | robustness | FDR | refusal |
 |---|---:|---:|---:|---:|
@@ -48,7 +48,7 @@ ladder):
 | 3 | 0.6226 / 0.5730 | 0.4811 / 0.1395 |
 
 The paid re-analysis is not uniformly necessary: at levels 1–2 the free path matches or beats
-it, so "paid precision matters" would be an overstatement at the shipped default. It becomes
+it, so "paid precision matters" would have been an overstatement at the former level-1 default. It becomes
 decisive only at level 3 (8.5° coarse noise), where the free path loses 0.14 development and
 0.43 robustness. Recorded honestly; no oracle or reference change was made.
 
@@ -100,3 +100,29 @@ python scripts/measure_reference.py \
 `--task` takes the on-disk path under `benchmarks/`, not the logical id
 `Geophysics/FocalMechanismStressInversion` (the fine-grained domain stays in `metadata.yaml`);
 the pre-2026-09-07 command passed the logical id and resolved to no directory.
+
+### 2026-09-08 evaluator-contract re-review
+
+The external `frontier_eval/run_eval.py` entrypoint now delegates to the trusted
+`sle eval` sandbox path instead of importing candidate code in the oracle process.
+Malformed submissions no longer count as discovery attempts. Confidence calibration
+uses actual supported-world mechanism recovery as its target, and zero for refusals
+or unsupported worlds; the combined-score normalization is unchanged. These changes
+have targeted local regressions; they do not imply independent domain certification
+or replace clean Linux sandbox replay.
+Principal axes must be orthogonal; abstention requires empty or null axes and plane
+assignments with null R. Re-analysis rejects boolean/floating-point IDs. Both split
+confidence metrics and the discovery-attempt count are now published separately.
+
+### 2026-09-08 default moves to the measured paid-information regime
+
+Level 3 is now the shipped default (8.5-degree coarse, 2.6-degree re-analysis noise).
+The scientific generator and three-level ladder are unchanged. A fresh local probe of
+the complete reference gives `0.622620` development / `0.573022` held out. Calling the
+same reference with a zero re-analysis budget gives `0.469429` / `0.139507`; this drops
+development recovery by `0.153192` and held-out recovery by `0.433516`. The baseline
+remains valid with exactly zero development and held-out scores at all three levels.
+Unlike the former default, the active regime makes paid precision useful. The historical
+probe table above is preserved; the current no-budget method differs from that earlier
+ablation and is not silently substituted into its record. These remain local diagnostics,
+not a frozen frontier-model calibration draw.

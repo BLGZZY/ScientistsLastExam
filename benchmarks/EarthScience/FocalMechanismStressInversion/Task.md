@@ -32,20 +32,31 @@ events                      list of {id, plane_a, plane_b}; each plane is
                             [strike_deg, dip_deg, rake_deg] (Aki-Richards); the two
                             nodal planes are listed in arbitrary order
 plane_convention            the geometry statement above
-noise_sigma_deg             coarse mechanism uncertainty (4 degrees)
-reanalysis_sigma_deg        tightened uncertainty after re-analysis (1.2 degrees)
+noise_sigma_deg             coarse mechanism uncertainty (8.5 degrees)
+reanalysis_sigma_deg        tightened uncertainty after re-analysis (2.6 degrees)
 reanalysis_budget           16 credits
 reanalysis_cost             1 credit per event, once per event
 model_note                  Wallace-Bott statement and the R convention
 ```
 
-`reanalyze(event_id)` charges one credit, works once per event, and returns
+The principal stress axes must be orthogonal: the absolute dot product of their unit
+vectors must not exceed `1e-6`. When abstaining, use `None` or empty arrays for both
+axes and `plane_assignments`, and `None` for `R`. Confidence states expected mechanism recovery quality, not merely the presence of a
+supported world.
+
+`reanalyze(event_id)` accepts an integer ID (not a boolean or floating-point value), charges one credit, works once per event, and returns
 `{id, plane_a, plane_b, budget_cost}` with the tighter uncertainty.
 
 Overspending, re-analyzing an event twice, or malformed calls invalidate the world even
 when caught.
 
 ## Evaluation
+
+Confidence is evaluated separately as `1 - (confidence - target)^2`. The target is
+the actual mechanism-recovery score on a supported, non-abstaining world, and zero
+for refusals or unsupported worlds. Thus a poor reconstruction with high confidence
+cannot earn perfect confidence calibration. Invalid artifacts do not count as discovery
+attempts; coverage counts valid, non-abstaining supported-world submissions.
 
 - `combined_score` is development mechanism recovery above the always-abstain baseline.
   On supported worlds mechanism is the geometric mean of an axis score (|cosine| to the
@@ -66,7 +77,7 @@ Stress tensors are seeded (uniform orientation, R uniform on 0.15–0.85); fault
 are sampled with a slip-tendency floor; slip follows the Wallace-Bott shear direction;
 both nodal planes are perturbed by Gaussian angular noise and listed in seeded order.
 Difficulty levels 1–3 raise the coarse noise (4 → 8.5 degrees) and lower the sampling
-floor; level 1 is the shipped default.
+floor; level 3 is the shipped default. The lower levels remain available for diagnostics.
 
 ## Rules
 

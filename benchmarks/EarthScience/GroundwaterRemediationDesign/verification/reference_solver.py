@@ -2,7 +2,7 @@
 import math
 import numpy as np
 _REFERENCE_CACHE={}
-REFERENCE_ARCHIVE_SIZE = 5
+REFERENCE_ARCHIVE_SIZE = 16
 
 def _plan_metrics(problem, wells, shift=None):
     shift = shift or {"velocity": 1.0, "dispersion": 1.0, "decay": 1.0, "release": 1.0}

@@ -16,7 +16,7 @@ import math
 
 import numpy as np
 
-DIFFICULTY = 1
+DIFFICULTY = 3
 
 _DIFFICULTY_LADDER = {
     1: {"coarse_sigma_deg": 4.0, "fine_sigma_deg": 1.2, "shear_floor": 0.18},
@@ -221,6 +221,9 @@ class _Observatory:
 
     def reanalyze(self, event_id):
         try:
+            if not isinstance(event_id, (int, np.integer)) or isinstance(event_id, (bool, np.bool_)):
+                raise ValueError("event_id must be an integer")
+            event_id = int(event_id)
             if event_id not in {row["id"] for row in self.world["catalog"]}:
                 self.violated = True
                 raise ValueError("unknown event id")
@@ -240,8 +243,10 @@ class _Observatory:
 
 
 def _validate(submission, world):
-    if not isinstance(submission, dict):
-        raise ValueError("submission must be a mapping")
+    if not isinstance(submission, dict) or set(submission) != {
+        "sigma1", "sigma3", "R", "plane_assignments", "abstain", "confidence"
+    }:
+        raise ValueError("submission must contain exactly the documented fields")
     abstain = submission.get("abstain")
     if not isinstance(abstain, (bool, np.bool_)):
         raise ValueError("abstain must be boolean")
@@ -249,9 +254,12 @@ def _validate(submission, world):
     if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
         raise ValueError("confidence must be in [0,1]")
     if bool(abstain):
-        if submission.get("sigma1") or submission.get("sigma3") \
-                or submission.get("plane_assignments"):
-            raise ValueError("abstention requires empty structure")
+        for field in ("sigma1", "sigma3", "plane_assignments"):
+            value = submission[field]
+            if value is not None and np.asarray(value).size:
+                raise ValueError("abstention requires null or empty structure")
+        if submission["R"] is not None:
+            raise ValueError("abstention requires R=null")
         return None, None, None, confidence, True
     sigma1 = np.asarray(submission.get("sigma1"), dtype=float).reshape(-1)
     sigma3 = np.asarray(submission.get("sigma3"), dtype=float).reshape(-1)
@@ -261,6 +269,10 @@ def _validate(submission, world):
         raise ValueError("trend must lie in [0,360)")
     if not -90.0 <= float(sigma1[1]) <= 90.0 or not -90.0 <= float(sigma3[1]) <= 90.0:
         raise ValueError("plunge must lie in [-90,90]")
+    e1 = _axis_from_angles(*sigma1)
+    e3 = _axis_from_angles(*sigma3)
+    if abs(float(e1 @ e3)) > 1e-6:
+        raise ValueError("principal stress axes must be orthogonal (absolute dot <= 1e-6)")
     ratio = float(submission.get("R"))
     if not math.isfinite(ratio) or not 0.0 <= ratio <= 1.0:
         raise ValueError("R must lie in [0,1]")
@@ -315,7 +327,7 @@ def _evaluate_world(candidate, spec, split, index):
         else:
             correct = bool(abstain)
             mechanism = axis = r = plane = 1.0 if correct else 0.0
-        target_confidence = 1.0 if (supported != abstain or (not supported and abstain)) else 0.0
+        target_confidence = mechanism if supported and not abstain else 0.0
         row.update({"valid": True, "abstained": abstain,
                     "mechanism_score": mechanism, "axis_score": axis,
                     "r_score": r, "plane_score": plane,
@@ -339,10 +351,11 @@ def _summary(rows, specs):
         "valid_count": sum(r["valid"] for r in rows),
         "axis_score": float(np.mean([r["axis_score"] for r in supported])) if supported else 0.0,
         "r_score": float(np.mean([r["r_score"] for r in supported])) if supported else 0.0,
+        "confidence": float(np.mean([r["confidence_score"] for r in rows])),
         "plane_score": float(np.mean([r["plane_score"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -363,16 +376,25 @@ def evaluate(infer_stress_orientation):
         "development_axis_score": dev["axis_score"],
         "development_r_score": dev["r_score"],
         "development_plane_score": dev["plane_score"],
+        "development_confidence_calibration_score": dev["confidence"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
         "supported_world_count": dev["supported_count"],
         "unsupported_world_count": dev["unsupported_count"],
+        "discovery_attempt_count": dev["attempt_count"],
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
+        "heldout_confidence_calibration_score": hold["confidence"],
+        "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
         "per_world": development + heldout,
     }

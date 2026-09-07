@@ -89,6 +89,15 @@ class FocalMechanismStressInversionTests(unittest.TestCase):
         self.assertEqual(result["development_false_discovery_rate"], 0.0)
         self.assertEqual(result["development_correct_refusal_rate"], 1.0)
 
+    def test_paid_reanalysis_materially_improves_the_shipped_regime(self):
+        self.assertEqual(self.ev.DIFFICULTY, 3)
+        full = self.ev.evaluate(self.ref.infer_stress_orientation)
+        free = self.ev.evaluate(lambda problem, reanalyze, budget:
+                                self.ref.infer_stress_orientation(problem, reanalyze, 0))
+        self.assertEqual(free["valid"], 1.0)
+        self.assertGreater(full["combined_score"] - free["combined_score"], 0.1)
+        self.assertGreater(full["robustness_score"] - free["robustness_score"], 0.3)
+
     def test_reanalysis_is_charged_once_per_event(self):
         world = self.ev._world((33011, "supported"))
         observatory = self.ev._Observatory(world)

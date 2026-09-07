@@ -244,7 +244,7 @@ def _evaluate_world(candidate, spec, split, index):
             correct = bool(abstain)
             model_score = waveform_score = mechanism = 1.0 if correct else 0.0
             relative = 0.0 if correct else 1e6
-        target_confidence = 1.0 if (supported and not abstain) else 0.0
+        target_confidence = mechanism if supported and not abstain else 0.0
         row.update({
             "valid": True, "abstained": abstain, "mechanism_score": mechanism,
             "model_score": model_score, "waveform_score": waveform_score,
@@ -273,7 +273,7 @@ def _summary(rows, specs):
         "confidence": float(np.mean([row["confidence_score"] for row in rows])),
         "false_discovery_count": sum(row["false_discovery"] for row in unsupported),
         "correct_refusal_count": sum(row["correct_refusal"] for row in unsupported),
-        "attempt_count": sum(not row["abstained"] for row in supported),
+        "attempt_count": sum(row["valid"] and not row["abstained"] for row in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -310,5 +310,11 @@ def evaluate(invert_velocity_model):
         "heldout_false_discovery_rate": hold["false_discovery_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["correct_refusal_count"] / hold["unsupported_count"],
         "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_false_discovery_count": hold["false_discovery_count"],
+        "heldout_correct_refusal_count": hold["correct_refusal_count"],
+        "heldout_confidence_calibration_score": hold["confidence"],
         "per_world": development + heldout,
     }

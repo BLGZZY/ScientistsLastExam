@@ -9,12 +9,12 @@ oracle:
     sampling with Wallace-Bott slip directions, Aki-Richards nodal-plane geometry,
     Gaussian angular perturbation of both planes per event in seeded order, regime
     mixtures and uniform incoherent catalogs
-  feasibility: bounded axis angles and R, a complete 0/1 plane row, charged unique
+  feasibility: bounded mutually orthogonal principal-axis angles and R, a complete 0/1 plane row, charged unique
     re-analysis within a sixteen-credit budget
   deterministic: true
   external_tooling: none beyond NumPy
 difficulty_ladder:
-  default_level: 1
+  default_level: 3
   levels:
     1: 4-degree coarse noise, 1.2-degree re-analysis
     2: 6-degree coarse noise, 1.8-degree re-analysis
@@ -34,6 +34,8 @@ invariants:
 - the Wallace-Bott shear of the true tensor lies along every true slip direction
 - both nodal planes of an event are perturbed independently and listed in seeded order
 - axes are scored on absolute cosine so sign flips are free
+- principal axes form a physical orthogonal frame, with absolute unit-vector dot at most 1e-6
+- invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
 - a full abstention scores exactly zero after normalization
 - re-analysis is charged, once per event, and overspending invalidates the world
 known_shortcuts: A constant-regime family (twelve azimuths, fixed R and plane-a
@@ -94,9 +96,10 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
     and clean frontier-model calibration before certification
-  remaining_risk: Plane assignment sits at 0.46 against an axis score near 0.99; the
-    headroom concentrates in the combinatorial ambiguity, so a frontier draw must show
-    it is not trivially closable.
+  remaining_risk: The shipped default is level 3, where the full witness scores 0.622620
+    development and 0.573022 held out; the same method with no paid re-analysis scores
+    0.469429 and 0.139507. A clean frontier draw must still establish the difficulty
+    of joint plane assignment and stress recovery beyond the complete witness.
 
 frontier_eng_overlap_review:
   date: '2026-09-06'

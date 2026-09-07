@@ -15,6 +15,18 @@ regular grid,
 u[t+1] = 2 u[t] - u[t-1] + (c dt)^2 Laplacian(u[t]) + source[t].
 ```
 
+For acquired shots the source is a unit-amplitude 12 Hz Ricker wavelet,
+`(1 - 2*a*a) * exp(-a*a)`, with `a = pi*12*(t - 1.5/12)`. Pressure starts at zero
+at both initial time levels. The public discretization uses the five-point spatial
+Laplacian, with its update set to zero on the outermost row and column. Multiply the
+wave update by a damping mask before adding the source: start from one everywhere,
+set the outermost rows/columns to 0.86, then the second rows/columns to 0.94 (the
+second assignment wins at intersections). Inject the source at row 2 and the supplied
+source column; record the updated pressure at row 2 and columns `receiver_x_m/spacing_m`.
+The grid spacing and time increment are the supplied `spacing_m` and successive
+`time_s` differences. These acquisition physics define the public forward problem;
+the velocity anomalies and sealed assessment shots remain hidden.
+
 The evaluator contains supported velocity anomalies, a no-anomaly null world, and data with
 attenuation/phase effects outside the public acoustic family. Hidden worlds, noise and sealed
 source frequencies are not visible to the candidate.
@@ -47,6 +59,12 @@ shot is allowed but costs again. Velocity must be finite and remain inside
 `abstain=True`, `velocity_m_s` must be empty.
 
 ## Evaluation
+
+Confidence is evaluated separately as `1 - (confidence - target)^2`. The target is
+the actual mechanism-recovery score on a supported, non-abstaining world, and zero
+for refusals or unsupported worlds. Thus a poor reconstruction with high confidence
+cannot earn perfect confidence calibration. Invalid artifacts do not count as discovery
+attempts; coverage counts valid, non-abstaining supported-world submissions.
 
 - `combined_score` is development mechanism recovery normalized so always abstaining is zero.
 - Supported worlds use depth-weighted velocity recovery and wave-equation prediction on sealed
