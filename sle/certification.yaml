@@ -46,10 +46,6 @@ tasks:
       - doi:10.1186/2193-2697-2-6
       - doi:10.1016/S0309-1708(01)00020-3
 
-  MedicinalChemistry/MolecularLeadOptimization:
-    status: candidate
-    reason: RDKit community-standard oracle with a verified approved-drug reference panel; pending external medicinal-chemistry review
-    citation_ids: [doi:10.1038/nchem.1243, doi:10.1186/1758-2946-1-8, doi:10.1021/jm901137j]
   Mathematics/NarrowAdmissibleTuple:
     status: candidate
     reason: exact admissibility/diameter oracle scored uncapped against Polymath8b's own published narrow-admissible-tuple diameters (246 at k=50, direct primary-source quote; 270 at k=54, secondary-source only, disclosed); no frontier searcher draw yet, pending external number-theory review
