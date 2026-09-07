@@ -1,0 +1,22 @@
+domain: Mathematics
+task: FootballPoolCovering
+scientific_role: optimization
+difficulty: flagship
+tier: T3
+oracle_type: analytical
+score_mode: clipped
+gpu_required: false
+eval_time_seconds: 10
+science_metric: mean_gap_closure_to_cited_size_lower_bound
+sizes:
+- 6
+- 7
+- 8
+- 9
+- 10
+reference_baseline: hamming4_product_with_all_free_suffixes
+reference_sota: 'Published constructive size records retained for raw comparison, not the score-one anchor: 73/186/486/1269/3645'
+citation: Keri ternary covering-code tables; Haas EJC14 (2007) R27 doi:10.37236/945; van Laarhoven et al. JCTA52
+  (1989) 304-312
+reference_target: Cited lower bounds 71/156/402/1060/2854; proof external, attainability unknown
+reference_method_status: public_data_reconstruction_only; truth_blind_search_reference_pending

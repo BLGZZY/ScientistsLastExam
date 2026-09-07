@@ -1,0 +1,130 @@
+schema_version: 2
+scientific_question: Construct smaller ternary radius-one covering codes for n=6..10, measuring
+  progress from a reproducible generic construction toward cited size lower bounds.
+artifact: One list of length-n words over {0,1,2} per instance; the oracle re-checks from scratch
+  that every one of the 3^n words lies within Hamming distance 1 of some returned codeword.
+oracle:
+  model: exact coverage verification by base-3 index marking — for every submitted codeword the
+    oracle marks the codeword and its 2n radius-1 neighbours (symbol- dependent deltas so no positional
+    carry occurs) in a byte array over all 3^n words, then requires every word marked
+  feasibility: every codeword a finite sequence of exactly n integral symbols in {0,1,2}, at most
+    3^n codewords, finite sequence, full radius-1 coverage of {0,1,2}^n; a purported construction
+    strictly below the cited bound is flagged for audit
+  deterministic: true
+  external_tooling: none beyond NumPy
+difficulty_ladder:
+  default_level: 1
+  levels:
+    1: Five fixed open parameter choices; raw sizes and record gaps remain separately visible.
+      Competitive truth-blind reference and frontier calibration pending.
+normalization:
+  baseline: '[4,2,3]_3 Hamming code times all free suffixes; 81/243/729/2187/6561 words; rebuilt
+    by the oracle and scoring zero'
+  reference: Attribution-preserving executable public-data reconstruction, not a truth-blind search
+    reference; mean 0.6870213311 in local development diagnostics only
+  target: 71/156/402/1060/2854 published lower bounds as tabulated by Keri; external arguments
+    not replayed here
+  score: mean clip((baseline_size - size)/(baseline_size - lower_bound), 0, 1); published constructive
+    records are not score-one anchors
+  target_semantics: A valid construction attaining the cited lower bound is optimal conditional
+    on that external bound. The checker certifies construction validity, not the lower-bound theorem.
+    Attainability is unknown; unused score range is not measured headroom.
+  raw_score: Negative mean actual artifact size when all five are valid; sentinel zero when any
+    is invalid, interpreted with valid=0. Kept search-visible independently of combined_score.
+citations:
+- id: url:https://old.sztaki.hu/~keri/codes/3_tables.pdf
+  title: Tables for bounds on covering codes, ternary table (Keri; primary anchor source, last
+    revised 2011-11-21, retrieved 2026-09-08)
+- id: url:https://oeis.org/A004044
+  title: OEIS A004044, the classic football pool problem (exact values n<=5; ranges 71-73, 156-186,
+    402-486; 1989 bounds still best as of the 2021 comment)
+- id: url:https://www.sciencedirect.com/science/article/pii/S0097316503000104
+  title: An improved upper bound for the football pool problem for nine matches (Di Pasquale-Ostergard,
+    JCTA 2003; the 1269 record)
+- id: url:https://arxiv.org/abs/2606.09600
+  title: Formal Foundations and Proof-Carrying Certificates for q-ary Covering Codes in Lean 4
+    (Florath, June 2026; transcribes the 1989 records, no new bounds)
+- id: url:https://arxiv.org/abs/2608.19872
+  title: New upper and lower bounds on covering codes K_q(n,R) (Marosi 2026; 83 improved cells,
+    all q >= 6, scored ternary cells untouched)
+invariants:
+- Exact construction verification independent of reported size or claimed properties
+- Generic executable baseline is valid and scores zero
+- Published record reconstruction is below one; one is reserved for attaining the cited lower
+  bound
+- Raw size, record gap, bound gap, target attainment and record improvements remain separately
+  reported
+- Deterministic inputs and per-instance malformed-output failure isolation
+- The cited lower bounds are external mathematical assumptions, not proven by this evaluator
+known_shortcuts: Public 1989 n6..8 code reconstruction plus free suffixes scores 0.6870213311;
+  Hamming-product baseline zero; data-free greedy seeds0..3 score0.183377..0.197108. All are executable
+  local diagnostics, not calibration evidence. Independent competitive search reference missing.
+licensing:
+  task_package: repository_license_not_declared
+  external_assets: Packed code data extracted from Andreas Florath covering-codes-lean, BSD-3-Clause;
+    see references/CoveringCodes-LICENSE.txt and reference_sources.json
+  note: Only attributed construction data are redistributed; source commits, SHA-256 hashes and
+    license notices are retained. No paper prose copied.
+contamination:
+  status: public_data_replication_risk
+  rationale: Exact re-verification prevents fake constructions but cannot distinguish independent
+    search from public-data lookup. The shipped reconstruction is a shortcut probe, not evidence
+    of truth-blind problem-solving ability.
+review:
+  domain: pending_external_mathematics
+  evaluator_security: automated_invariant_and_malformed_candidate_sweeps
+provenance:
+  class: known_answer
+  target_source: Cited published size lower bounds, separate from constructive record sizes. See
+    references/known_best.md for proof provenance, trust assumptions and unresolved review.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+novelty_risk:
+  level: high
+  rationale: Published-record reproduction can earn intermediate score. Smaller valid artifacts
+    may be new records after literature review, regardless of normalized score. Changed normalization
+    alone does not establish model difficulty.
+lineage:
+  status: complete
+  builder_model_ids:
+  - glm-5.3-subagent
+  builder_scaffolds:
+  - sle-contributing-template
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: 2026-09-08 local build, before any frontier model saw the task. The
+    builder's own red-team cross-check caught the first verifier draft marking radius-1 neighbours
+    as idx + 3^i / idx + 2*3^i, which silently carries out of a digit equal to 2 and marks the
+    wrong word; replaced with symbol-dependent deltas (+1/+2, -1/+1, -2/-1 for symbols 0/1/2).
+    The same carry mistake was made again in the build-time greedy probe and caught by an IndexError,
+    which motivated pinning the checker against an independent brute-force Hamming implementation
+    in tests/test_footballpoolcovering.py. The malformed-candidate sweep then caught a genuine
+    crash path the try/except net missed — a float('nan') or float('inf') symbol reached int(f)
+    and raised ValueError/OverflowError out of the oracle; replaced the comparison with float.is_integer(),
+    which rejects non-finite values, and pinned NaN/inf rows in the task tests. The same sweep
+    caught scalar returns and per-row scalars needing explicit rejection before any iteration,
+    and infinite generators needing islice truncation at the 3^n checker cap. No frontier model
+    has seen the task; no evaluator change followed any model output. User-directed review revision
+    on 2026-09-08 replaced weak-baseline-to-record uncapped scoring with generic-baseline-to-cited-lower-bound
+    clipped scoring, shipped attributed reconstruction and diagnostic methods, corrected mathematical
+    explanations and malformed numeric handling. Only local development checks were performed;
+    no frontier model draw or formal calibration evidence was produced.
+  shortcut_discoverer: initial_internal_red_team
+  frozen_before_eval: false
+  freeze_timestamp: null
+construction_audit:
+  status: initial_internal
+  author_domain: AI-assisted benchmark engineering
+  reviewer_domain: pending_external_mathematics
+  expert_hours: null
+  red_team_rounds: 2
+  oracle_disagreement_status: not_quantified
+  independent_recomputation_status: Exact baseline and shipped reconstruction verification plus
+    existing independent small-instance checker tests. Published lower-bound proofs are external
+    and not independently replayed. Local development diagnostics are not formal calibration evidence.
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []

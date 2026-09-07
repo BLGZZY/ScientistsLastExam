@@ -1,0 +1,5 @@
+1) Only edit solution.py. Keep build_covering(n) -> list of length-n words over symbols 0,1,2.
+2) Every word in {0,1,2}^n must be within Hamming distance 1 of some returned codeword; invalid -> score 0 for that n.
+3) At most 3^n codewords per instance; duplicates are legal but counted.
+4) numpy/stdlib only, CPU, seconds to a minute per instance. Do not read verification/ or frontier_eval/.
+5) Score is clipped gap closure from the executable generic baseline to a cited size lower bound; matching a published record does not score 1. Raw size and record improvements are still reported.

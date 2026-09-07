@@ -1,0 +1,18 @@
+{
+  "source_project": "Andreas Florath / covering-codes-lean",
+  "original_constructions": "van Laarhoven, Aarts, van Lint and Wille, JCTA 52 (1989) 304-312",
+  "commit": "460df105545c2d6b04ba71f29de6b56dbda92825",
+  "license": "BSD-3-Clause",
+  "retrieved_on": "2026-09-08",
+  "source_url": "https://raw.githubusercontent.com/florath/covering-codes-lean/460df105545c2d6b04ba71f29de6b56dbda92825/CoveringCodes/Database/Sources/VanLaarhoven1989.lean",
+  "source_sha256": "764633369ed153c1b891b155338c21bcbc631c5abf41e693707a8fa3fa455509",
+  "extraction": "Only the integer arrays vanLaarhoven6Packed, vanLaarhoven7Packed and vanLaarhoven8Packed; base-3 little-endian words. No proof code or paper prose copied.",
+  "files": [
+    {
+      "path": "verification/data/van_laarhoven_packed.json",
+      "sha256": "581b327f9a65d164b7fcdd98737ed83ab160f6463365d65151d0093cb334335b"
+    }
+  ],
+  "license_source_url": "https://raw.githubusercontent.com/florath/covering-codes-lean/460df105545c2d6b04ba71f29de6b56dbda92825/LICENSE",
+  "license_sha256": "bdd45fef27a4583481f06f1c40c5225eb51efb91db79c46f1dbc34926b7386d2"
+}

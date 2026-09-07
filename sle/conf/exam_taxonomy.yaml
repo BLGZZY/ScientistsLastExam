@@ -97,6 +97,10 @@ tasks:
   ParticlePhysics/DiscrepantMeasurements: {form: discovery, kind: evidence, note: on_ramp_do_not_pair}
   ParticlePhysics/LookElsewhereAnomaly: {form: discovery, kind: evidence, note: trials_factor_not_clone_of_discrepant_measurements}
   Gravitation/PTAHellingsDowns: {form: discovery, kind: evidence, note: hd_orf_not_lookelsewhere_bump}
+  Mathematics/FootballPoolCovering:
+    form: optimization
+    analogue: combinatorial
+    note: ternary_radius1_covering_not_binary_packing
   Mathematics/HeavyTailEvidence: {form: discovery, kind: evidence, note: clauset_tails_not_lookelsewhere}
   EvidenceSynthesis/ProspectiveMetaAnalysis: {form: discovery, kind: evidence}
   # --- discovery / substance --------------------------------------------------

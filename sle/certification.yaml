@@ -492,6 +492,16 @@ tasks:
     citation_ids:
       - arxiv:2601.20996
       - doi:10.1103/PhysRevB.78.104102
+  Mathematics/FootballPoolCovering:
+    status: candidate
+    reason: 'candidate revised under PR reviewer guidance: Hamming-product zero anchor, published covering-size
+      lower bounds as ideal full-score targets, exhaustive exact coverage and independently executable public-code
+      reconstruction. Raw code sizes and record gaps retained. General search reference, lower-bound review
+      and clean Linux model calibration remain pending.'
+    citation_ids:
+    - url:https://old.sztaki.hu/~keri/codes/3_tables.pdf
+    - url:https://www.sciencedirect.com/science/article/pii/S0097316503000104
+    - url:https://oeis.org/A004044
   Mathematics/HeavyTailEvidence:
     status: candidate
     reason: >-

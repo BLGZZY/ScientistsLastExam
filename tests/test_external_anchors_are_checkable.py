@@ -63,6 +63,7 @@ DECLARED_EXTERNAL_ANCHORS = {
     "Mathematics/VanDerWaerdenColoring",
     "Mathematics/SchurPartition",
     "Mathematics/ErdosMinimumOverlap",
+    'Mathematics/FootballPoolCovering',
     "Mathematics/HeilbronnTrianglePacking",
     "Algorithm/TensorRank555",
     "Superconductivity/SuperconductorTcRecord",

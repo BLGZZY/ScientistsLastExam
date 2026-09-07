@@ -1,0 +1,86 @@
+{
+  "task": "Mathematics/FootballPoolCovering",
+  "anchors": [
+    {
+      "name": "sota_ref_n6",
+      "value": 73,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "smallest published ternary radius-1 covering for 6 matches per Keri's ternary table (K_3(6,1) row '71-73'); code found by simulated annealing in van Laarhoven-Aarts-van Lint-Wille, JCTA Ser. A 52 (1989) 304-312; lower bound 71 (Linderoth-Margot-Thain 2007), not proven optimal",
+      "retrieved_on": "2026-09-08",
+      "role": "raw_record_comparison_only_not_scoring_target"
+    },
+    {
+      "name": "sota_ref_n7",
+      "value": 186,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "smallest published covering for 7 matches per Keri's table (row '156-186'); van Laarhoven et al. 1989; lower bound 156 (Haas 2006), not proven optimal; still the record per OEIS A004044 comment of June 2021",
+      "retrieved_on": "2026-09-08",
+      "role": "raw_record_comparison_only_not_scoring_target"
+    },
+    {
+      "name": "sota_ref_n8",
+      "value": 486,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "smallest published covering for 8 matches per Keri's table (row '402-486'); van Laarhoven et al. 1989; lower bound 402 (Haas 2006), not proven optimal",
+      "retrieved_on": "2026-09-08",
+      "role": "raw_record_comparison_only_not_scoring_target"
+    },
+    {
+      "name": "sota_ref_n9",
+      "value": 1269,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "smallest published covering for 9 matches per Keri's table (row '1060-1269'); Di Pasquale-Ostergard, JCTA Ser. A (2003), https://www.sciencedirect.com/science/article/pii/S0097316503000104 ; lower bound 1060 (Habsieger 1996), not proven optimal",
+      "retrieved_on": "2026-09-08",
+      "role": "raw_record_comparison_only_not_scoring_target"
+    },
+    {
+      "name": "sota_ref_n10",
+      "value": 3645,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "smallest published covering for 10 matches per Keri's table (row '2854-3645', upper marker 's' = Blokhuis-Lam 1984); lower bound 2854 (Haas 2002), not proven optimal",
+      "retrieved_on": "2026-09-08",
+      "role": "raw_record_comparison_only_not_scoring_target"
+    },
+    {
+      "name": "lower_bound_n6",
+      "value": 71,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "Published ternary radius-one size lower bound as tabulated by Keri; proof/source trust assumptions in known_best.md; not replayed by coverage checker.",
+      "role": "score_one_target_not_constructive_record",
+      "retrieved_on": "2026-09-08"
+    },
+    {
+      "name": "lower_bound_n7",
+      "value": 156,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "Published ternary radius-one size lower bound as tabulated by Keri; proof/source trust assumptions in known_best.md; not replayed by coverage checker.",
+      "role": "score_one_target_not_constructive_record",
+      "retrieved_on": "2026-09-08"
+    },
+    {
+      "name": "lower_bound_n8",
+      "value": 402,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "Published ternary radius-one size lower bound as tabulated by Keri; proof/source trust assumptions in known_best.md; not replayed by coverage checker.",
+      "role": "score_one_target_not_constructive_record",
+      "retrieved_on": "2026-09-08"
+    },
+    {
+      "name": "lower_bound_n9",
+      "value": 1060,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "Published ternary radius-one size lower bound as tabulated by Keri; proof/source trust assumptions in known_best.md; not replayed by coverage checker.",
+      "role": "score_one_target_not_constructive_record",
+      "retrieved_on": "2026-09-08"
+    },
+    {
+      "name": "lower_bound_n10",
+      "value": 2854,
+      "source_url": "https://old.sztaki.hu/~keri/codes/3_tables.pdf",
+      "derivation": "Published ternary radius-one size lower bound as tabulated by Keri; proof/source trust assumptions in known_best.md; not replayed by coverage checker.",
+      "role": "score_one_target_not_constructive_record",
+      "retrieved_on": "2026-09-08"
+    }
+  ],
+  "scoring_revision": "clipped_generic_baseline_to_cited_lower_bound"
+}
