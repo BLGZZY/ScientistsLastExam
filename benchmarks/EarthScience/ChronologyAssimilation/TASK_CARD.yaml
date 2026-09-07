@@ -17,7 +17,7 @@ difficulty_ladder:
     2: 9 accumulation segments, offset <=190 years and elevated noise
     3: 12 accumulation segments, offset <=230 years and elevated noise
 normalization:
-  baseline: three sparse dating calls followed by abstention on every world
+  baseline: three sparse dating calls, constant age offsets and an overconfident proxy-average reconstruction on every world
   reference: Sparse-date monotone age-depth interpolation followed by age-error-aware GP reconstruction.
   score: CE, chronology and CRPS recovery normalized above always abstaining; raw RMSE, uncertainty calibration,
     refusal and held-out transfer remain separate

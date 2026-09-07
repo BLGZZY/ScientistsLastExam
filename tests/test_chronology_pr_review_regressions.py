@@ -123,3 +123,17 @@ def test_confident_wrong_climate_does_not_earn_perfect_calibration():
     row = oracle._evaluate_world(candidate, oracle.DEVELOPMENT_SPECS[0], "development", 0)
     assert row["valid"]
     assert row["confidence_score"] < 1e-3
+
+
+
+def test_weak_chronology_baseline_claims_reconstructions_at_every_level():
+    oracle = load("ChronologyAssimilation")
+    baseline = load("ChronologyAssimilation", "solution.py")
+    for level in (1, 2, 3):
+        oracle.DIFFICULTY = level
+        result = oracle.evaluate(baseline.reconstruct_climate)
+        assert result["valid"] == 1.0
+        assert result["combined_score"] == 0.0
+        assert result["robustness_score"] == 0.0
+        assert result["development_discovery_coverage"] == 1.0
+        assert result["development_false_discovery_rate"] == 1.0

@@ -111,3 +111,8 @@ optional offsets must have the documented shape even alongside full curves. Floa
 overflow during reconstruction scoring fails closed with finite invalid metrics. The
 reference-reproduction instructions now use paths and tests actually present in this
 standalone PR.
+
+The 2026-09-08 baseline now fits sparse constant age offsets and confidently averages
+proxy series with noise-only uncertainty, without testing nonlinear response or
+cross-record coherence. It is a legal, scientifically weak reconstruction. Always
+abstaining remains a separate zero-score test rather than the baseline program.
