@@ -65,6 +65,15 @@ mass noise split the same fragment into duplicate nodes at distinct rounded keys
 hurt four-energy precision — fixed by merging observations within a third of the
 tolerance. All three are pinned in `tests/test_mass_fragmentation_tree.py`.
 
+A 2026-09-08 adversarial review found that repeating each true edge twenty times
+produced edge F1 1.904762 and mechanism 1.452381. Canonical duplicate edges are now
+rejected, while the matching routine independently counts each true edge at most
+once. Outputs are bounded at 256 nodes and 4096 edges before matching. The normal
+reference remains 0.564467 development; this retest is local debugging only.
+The public query contract now correctly says that repeated calls draw fresh noise,
+while replaying the same ordered calls is deterministic. Invalid outputs are no
+longer reported as scientific discovery attempts.
+
 ## 7. Robustness and reproducibility
 
 Development and held-out metrics stay separate; the held-out set uses fresh molecules,

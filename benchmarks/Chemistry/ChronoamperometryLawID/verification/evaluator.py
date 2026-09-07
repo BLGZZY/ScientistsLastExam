@@ -300,7 +300,7 @@ def _summary(rows, specs):
         "prediction_score": float(np.mean([r["prediction_score"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -327,6 +327,7 @@ def evaluate(identify_current_law):
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
         "supported_world_count": dev["supported_count"],
         "unsupported_world_count": dev["unsupported_count"],
+        "discovery_attempt_count": dev["attempt_count"],
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
@@ -334,5 +335,10 @@ def evaluate(identify_current_law):
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
         "per_world": development + heldout,
     }

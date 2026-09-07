@@ -6,7 +6,7 @@ Voltage-clamp experiments hold the membrane at chosen potentials and read the io
 current transient; fitting the classic Hodgkin-Huxley gating model to well-chosen
 protocols is how channel conductances, reversal potentials and activation shifts were
 first measured. A membrane carrying a current outside the three-current family — a
-fast-inactivating A-type conductance, or a rectifying leak — cannot be explained by
+fast-inactivating A-type-like conductance, or a rectifying leak — cannot be explained by
 any parameter row, and a confident fit there is a false discovery.
 
 ## Your task
@@ -21,9 +21,9 @@ def recover_channel_parameters(problem, voltage_step, budget_units):
 
 ```text
 parameters / parameter_bounds   the eight names and bounds
-gating_equations                the public 1952 alpha/beta forms
+gating_equations                the public 1952 alpha/beta forms in a relative voltage u
 current_equation                the public three-current expression with the shift
-                                convention V -> V - sNa (V - sK) inside gating
+                                convention u = V + 65 - sNa (V + 65 - sK) inside gating
 holding_potential_mV            -80
 step_bounds_mV                  [-70, 60]
 durations_ms                    [5, 10, 20, 30]
@@ -48,6 +48,11 @@ invalidate the world even when caught.
 - Parameter recovery, false discovery rate, correct refusal rate and discovery
   coverage are reported with denominators; a full abstention scores exactly zero.
 - `robustness_score` repeats the audit on held-out parameters and failures.
+
+V is the absolute membrane potential in mV. The published rate functions use voltage
+relative to -65 mV; apply the same +65 mV conversion and activation shift at the
+holding potential. Conductances are in mS/cm², current density in µA/cm², and the
+rate constants retain the classic 6.3 °C time scale.
 
 This is a deterministic simulation of the public equations, not a claim about any
 specific preparation.

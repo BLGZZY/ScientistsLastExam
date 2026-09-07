@@ -163,6 +163,29 @@ class ChronoamperometryPins(unittest.TestCase):
 
 
 class HodgkinHuxleyPins(unittest.TestCase):
+    def test_a_type_current_has_a_transient_from_holding_inactivation(self):
+        ev = _load(ROOT / "benchmarks/Biology/HodgkinHuxleyCurrentID/verification/evaluator.py",
+                   "r4_hh_a_type")
+        parameters = [120.0, 36.0, 0.3, 50.0, -77.0, -54.4, 0.0, 0.0]
+        time, gates = ev._gating_traces(30.0, 30.0)
+        extra = (ev.ionic_current(parameters, 30.0, gates, "a_type")
+                 - ev.ionic_current(parameters, 30.0, gates))
+        # A depolarizing clamp releases holding-state availability, then the
+        # extra current inactivates on the stated fast 20 ms time scale.
+        self.assertGreater(float(extra.max()), 500.0)
+        self.assertGreater(float(extra.max()), 2.0 * float(extra[-1]))
+
+    def test_absolute_voltage_matches_classic_resting_gate_values(self):
+        ev = _load(ROOT / "benchmarks/Biology/HodgkinHuxleyCurrentID/verification/evaluator.py",
+                   "r4_hh_voltage_convention")
+        with mock.patch.object(ev, "HOLDING", -65.0):
+            _, gates = ev._gating_traces(-65.0, 5.0)
+        # Independent published HH equilibrium values at absolute V = -65 mV.
+        expected = (0.0529324853, 0.5961207535, 0.3176769141)
+        for column, value in enumerate(expected):
+            self.assertAlmostEqual(float(gates[0, column]), value, places=8)
+            self.assertAlmostEqual(float(gates[-1, column]), value, places=8)
+
     def test_rate_forms_are_stable_at_singular_points(self):
         ev = _load("benchmarks/Biology/HodgkinHuxleyCurrentID/verification/evaluator.py",
                    "r4_hh")

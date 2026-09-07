@@ -1,7 +1,7 @@
 """Truth-blind reference witness: weighted network adjustment, drift test, pendant triage.
 
 Uses only the public measurements and the charged laboratory. Weighted least squares
-over the seven species reconciles Hess closure; a dominant single outlier is tested by
+over the public species reconciles Hess closure; a dominant single outlier is tested by
 drop-and-refit before any drift test, because least squares otherwise smears one giant
 slip across the culprit's instrument class; a coherent per-class shift is confirmed by
 one budgeted cross-check; a pendant-pair tension is either resolved by a cross-check or
@@ -56,8 +56,9 @@ def _result(verdict, flagged, instrument, ids, design, enthalpies, confidence):
     }
 
 
-def _chi_square(design, values, sigmas, dof):
+def _chi_square(design, values, sigmas):
     _, residuals = _weighted_fit(design, values, sigmas)
+    dof = max(len(values) - np.linalg.matrix_rank(design), 1)
     return float(np.sum((residuals / sigmas) ** 2) / dof)
 
 
@@ -65,7 +66,7 @@ def audit_thermochemical_cycle(problem, replicate, cross_check, budget_units):
     del budget_units
     species = problem["species"]
     design, values, sigmas, ids, instruments = _design(problem, species)
-    dof = max(len(ids) - len(species), 1)
+    dof = max(len(ids) - np.linalg.matrix_rank(design), 1)
     enthalpies, residuals = _weighted_fit(design, values, sigmas)
     chi_square = float(np.sum((residuals / sigmas) ** 2) / dof)
     if chi_square < CONSISTENT_GATE:
@@ -84,7 +85,7 @@ def audit_thermochemical_cycle(problem, replicate, cross_check, budget_units):
     if studentized[top] >= DOMINANT_GATE and top not in pendant_indices:
         keep = np.ones(len(ids), dtype=bool)
         keep[top] = False
-        reduced = _chi_square(design[keep], values[keep], sigmas[keep], dof)
+        reduced = _chi_square(design[keep], values[keep], sigmas[keep])
         if reduced < max(DROP_REFIT_GATE, 0.25 * chi_square):
             enthalpies_drop, _ = _weighted_fit(design[keep], values[keep], sigmas[keep])
             return _result("single_fault", [ids[top]], "", ids, design,

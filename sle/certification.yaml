@@ -12,7 +12,7 @@ policy:
 tasks:
   Electrophysiology/HodgkinHuxleyCurrentID:
     status: candidate
-    reason: deterministic voltage-clamp channel-parameter recovery over the public 1952 gating equations in closed form, with sealed-protocol prediction and A-type/rectifying extra-current refusal; the multistart least-squares witness reaches 0.718/0.594 with zero false discoveries, leaving parameter-recovery headroom; pending clean Linux calibration, independent electrophysiology review and server-held membranes
+    reason: deterministic voltage-clamp parameter recovery with consistent absolute membrane and relative rate coordinates, holding-state A-type transients and sealed-protocol prediction; after the 2026-09-08 model corrections the standalone witness reaches 0.640364/0.828679 development/heldout with zero false discoveries in local debugging; earlier calibration and shortcut conclusions are superseded; pending clean Linux calibration, independent electrophysiology review and server-held membranes
     citation_ids:
       - doi:10.1113/jphysiol.1952.sp004764
   Electrochemistry/ChronoamperometryLawID:
@@ -28,7 +28,7 @@ tasks:
       - doi:10.1186/s13321-016-0116-8
   ChemicalProcess/ThermochemicalCycleAudit:
     status: candidate
-    reason: deterministic Hess-closure network audit with instrument drift, transcription slips, reference-state offsets and an information-conditioned pendant-pair refusal axis, replicate/cross-check budget against systematic-versus-random error; the truth-blind adjustment witness reaches 0.557/0.656 with perfect verdicts and diagnosis on development while probes stay at or below 0.202; pending clean Linux calibration, server-held networks, independent thermochemistry review and ATcT-style replication
+    reason: deterministic rank-7 Hess network over eight species with a truly pendant forward/reverse pair, persistent same-instrument offsets and cross-check-conditioned fault attribution; both always-consistent and always-underdetermined strategies score zero; the corrected standalone witness reaches 0.535168/0.233600 development/heldout in local debugging, resolving both development pendant cases with charged queries; earlier calibration and shortcut conclusions are superseded; pending clean Linux calibration, server-held networks, independent thermochemistry review and ATcT-style replication
     citation_ids:
       - doi:10.1021/jp047912y
       - doi:10.1021/acs.jpca.6c03567

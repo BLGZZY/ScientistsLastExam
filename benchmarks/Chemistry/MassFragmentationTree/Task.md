@@ -16,8 +16,10 @@ In both worlds a single confident tree is a false discovery.
 ```python
 def recover_fragmentation_tree(problem, acquire, zoom, budget_units):
     """Return a mapping with exactly:
-      nodes: list of positive finite fragment-ion m/z floats (may include the precursor)
-      edges: list of [parent_mz, child_mz, loss_name]; each endpoint must reference a
+      nodes: list of at most 256 unique positive finite fragment-ion m/z floats
+             (may include the precursor)
+      edges: at most 4096 unique [parent_mz, child_mz, loss_name] rows, also unique
+             after endpoint matching; each endpoint must reference a
              distinct submitted node within mass_tolerance_da; loss_name must come from
              the public loss library
       abstain: bool
@@ -62,7 +64,8 @@ budget_cost                   units charged
 ```
 
 Overspending or malformed calls invalidate the world even when caught. Repeated calls
-with identical arguments return identical spectra (deterministic instrument).
+draw fresh noise. Replaying the same ordered call sequence in the same world
+returns exactly the same spectra.
 
 ## Evaluation
 

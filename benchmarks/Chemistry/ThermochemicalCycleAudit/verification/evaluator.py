@@ -22,25 +22,26 @@ _DIFFICULTY_LADDER = {
     3: {"sigma_multiplier": 1.55, "drift_strength": 1.75},
 }
 
-SPECIES = ("iso1", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7")
+SPECIES = ("iso1", "iso2", "iso3", "iso4", "iso5", "iso6", "iso7", "iso8")
 INSTRUMENTS = {"bomb": 0.35, "dsc": 1.10, "eqm": 2.40}
 # Fixed interconversion network (row = reaction, stoichiometry over SPECIES):
-# eleven reactions spanning rank 7 plus a pendant duplicate/reverse pair (rows 11, 12)
-# whose attribution is structurally underdetermined when one of them is corrupted.
+# Eleven core reactions have rank 6. The only observations involving iso8 are
+# the pendant forward/reverse pair, raising total rank to 7. Without an external
+# cross-check, either member can explain the discrepancy by changing h(iso8).
 REACTIONS = (
-    ((-1, 1, 0, 0, 0, 0, 0), "iso1 -> iso2"),
-    ((0, -1, 1, 0, 0, 0, 0), "iso2 -> iso3"),
-    ((1, 0, -1, 0, 0, 0, 0), "iso3 -> iso1"),
-    ((0, -1, 0, 1, 0, 0, 0), "iso2 -> iso4"),
-    ((0, 0, 0, -1, 1, 0, 0), "iso4 -> iso5"),
-    ((0, 1, 0, 0, -1, 0, 0), "iso5 -> iso2"),
-    ((0, 0, 0, -1, 0, 1, 0), "iso4 -> iso6"),
-    ((0, 0, 0, 0, 0, -1, 1), "iso6 -> iso7"),
-    ((0, 0, 0, 1, 0, 0, -1), "iso7 -> iso4"),
-    ((-2, 0, 1, 0, 1, 0, 0), "2 iso1 -> iso3 + iso5"),
-    ((0, 0, 0, -2, 1, 0, 1), "2 iso4 -> iso5 + iso7"),
-    ((0, 0, 0, 0, 0, -1, 1), "iso6 -> iso7 (duplicate determination)"),
-    ((0, 0, 0, 0, 0, 1, -1), "iso7 -> iso6"),
+    ((-1, 1, 0, 0, 0, 0, 0, 0), "iso1 -> iso2"),
+    ((0, -1, 1, 0, 0, 0, 0, 0), "iso2 -> iso3"),
+    ((1, 0, -1, 0, 0, 0, 0, 0), "iso3 -> iso1"),
+    ((0, -1, 0, 1, 0, 0, 0, 0), "iso2 -> iso4"),
+    ((0, 0, 0, -1, 1, 0, 0, 0), "iso4 -> iso5"),
+    ((0, 1, 0, 0, -1, 0, 0, 0), "iso5 -> iso2"),
+    ((0, 0, 0, -1, 0, 1, 0, 0), "iso4 -> iso6"),
+    ((0, 0, 0, 0, 0, -1, 1, 0), "iso6 -> iso7"),
+    ((0, 0, 0, 1, 0, 0, -1, 0), "iso7 -> iso4"),
+    ((-2, 0, 1, 0, 1, 0, 0, 0), "2 iso1 -> iso3 + iso5"),
+    ((0, 0, 0, -2, 1, 0, 1, 0), "2 iso4 -> iso5 + iso7"),
+    ((0, 0, 0, 0, 0, -1, 0, 1), "iso6 -> iso8"),
+    ((0, 0, 0, 0, 0, 1, 0, -1), "iso8 -> iso6"),
 )
 MEASUREMENT_IDS = tuple("R%02d" % (index + 1) for index in range(len(REACTIONS)))
 PENDANT_IDS = ("R12", "R13")
@@ -115,7 +116,7 @@ def _world(spec):
         values[index] += slip
         corruption = {"indices": [index], "offset": slip}
     elif kind == "underdetermined":
-        index = 11  # the duplicate pendant determination
+        index = int(rng.choice((11, 12)))
         offset = float(rng.uniform(4.5, 9.0)) * profile["drift_strength"]
         if rng.random() < 0.5:
             offset = -offset
@@ -153,8 +154,9 @@ def problem_statement(world):
         "cross_check_cost": CROSS_CHECK_COST,
         "budget_units": BUDGET_UNITS,
         "network_note": (
-            "enthalpies close under Hess's law over the seven species; the pendant "
-            "duplicate/reverse pair R12/R13 shares one instrument class"
+            "enthalpies close under Hess's law over eight species; only the pendant "
+            "forward/reverse pair R12/R13 observes iso8 and shares one instrument class; "
+            "a determination-specific systematic offset persists in same-instrument replicates"
         ),
     }
 
@@ -199,6 +201,9 @@ class _Laboratory:
             value = (self.world["truth"][index]
                      + self.world["instrument_offsets"][self.world["instruments"][index]]
                      + rng.normal(0.0, 1.0) * sigma)
+            if (self.world["kind"] == "underdetermined"
+                    and index in self.world["corruption"]["indices"]):
+                value += self.world["corruption"]["offset"]
             return {"id": measurement_id, "value_kj_per_mol": float(value),
                     "sigma_kj_per_mol": float(sigma),
                     "instrument": self.world["instruments"][index],
@@ -251,6 +256,10 @@ def _validate(submission, world):
         raise ValueError("drift_instrument must be a known instrument name or empty")
     if verdict == "instrument_drift" and not instrument:
         raise ValueError("instrument_drift verdict must name an instrument")
+    if verdict != "instrument_drift" and instrument:
+        raise ValueError("only an instrument_drift verdict may name an instrument")
+    if verdict == "consistent" and flagged:
+        raise ValueError("a consistent verdict cannot flag faulty measurements")
     corrected = submission.get("corrected_enthalpies")
     if not isinstance(corrected, dict) or set(corrected) != set(MEASUREMENT_IDS):
         raise ValueError("corrected_enthalpies must map every measurement id to a value")
@@ -281,7 +290,7 @@ def _diagnosis_scores(flagged, verdict, instrument, world, resolved):
     if kind == "clean":
         verdict_correct = verdict == "consistent"
         diagnosis = 1.0 if not flagged_set else diagnosis
-        false_discovery = bool(flagged_set) or verdict != "consistent"
+        false_discovery = bool(flagged_set) or verdict in ("single_fault", "instrument_drift")
     elif kind == "drift":
         verdict_correct = (verdict == "instrument_drift"
                            and instrument == world["corruption"]["instrument"])
@@ -315,7 +324,8 @@ def _score(submission, world, resolved=False):
     correction_gain = float(np.clip(correction_gain, 0.0, 1.0))
     mechanism = float(0.45 * correction_gain + 0.35 * verdict_score + 0.20 * diagnosis)
     engaged = verdict != "consistent" or bool(flagged) or bool(instrument)
-    if kind_refuses(world) and not engaged:
+    if (world_needs_engagement(world) and not engaged
+            or verdict == "underdetermined" and not kind_refuses(world)):
         mechanism = 0.0
     target_confidence = 1.0 if (engaged == world_needs_engagement(world)) else 0.3
     confidence_score = 1.0 - (confidence - target_confidence) ** 2
@@ -331,6 +341,7 @@ def _score(submission, world, resolved=False):
         "false_discovery": false_discovery,
         "correct_refusal": correct_refusal,
         "engaged": bool(engaged),
+        "attempted": verdict in ("single_fault", "instrument_drift"),
     }
 
 
@@ -351,6 +362,7 @@ def _passive_submission(world):
 
 def _empty(split, index):
     return {"split": split, "world_index": index, "valid": False, "engaged": False,
+            "resolved": False, "attempted": False,
             "mechanism_score": 0.0, "correction_gain": 0.0, "verdict_score": 0.0,
             "diagnosis_score": 0.0, "confidence_score": 0.0,
             "false_discovery": False, "correct_refusal": False, "budget_used": 0}
@@ -370,6 +382,7 @@ def _evaluate_world(candidate, spec, split, index):
         resolved = any(index in lab.cross_checked for index in (11, 12))
         scores = _score(submission, world, resolved=resolved)
         row.update(scores)
+        row["resolved"] = bool(world["kind"] == "underdetermined" and resolved)
         row["valid"] = True
         row["budget_used"] = lab.used
     except Exception:
@@ -380,21 +393,29 @@ def _evaluate_world(candidate, spec, split, index):
 def _summary(rows, specs):
     raw = float(np.mean([r["mechanism_score"] for r in rows]))
     passive = float(np.mean([r.get("passive_mechanism", 0.0) for r in rows]))
-    refusing = [r for r, s in zip(rows, specs) if s[1] == "underdetermined"]
+    potentially_refusing = [r for r, s in zip(rows, specs) if s[1] == "underdetermined"]
+    refusing = [r for r in potentially_refusing if not r["resolved"]]
     clean = [r for r, s in zip(rows, specs) if s[1] == "clean"]
     scored_for_fdr = clean + refusing
+    # Either constant null strategy can earn at most one per relevant world.
+    # This makes all-refusal and all-consistent submissions score exactly zero,
+    # even when they also return a useful least-squares correction.
+    null_floor = max(passive, len(potentially_refusing) / len(rows), len(clean) / len(rows))
     return {
         "raw": raw, "passive": passive,
-        "normalized": float(np.clip((raw - passive) / max(1.0 - passive, 1e-9), 0.0, 1.0)),
+        "null_floor": null_floor,
+        "normalized": float(np.clip((raw - null_floor) / max(1.0 - null_floor, 1e-9), 0.0, 1.0)),
         "valid_count": sum(r["valid"] for r in rows),
         "correction_gain": float(np.mean([r["correction_gain"] for r in rows])),
         "verdict_score": float(np.mean([r["verdict_score"] for r in rows])),
         "diagnosis_score": float(np.mean([r["diagnosis_score"] for r in rows])),
         "false_count": sum(r["false_discovery"] for r in scored_for_fdr),
         "fdr_denominator": len(scored_for_fdr),
+        "clean_count": len(clean),
         "refusal_count": sum(r["correct_refusal"] for r in refusing),
         "refusing_count": len(refusing),
-        "attempt_count": sum(r["engaged"] for r in rows if r["valid"]),
+        "resolved_count": len(potentially_refusing) - len(refusing),
+        "attempt_count": sum(r["attempted"] for r in rows if r["valid"]),
     }
 
 
@@ -412,14 +433,19 @@ def evaluate(audit_thermochemical_cycle):
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
         "passive_mechanism_score": dev["passive"],
+        "null_strategy_floor": dev["null_floor"],
         "development_correction_gain": dev["correction_gain"],
         "development_verdict_score": dev["verdict_score"],
         "development_diagnosis_score": dev["diagnosis_score"],
         "development_false_discovery_rate": dev["false_count"] / dev["fdr_denominator"],
-        "development_correct_refusal_rate": dev["refusal_count"] / dev["refusing_count"],
+        "development_correct_refusal_rate": dev["refusal_count"] / max(dev["refusing_count"], 1),
         "development_discovery_coverage": dev["attempt_count"] / len(development),
-        "clean_world_count": dev["fdr_denominator"],
+        "clean_world_count": dev["clean_count"],
+        "false_discovery_world_count": dev["fdr_denominator"],
+        "discovery_attempt_count": dev["attempt_count"],
+        "development_world_count": len(development),
         "refusing_world_count": dev["refusing_count"],
+        "resolved_world_count": dev["resolved_count"],
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
@@ -427,6 +453,11 @@ def evaluate(audit_thermochemical_cycle):
         "heldout_verdict_score": hold["verdict_score"],
         "heldout_correction_gain": hold["correction_gain"],
         "heldout_false_discovery_rate": hold["false_count"] / hold["fdr_denominator"],
-        "heldout_correct_refusal_rate": hold["refusal_count"] / hold["refusing_count"],
+        "heldout_correct_refusal_rate": hold["refusal_count"] / max(hold["refusing_count"], 1),
+        "heldout_false_discovery_world_count": hold["fdr_denominator"],
+        "heldout_refusing_world_count": hold["refusing_count"],
+        "heldout_resolved_world_count": hold["resolved_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
         "per_world": development + heldout,
     }

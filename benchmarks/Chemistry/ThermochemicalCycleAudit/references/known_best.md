@@ -3,7 +3,7 @@
 ## 1. Reference method
 
 `verification/reference_solver.py` is standalone and uses only public measurements and
-the charged laboratory. Weighted least squares over the seven species reconciles Hess
+the charged laboratory. Weighted least squares over the eight species reconciles Hess
 closure; a dominant single outlier is tested by drop-and-refit before any drift test,
 because least squares otherwise smears one giant slip across the culprit's own
 instrument class and fakes a coherent calibration drift; a class with two or more
@@ -16,13 +16,29 @@ and any second confirming query.
 
 ## 2. Baseline and normalization
 
+**2026-09-08 correction:** R12/R13 now form the only observations of the eighth
+species. The original pair duplicated R8 and was identifiable from the core; its
+replicates also incorrectly erased the offset. The repaired model has rank 7 over
+8 species, randomizes the faulty pair member, and preserves its systematic offset
+in same-instrument replicates. A noise-free algebraic test exhibits two different
+fault attributions producing exactly the same observations without a cross-check.
+
+Both all-consistent and all-underdetermined strategies now normalize to zero, even
+with better corrections. Oracle-direct debugging after correction gives baseline 0,
+reference development 0.535168 and heldout 0.233600. Both development pendant worlds
+are resolved by cross-checks, so `resolved_world_count = 2` and the eligible refusal
+denominator is zero; this is reported separately from refusal performance.
+These are local debugging results. The previous results below, all old ablations,
+and all old shortcut comparisons are **superseded** and require new Linux measurement.
+
+
 The shipped `solution.py` trusts every reported value and calls the batch consistent.
 Measured on 2026-09-05 the baseline scores exactly `0.000000` development and
 `0.000000` robustness; the passive auditor defines zero by construction. A
 truth-informed auditor (correct verdict, full flags, truth-corrected values) scores
 `1.000000` mean mechanism on development worlds.
 
-## 3. Capability comparisons and ablations
+## 3. Historical capability comparisons and ablations (superseded)
 
 Local oracle-direct ablations of the reference, measured 2026-09-05:
 
@@ -37,7 +53,7 @@ Local oracle-direct ablations of the reference, measured 2026-09-05:
 Every capability contributes. These are local debugging numbers, not frozen benchmark
 evidence.
 
-## 4. Shortcut probes
+## 4. Historical shortcut probes (superseded)
 
 - Naive single-outlier flagging (largest studentized residual of a plain weighted fit,
   drop-and-refit corrections): **0.202**.
@@ -67,6 +83,13 @@ coherent drift absorbed by least squares down to four same-signed small residual
 below the aggregate detection gate (z 2.22 against 2.3) — the gate is 2.0 with a
 lenient cross-check confirmation. All four are pinned in
 `tests/test_thermochemical_cycle_audit.py`.
+
+The 2026-09-08 review also corrected the reference degrees of freedom to use the
+actual design rank, prevented invalid submissions from registering as discoveries,
+and separated actual clean-world counts from false-discovery eligibility counts.
+The public citation for doi:10.1021/acs.jpca.6c03567 is Bross, Thorpe & Ruscic (2026),
+not the previously stated 2024 date; the DOI supports network auditing, not the
+original synthetic network's unidentifiability claim.
 
 ## 7. Robustness and reproducibility
 

@@ -100,7 +100,9 @@ def _gating_traces(voltage, duration, sNa=0.0, sK=0.0):
         start_value = alpha_fn(hold_veff) / rate_hold
         return steady + (start_value - steady) * np.exp(-rate_step * time)
 
-    veff_na, veff_k = voltage - sNa, voltage - sK
+    # alpha/beta take voltage relative to -65 mV; currents and public protocols
+    # use absolute membrane potential. Shift holding and step consistently.
+    veff_na, veff_k = voltage + 65.0 - sNa, voltage + 65.0 - sK
     m = trace(alpha_m, beta_m, veff_na)
     h = trace(alpha_h, beta_h, veff_na)
     n = trace(alpha_n, beta_n, veff_k)
@@ -118,8 +120,13 @@ def ionic_current(parameters, voltage, gating, world_kind="supported", extra_sca
         a_inf = 1.0 / (1.0 + math.exp(-(voltage + 15.0) / 8.0))
         b_inf = 1.0 / (1.0 + math.exp((voltage + 60.0) / 12.0))
         time = np.arange(1, len(m) + 1) * SAMPLE_DT
-        a = a_inf * (1.0 - np.exp(-time / 1.5))
-        b = b_inf * np.exp(-time / 220.0) + 0.05
+        a_hold = 1.0 / (1.0 + math.exp(-(HOLDING + 15.0) / 8.0))
+        a = a_inf + (a_hold - a_inf) * np.exp(-time / 1.5)
+        # Inactivation starts at the holding-potential equilibrium and relaxes
+        # toward the clamp equilibrium. Using b_inf as the starting value would
+        # suppress the transient before the depolarizing step even begins.
+        b_hold = 1.0 / (1.0 + math.exp((HOLDING + 60.0) / 12.0))
+        b = b_inf + (b_hold - b_inf) * np.exp(-time / 20.0)
         current = current + 18.0 * extra_scale * a ** 3 * b * (voltage - EK)
     elif world_kind == "rectifying":
         current = current + 3.5 * extra_scale * (voltage - EL) * np.abs(
@@ -147,14 +154,14 @@ def problem_statement(world):
         "parameters": list(PARAMETER_NAMES),
         "parameter_bounds": PARAMETER_BOUNDS.copy(),
         "gating_equations": {
-            "alpha_n": "0.01*(10-V)/(exp((10-V)/10)-1)",
-            "beta_n": "0.125*exp(-V/80)",
-            "alpha_m": "0.1*(25-V)/(exp((25-V)/10)-1)",
-            "beta_m": "4*exp(-V/18)",
-            "alpha_h": "0.07*exp(-V/20)",
-            "beta_h": "1/(exp((30-V)/10)+1)",
+            "alpha_n": "0.01*(10-u)/(exp((10-u)/10)-1)",
+            "beta_n": "0.125*exp(-u/80)",
+            "alpha_m": "0.1*(25-u)/(exp((25-u)/10)-1)",
+            "beta_m": "4*exp(-u/18)",
+            "alpha_h": "0.07*exp(-u/20)",
+            "beta_h": "1/(exp((30-u)/10)+1)",
         },
-        "current_equation": "I = gNa*m^3*h*(V-ENa) + gK*n^4*(V-EK) + gL*(V-EL) with V replaced by V-sNa (sK) inside the sodium (potassium) gating",
+        "current_equation": "I = gNa*m^3*h*(V-ENa) + gK*n^4*(V-EK) + gL*(V-EL); V is absolute membrane potential in mV, and the alpha/beta argument is V+65-sNa (V+65-sK) for sodium (potassium), also at holding",
         "holding_potential_mV": HOLDING,
         "step_bounds_mV": list(STEP_BOUNDS),
         "durations_ms": list(DURATIONS),
@@ -305,7 +312,7 @@ def _summary(rows, specs):
         "prediction_score": float(np.mean([r["prediction_score"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -330,11 +337,17 @@ def evaluate(recover_channel_parameters):
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
         "supported_world_count": dev["supported_count"],
         "unsupported_world_count": dev["unsupported_count"],
+        "discovery_attempt_count": dev["attempt_count"],
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
         "per_world": development + heldout,
     }

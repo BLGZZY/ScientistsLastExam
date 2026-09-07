@@ -4,7 +4,7 @@
 
 Thermochemical networks (the structure behind Active Thermochemical Tables) close under
 Hess's law: any cycle through the reaction graph must sum to zero. A batch of
-interconversion enthalpies over seven isomers, each with a stated instrument and
+interconversion enthalpies over eight isomers, each with a stated instrument and
 uncertainty, is therefore over-determined, and its closure residuals are evidence.
 The audit must decide what that evidence supports — that the batch is consistent, that
 one determination is faulty, that one instrument drifted — and must refuse attributions
@@ -26,10 +26,11 @@ def audit_thermochemical_cycle(problem, replicate, cross_check, budget_units):
 `problem` is a mapping with the keys
 
 ```text
-species                           seven isomer names
+species                           eight isomer names
 measurements                      list of {id, reaction, stoichiometry, value_kj_per_mol,
                                   sigma_kj_per_mol, instrument} — thirteen determinations;
-                                  R12/R13 are a duplicate/reverse pendant pair sharing one
+                                  R12/R13 are the forward/reverse pendant pair for iso8,
+                                  the only observations involving iso8, sharing one
                                   instrument class
 instrument_sigma_kj_per_mol       precision class of each instrument
 reference_state_offsets_kj_per_mol  published phase-convention offsets a single
@@ -41,7 +42,9 @@ network_note                      closure statement
 
 `replicate(measurement_id)` charges 1 and returns `{id, value_kj_per_mol,
 sigma_kj_per_mol, instrument, budget_cost}` — an independent repetition by the same
-instrument: the random error shrinks, a systematic error does not.
+instrument: the random error shrinks, instrument drift and a pendant determination-specific
+systematic offset persist. Repeating an original transcription or reference-state
+record instead produces a fresh determination.
 
 `cross_check(measurement_id)` charges 3, is available once per measurement, and returns
 the same keys with `instrument: reference_lab` — a higher-precision re-determination by
@@ -51,10 +54,14 @@ Overspending or malformed calls invalidate the world even when caught.
 
 ## Evaluation
 
-- `combined_score` is the development score above the passive auditor (trust everything,
-  call the batch consistent, return reported values). Per world it blends
+- `combined_score` is the development score above both null strategies (always call
+  the batch consistent or always return `underdetermined`). The normalization floor
+  is the maximum of the passive-auditor mean, the clean-world fraction and the
+  potentially unresolved-world fraction. Per world it blends
   closure-correction gain (45%), verdict correctness (35%) and flagged-set diagnosis
-  (20%). The passive auditor scores exactly zero after normalization.
+  (20%). Both null strategies score exactly zero even if their corrected values improve.
+  A refusal on an identifiable world, or an unengaged consistency claim on a faulty
+  world, earns no mechanism credit.
 - Verdict targets: clean worlds → `consistent`; a drifting instrument →
   `instrument_drift` naming the instrument; a localized faulty determination →
   `single_fault`.
@@ -64,7 +71,12 @@ Overspending or malformed calls invalidate the world even when caught.
   spent the tension is resolved and the honest verdict becomes `single_fault`.
 - False discovery: flagging innocents in clean worlds, or naming a pendant member
   without resolving information. Correct refusal: `underdetermined` before any pendant
-  cross-check. Denominators for both are published.
+  cross-check. `false_discovery_world_count` is the number of clean plus still
+  unresolved worlds; `refusing_world_count` counts only still-unresolved worlds.
+  `resolved_world_count` separately counts informative cross-check resolutions.
+  A refusal rate with zero eligible worlds is reported as zero with denominator zero.
+  Declining to attribute a fault does not itself count as a discovery attempt or a
+  false discovery; `discovery_attempt_count` counts valid fault/drift claims.
 - `robustness_score` repeats the audit on held-out networks, corruptions and noise.
 
 This is a synthetic procedural network, not a claim about real isomer thermochemistry.
@@ -84,7 +96,7 @@ uncertainties (1.0 → 1.55) and drift magnitudes; level 1 is the shipped defaul
 - Use `sle.contract_lint` for free local shape checks before returning an inference.
 
 References: Ruscic et al. (2004), J. Phys. Chem. A, doi:`10.1021/jp047912y`;
-Ruscic (2024), J. Phys. Chem. A, doi:`10.1021/acs.jpca.6c03567`. These motivate
+Bross, Thorpe & Ruscic (2026), J. Phys. Chem. A, doi:`10.1021/acs.jpca.6c03567`. These motivate
 thermochemical-network auditing; the benchmark uses the synthetic network stated above.
 
 ## 关系与区别 / Relationship to nearby tasks

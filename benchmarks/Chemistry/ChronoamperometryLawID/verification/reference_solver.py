@@ -1,13 +1,11 @@
 """Truth-blind reference witness: multi-family least squares with refusal tests.
 
 Uses only the public laws and the charged potentiostat. Three potential steps cover
-the amplitude response; every family is fitted to the merged transients by bounded
-least squares and the best relative residual wins. Two refusal tests guard the
-unmodellable worlds: the tail log-slope must match the fitted family within a public
-tolerance (anomalous fractional diffusion decays as t^-1/3), and the residuals must
-not trend with time (a linear baseline drift leaves a ramming trend). It deliberately
-lacks model selection by information criteria, amplitude-weighted fitting, and any
-use of more than three steps.
+the amplitude response; every family is fitted by noise-weighted bounded least
+squares and an Akaike-style parameter penalty selects the family. A residual
+chi-square test detects model mismatch, and a shared linear-drift projection guards
+against forcing instrument drift into a current-law family. It deliberately lacks
+adaptive protocol selection and joint drift/family hypothesis fitting.
 """
 
 from __future__ import annotations

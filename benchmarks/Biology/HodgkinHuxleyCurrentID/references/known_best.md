@@ -13,12 +13,22 @@ protocol design, trace reweighting and gating-clamp decomposition.
 
 ## 2. Baseline and normalization
 
+**2026-09-08 correction:** the oracle and reference now consistently use absolute
+membrane voltages, converting to the original rate coordinate with `u = V + 65 - s`
+at the holding and step potentials. Independent equilibrium values at -65 mV are
+pinned in `tests/test_pr9_chem_bio_contracts.py`. This follows the absolute-potential
+convention in the [NEURON Book, Chapter 9](https://www.neuron.yale.edu/ftp/ted/book/revisions/chap9indexedref.pdf).
+Oracle-direct debugging after correction gives baseline 0, reference development
+0.640364, heldout 0.828679, development FDR zero and refusal one. These are local
+debugging observations, not clean Linux calibration or independent certification.
+The old numbers below and their ablation/shortcut conclusions are **superseded**.
+
 The shipped `solution.py` charges one protocol and guesses mid-range parameters:
 `0.000000`. Submitting the true parameter row scores one (sealed prediction exact).
 Measured on 2026-09-05 the reference reaches `0.7176` development and `0.5940`
 robustness with zero false discoveries and full refusal.
 
-## 3. Capability comparisons and ablations
+## 3. Historical capability comparisons and ablations (superseded)
 
 | variant | development | refusal |
 |---|---:|---:|
@@ -29,7 +39,7 @@ robustness with zero false discoveries and full refusal.
 Multistart rescues local minima; the misfit gate carries the refusal axis. Local
 debugging numbers, not frozen benchmark evidence.
 
-## 4. Shortcut probes
+## 4. Historical shortcut probes (superseded)
 
 Mid-range guesses score zero; the parameter axis (0.565) resists lazy fits because
 conductances, reversals and shifts trade off. No low-dimensional family reaches the
@@ -50,7 +60,17 @@ every trace constant. (iii) A math.exp call on an array crashed A-type worlds. (
 The rectifying extra current was four percent of peak — below the misfit gate — and
 was strengthened to a quadratic leak the family cannot absorb. (v) The reference
 imported the hidden evaluator; it now restates the public equations. All pinned in
-`tests/test_hodgkin_huxley_current_id.py`.
+`tests/test_pr9_chem_bio_contracts.py`.
+
+The 2026-09-08 review found that the original alpha/beta equations were expressed
+relative to rest, while holding and reversal potentials were absolute. The missing
+65 mV conversion changed both physical currents and reference difficulty; old
+measurements cannot be reused. The A-type transient also previously started from
+the depolarized inactivation equilibrium and used a slow 220 ms decay, suppressing
+the very transient it was intended to model. It now starts from holding-state
+availability and relaxes over 20 ms, with a regression test for the resulting
+transient. These are explicitly synthetic A-type-like currents; renewed
+experimental-design and model-mismatch sensitivity measurements remain necessary.
 
 ## 7. Robustness and reproducibility
 

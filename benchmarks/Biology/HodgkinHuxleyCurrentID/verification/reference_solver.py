@@ -3,7 +3,7 @@
 Standalone: the public 1952 gating equations are restated here in closed form (at a
 clamped voltage every gating variable relaxes exponentially to its steady state from
 its holding steady state), and four voltage steps (-40, -20, 0, 30 mV for 20 ms) are
-fitted simultaneously by bounded least squares over the eight parameters from three
+fitted simultaneously by bounded least squares over the eight parameters from five
 starts, one of them the classic squid-axon values. Refusal fires when the best
 weighted residual per degree of freedom exceeds a misfit gate — an extra A-type or
 rectifying current leaves structural error no three-current fit absorbs. It
@@ -50,8 +50,8 @@ def _relax(step_rates, hold_rates, time):
 def _current(parameters, voltage, duration):
     sNa, sK = parameters[6], parameters[7]
     time = np.arange(1, int(round(duration / SAMPLE_DT)) + 1) * SAMPLE_DT
-    rates_na, rates_hold_na = _rates(voltage - sNa), _rates(HOLDING - sNa)
-    rates_k, rates_hold_k = _rates(voltage - sK), _rates(HOLDING - sK)
+    rates_na, rates_hold_na = _rates(voltage + 65.0 - sNa), _rates(HOLDING + 65.0 - sNa)
+    rates_k, rates_hold_k = _rates(voltage + 65.0 - sK), _rates(HOLDING + 65.0 - sK)
     m = _relax(rates_na[0:2], rates_hold_na[0:2], time)
     h = _relax(rates_na[2:4], rates_hold_na[2:4], time)
     n = _relax(rates_k[4:6], rates_hold_k[4:6], time)

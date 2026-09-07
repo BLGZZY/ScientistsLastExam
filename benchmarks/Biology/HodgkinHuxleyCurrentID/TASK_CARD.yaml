@@ -5,10 +5,11 @@ scientific_question: Can budgeted voltage-clamp protocols recover the eight
 artifact: A bounded length-8 parameter row, optional abstention and a confidence
   scalar.
 oracle:
-  model: classic 1952 gating kinetics in closed form at clamped voltages, seeded
+  model: classic 1952 gating kinetics with the absolute-to-relative voltage conversion
+    u = V + 65 - s applied at holding and clamp potentials, seeded
     bounded parameters, Gaussian trace noise, plus A-type and rectifying
     extra-current worlds
-  feasibility: bounded finite parameters, charged unique protocols within an
+  feasibility: bounded finite parameters, charged protocols within an
     eight-unit budget
   deterministic: true
   external_tooling: none beyond NumPy/SciPy
@@ -33,10 +34,12 @@ invariants:
   steady state
 - extra-current worlds leave structural residual no three-current fit absorbs
 - a full abstention scores exactly zero after normalization
-known_shortcuts: Mid-range guesses with one protocol score 0.000; the reference
-  reaches 0.718/0.594 with zero false discoveries. The parameter axis is the
-  difficulty (0.565); shifts and conductances trade off under trace noise. Formal
-  clean Linux calibration and independent review remain pending.
+known_shortcuts: Mid-range guesses remain zero after the 2026-09-08 voltage-convention
+  correction. Oracle-direct debugging gives reference 0.640364 development and
+  0.828679 heldout, with development false-discovery rate zero. Earlier 0.718/0.594
+  scores and shortcut/ablation conclusions used inconsistent voltage coordinates
+  and are superseded. New shortcut sweeps, clean Linux calibration and independent
+  review remain pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -70,6 +73,11 @@ lineage:
   calibration_runs: []
   calibration_evidence_status: missing
   edits_triggered_by_model: 2026-09-05 local build caught a 0/0 singularity in the public alpha forms at shifted 25 mV (replaced by a stable series form), a constant-trace closed-form bug that started relaxation from the step steady state, a math.exp call on an array in the A-type current, an undetectably weak rectifying world, and a reference that imported the hidden evaluator; each was fixed and pinned by tests.
+    The 2026-09-08 review corrected a missing +65 mV rate-coordinate conversion
+    in oracle and standalone reference, pinned independent resting gate values, and
+    stopped invalid outputs from counting as discovery attempts. The A-type
+    inactivation transient now also starts at the holding equilibrium and relaxes
+    with its stated fast time scale, instead of starting already inactivated.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null

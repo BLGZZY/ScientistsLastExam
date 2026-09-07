@@ -37,7 +37,7 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         stoichiometry = np.asarray([row[0] for row in self.ev.REACTIONS], dtype=float)
         rng = np.random.default_rng(4)
         for _ in range(8):
-            enthalpies = rng.uniform(-250, 150, size=7)
+            enthalpies = rng.uniform(-250, 150, size=len(self.ev.SPECIES))
             values = stoichiometry @ enthalpies
             residual = values - stoichiometry @ np.linalg.lstsq(
                 stoichiometry, values, rcond=None)[0]
@@ -91,7 +91,10 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         self.assertGreater(result["combined_score"], 0.3)
         self.assertEqual(result["development_verdict_score"], 1.0)
         self.assertEqual(result["development_false_discovery_rate"], 0.0)
-        self.assertEqual(result["development_correct_refusal_rate"], 1.0)
+        self.assertEqual(result["resolved_world_count"], 2)
+        self.assertEqual(result["refusing_world_count"], 0)
+        self.assertEqual(result["clean_world_count"], 2)
+        self.assertEqual(result["false_discovery_world_count"], 2)
 
     def test_replicates_shrink_random_error_but_not_systematics(self):
         world = self.ev._world((71023, "drift"))
@@ -124,6 +127,49 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         for spec in self.ev._BASE_DEVELOPMENT_SPECS:
             world = self.ev._world(spec)
             self.assertEqual(world["instruments"][11], world["instruments"][12])
+
+    def test_pendant_faults_are_observationally_equivalent_without_cross_check(self):
+        design = np.asarray([row[0] for row in self.ev.REACTIONS], dtype=float)
+        self.assertEqual(np.linalg.matrix_rank(design[:11]), 6)
+        self.assertEqual(np.linalg.matrix_rank(design), 7)
+        self.assertTrue(np.all(design[:11, -1] == 0))
+        enthalpies = np.arange(len(self.ev.SPECIES), dtype=float) * 10.0
+        first_values = design @ enthalpies
+        first_values[11] += 7.0
+        alternative = enthalpies.copy()
+        alternative[-1] += 7.0
+        second_values = design @ alternative
+        second_values[12] += 7.0
+        np.testing.assert_allclose(first_values, second_values)
+
+    def test_pendant_replicates_preserve_offset_and_cross_checks_resolve(self):
+        for spec in self.ev._BASE_DEVELOPMENT_SPECS[-2:]:
+            world = self.ev._world(spec)
+            index = world["corruption"]["indices"][0]
+            lab = self.ev._Laboratory(world)
+            repeated = lab.replicate(self.ev.MEASUREMENT_IDS[index])
+            checked = lab.cross_check(self.ev.MEASUREMENT_IDS[index])
+            self.assertGreater(abs(repeated["value_kj_per_mol"] - world["truth"][index]),
+                               0.5 * abs(world["corruption"]["offset"]))
+            self.assertLess(abs(checked["value_kj_per_mol"] - world["truth"][index]),
+                            0.5 * abs(world["corruption"]["offset"]))
+
+    def test_both_null_verdicts_score_zero_even_with_perfect_corrections(self):
+        for verdict in ("consistent", "underdetermined"):
+            for specs in (self.ev._BASE_DEVELOPMENT_SPECS, self.ev.HELDOUT_SPECS):
+                rows = []
+                for index, spec in enumerate(specs):
+                    world = self.ev._world(spec)
+
+                    def candidate(problem, replicate, cross_check, budget):
+                        return {"verdict": verdict, "flagged_measurements": [],
+                                "drift_instrument": "", "confidence": 0.5,
+                                "corrected_enthalpies": dict(zip(self.ev.MEASUREMENT_IDS,
+                                                                  world["truth"]))}
+
+                    rows.append(self.ev._evaluate_world(candidate, spec, "dev", index))
+                self.assertTrue(all(row["valid"] for row in rows))
+                self.assertEqual(self.ev._summary(rows, specs)["normalized"], 0.0)
 
     def test_corrected_enthalpies_cover_every_measurement(self):
         # Pins the truncated-artifact bug: drop-and-refit corrections must still be

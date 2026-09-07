@@ -5,10 +5,10 @@ scientific_question: Does a Hess-closure enthalpy network, under a replicate and
 artifact: A verdict string, flagged measurement ids, an optional instrument name,
   corrected enthalpies for every determination and a confidence scalar.
 oracle:
-  model: deterministic seven-isomer interconversion network with rank-7 closure, seeded
+  model: deterministic eight-isomer interconversion network with rank-7 closure, seeded
     enthalpies, balanced three-class instrument assignment with stated precisions,
     Gaussian noise, systematic instrument offsets, single slips of 28-110 kJ/mol, and a
-    pendant duplicate/reverse pair whose attribution is resolvable only by a budgeted
+    pendant forward/reverse pair whose attribution is resolvable only by a budgeted
     cross-check
   feasibility: complete corrected-enthalpy coverage, verdict from the public vocabulary,
     unique flags, charged queries within a six-unit budget
@@ -25,7 +25,8 @@ normalization:
   reference: weighted network adjustment with dominant-outlier drop-and-refit, coherent
     same-direction class testing with one confirming cross-check, pendant triage
   score: correction gain, verdict correctness and flagged-set diagnosis blended per
-    world, normalized above the passive auditor; false discovery and refusal remain
+    world, normalized above both all-consistent and all-underdetermined null strategies;
+    false discovery and refusal remain
     separate
 citations:
 - id: doi:10.1021/jp047912y
@@ -39,10 +40,12 @@ invariants:
   pendant cross-check
 - the passive auditor scores exactly zero after normalization
 - malformed or overspent laboratory calls invalidate the world even when caught
-known_shortcuts: Naive single-outlier flagging with least-squares corrections reaches
-  0.202, an always-underdetermined auditor reaches 0.117 and constant instrument-drift
-  claims reach 0.000 against the 0.556 reference; no tested shortcut approaches it.
-  Formal clean Linux calibration and independent domain validation remain pending.
+known_shortcuts: Both all-consistent and all-underdetermined strategies now score zero,
+  including with improved corrections. Earlier shortcut and ablation numbers predate
+  the 2026-09-08 correction of the falsely pendant network and are superseded.
+  Oracle-direct debugging after correction gives reference 0.535168 development and
+  0.233600 heldout; both development pendant cases are resolved by charged cross-checks.
+  New shortcut sweeps, clean Linux calibration and independent review remain pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -80,6 +83,11 @@ lineage:
     giant slip into a fake class drift, a length-truncated corrected-enthalpy artifact,
     an over-tight chi-square gate that false-alarmed clean worlds, and an aggregate
     drift signal absorbed below detection; each was fixed and pinned by tests.
+    The 2026-09-08 review found that the supposed pendant pair repeated an existing
+    core edge and that replication removed its offset. The pair now alone observes
+    an eighth species, either member may carry a persistent offset, and exact
+    observational equivalence is tested. Null-strategy normalization and dynamic
+    refusal/FDR denominators were also corrected; earlier calibration is superseded.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
@@ -100,8 +108,8 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
     and clean frontier-model calibration before certification
-  remaining_risk: The reference leaves headroom on correction gain (0.15); stronger
-    robust adjustment could close it, so the difficulty target needs a frontier draw.
+  remaining_risk: The corrected network invalidates previous ablation and shortcut
+    claims; stronger robust adjustment and renewed model calibration are still needed.
 
 frontier_eng_overlap_review:
   date: '2026-09-06'

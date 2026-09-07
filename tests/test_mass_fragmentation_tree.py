@@ -78,6 +78,40 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
             self.assertEqual(result["valid"], 0.0)
             self.assertEqual(result["combined_score"], 0.0)
 
+    def test_repeated_edges_cannot_inflate_recall(self):
+        spec = self.ev._BASE_DEVELOPMENT_SPECS[0]
+        world = self.ev._world(spec)
+        truth = self._truth_candidate(world)
+
+        def repeated(problem, acquire, zoom, budget):
+            submission = truth(problem, acquire, zoom, budget)
+            submission["edges"] *= 20
+            return submission
+
+        row = self.ev._evaluate_world(repeated, spec, "dev", 0)
+        self.assertFalse(row["valid"])
+        self.assertEqual(row["mechanism_score"], 0.0)
+        nodes = np.array([self.ev._formula_mass(f) + self.ev.PROTON_MASS
+                          for f in world["nodes"]])
+        edges = [(nodes[p], nodes[c], name) for p, c, name, _ in world["edges"]]
+        score, node_f1, edge_f1 = self.ev._mechanism_score(world, nodes, edges * 20)
+        self.assertLessEqual(edge_f1, 1.0)
+        self.assertLessEqual(score, 1.0)
+
+    def test_output_limits_reject_before_matching(self):
+        submission = {"nodes": list(range(1, 258)), "edges": [],
+                      "abstain": False, "confidence": 0.5}
+        with self.assertRaises(ValueError):
+            self.ev._validate(submission)
+
+    def test_instrument_repetitions_draw_fresh_but_replayable_noise(self):
+        world = self.ev._world(self.ev._BASE_DEVELOPMENT_SPECS[0])
+        first = self.ev._Instrument(world)
+        second = self.ev._Instrument(world)
+        first_reports = [first.acquire(20.0), first.acquire(20.0)]
+        self.assertNotEqual(first_reports[0], first_reports[1])
+        self.assertEqual(first_reports, [second.acquire(20.0), second.acquire(20.0)])
+
     def test_precursor_never_survives_in_source_worlds(self):
         # Pins the zoom-path bug: the in-source zeroing must hold for scans and zooms.
         for spec in self.ev._BASE_DEVELOPMENT_SPECS:

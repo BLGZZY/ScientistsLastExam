@@ -55,6 +55,8 @@ MIN_RELATIVE_INTENSITY = 0.005
 MIN_FRAGMENT_NEUTRAL_MASS = 27.0
 ZOOM_MIN_WIDTH_DA = 0.1
 ZOOM_MAX_WIDTH_DA = 3.0
+MAX_SUBMITTED_NODES = 256
+MAX_SUBMITTED_EDGES = 4096
 
 _BASE_DEVELOPMENT_SPECS = (
     (51011, "supported"), (51017, "supported"), (51023, "supported"),
@@ -424,7 +426,12 @@ def _validate(submission):
     confidence = float(submission.get("confidence"))
     if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
         raise ValueError("confidence must be in [0,1]")
-    nodes = np.asarray(submission.get("nodes"), dtype=float).reshape(-1)
+    raw_nodes = submission.get("nodes")
+    if not isinstance(raw_nodes, (list, tuple, np.ndarray)) or len(raw_nodes) > MAX_SUBMITTED_NODES:
+        raise ValueError("nodes must be a bounded list")
+    nodes = np.asarray(raw_nodes, dtype=float)
+    if nodes.ndim != 1:
+        raise ValueError("nodes must be one-dimensional")
     if bool(abstain):
         if nodes.size or submission.get("edges"):
             raise ValueError("abstention requires empty nodes and edges")
@@ -434,9 +441,10 @@ def _validate(submission):
     if len(set(np.round(nodes, 4))) != len(nodes):
         raise ValueError("nodes must be unique")
     edges_raw = submission.get("edges") or []
-    if not isinstance(edges_raw, (list, tuple)):
-        raise ValueError("edges must be a list")
+    if not isinstance(edges_raw, (list, tuple)) or len(edges_raw) > MAX_SUBMITTED_EDGES:
+        raise ValueError("edges must be a bounded list")
     edges = []
+    seen_edges = set()
     for row in edges_raw:
         parent_mz, child_mz, loss_name = row
         if loss_name not in LOSS_LIBRARY:
@@ -446,7 +454,11 @@ def _validate(submission):
         nearest_c = _nearest(nodes, child_mz)
         if nearest_p is None or nearest_c is None or nearest_p == nearest_c:
             raise ValueError("edge endpoints must reference distinct submitted nodes")
-        edges.append((nearest_p, nearest_c, loss_name))
+        edge = (nearest_p, nearest_c, loss_name)
+        if edge in seen_edges:
+            raise ValueError("edges must be unique after endpoint matching")
+        seen_edges.add(edge)
+        edges.append(edge)
     return nodes, edges, confidence, False
 
 
@@ -483,14 +495,15 @@ def _mechanism_score(world, nodes, edges):
     node_f1 = (2 * node_precision * node_recall / (node_precision + node_recall)
                if matched else 0.0)
     truth_edges = [(p, c, name) for p, c, name, _lab in world["edges"]]
-    edge_hits = 0
+    hit_edges = set()
     for parent_mz, child_mz, name in edges:
         tp = _matched_truth_index(matches, nodes, parent_mz, truth_nodes)
         tc = _matched_truth_index(matches, nodes, child_mz, truth_nodes)
         if tp is None or tc is None:
             continue
         if (tp, tc, name) in truth_edges:
-            edge_hits += 1
+            hit_edges.add((tp, tc, name))
+    edge_hits = len(hit_edges)
     edge_precision = edge_hits / len(edges) if edges else 0.0
     edge_recall = edge_hits / len(truth_edges) if truth_edges else 1.0
     edge_f1 = (2 * edge_precision * edge_recall / (edge_precision + edge_recall)
@@ -560,7 +573,7 @@ def _summary(rows, specs):
         "edge_f1": float(np.mean([r["edge_f1"] for r in supported])) if supported else 0.0,
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-        "attempt_count": sum(not r["abstained"] for r in supported),
+        "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
         "supported_count": len(supported), "unsupported_count": len(unsupported),
     }
 
@@ -592,6 +605,11 @@ def evaluate(recover_fragmentation_tree):
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
         "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "per_world": development + heldout,
     }
