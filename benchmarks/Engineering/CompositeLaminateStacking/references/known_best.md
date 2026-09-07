@@ -1,121 +1,103 @@
 # Reference and admission record — CompositeLaminateStacking
 
-Every number in the 2026-09-07 sections is produced by running code in this directory on this
-tree. Reproduce the headline numbers with
+## Current model and corrected measurements (2026-09-08)
 
-```
-python3 - <<'EOF'
+The normal-load sign audit found a scientific inconsistency: the buckling screen treated
+positive `Nx,Ny` as compression, while the first-ply calculation interpreted the same positive
+loads as tensile stress and selected tensile strengths. Both the oracle and standalone
+reference now solve `strain=A^-1*[-Nx,-Ny,Nxy]`. Signed engineering shear is retained;
+`Nxy=integral(tau_xy dz)`. Moments follow `M=integral(z*stress dz)` with tensile-positive
+normal stress and are unchanged. See Nettles, [NASA RP-1351, sections III.C-D, pp. 15–17](https://ntrs.nasa.gov/citations/19950009349)
+for force/moment resultants and the tensile-positive CLT convention.
+
+Independent uniform 0-degree membrane limits now select `Xc,Yc` under compression and
+`Xt,Yt` under tension. For example, 10 MPa longitudinal compression with `Xc=1.05 GPa`
+must give a first-ply reserve of 105; the old code returned 145 from the tensile strength,
+and the correction returns 105. Signed shear on uniform ±45-degree stacks also agrees
+with independently rotated stresses. Sixteen parameterized cases check both implementations.
+These tests establish constitutive consistency; they are not finite-element or domain certification.
+
+No material coefficient, load, strength, normalization formula or search budget was changed.
+The existing reference and anchor were rerun on the corrected model:
+
+| entry | development | heldout | valid |
+|---|---:|---:|---:|
+| shipped baseline (`solution.py`) | 0.000000 | 0.000000 | 1 |
+| full runnable reference (`verification/reference.py`) | 0.7398856153431821 | 0.8909542521094814 | 1 |
+
+The reference's sealed-degradation metrics are 0.7622405484472773 development and
+0.8779567780853759 heldout. Repeat evaluation is identical. One heldout instance reaches
+1.0170274247147306 on the uncapped scale: the finite search anchor is not a global optimum.
+A local macOS Python 3.12 / NumPy 1.26.4 run took 27.03 seconds for the baseline including
+all six anchor searches, and another 0.46 seconds for the full reference with the anchor
+cached. Metadata retains a 45-second envelope and the secure wrapper a 300-second candidate
+timeout. Linux sandbox replay remains required; local in-process checks are not black-box evidence.
+
+Reproduce current headline metrics from the repository root:
+
+```python
 import importlib.util
-s=importlib.util.spec_from_file_location("ev","benchmarks/Engineering/CompositeLaminateStacking/verification/evaluator.py")
-m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
-s2=importlib.util.spec_from_file_location("ref","benchmarks/Engineering/CompositeLaminateStacking/verification/reference.py")
-r=importlib.util.module_from_spec(s2);s2.loader.exec_module(r)
-print(m.evaluate(r.design_laminate))
-EOF
+
+def load(name, path):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+task = "benchmarks/Engineering/CompositeLaminateStacking"
+ev = load("ev", f"{task}/verification/evaluator.py")
+ref = load("ref", f"{task}/verification/reference.py")
+print(ev.evaluate(ref.design_laminate))
 ```
 
-## 1. Reference method
+## Reference and normalization methods
 
-`verification/reference.py` is standalone and uses only public inputs and charged interfaces:
-thirteen seeded permutation starts followed by adjacent-exchange refinement of the symmetric
-half stack to convergence. The evaluator independently computes the score-one anchor: tiled
-block-family seeds (contiguous width-1-3 blocks over all angle orders, filtered by the run
-limit), a twenty-four-permutation adjacency warm start, eight random starts each refined by
-full pair exchange to convergence, and twelve iterated-local-search rounds. Paired bending
-moments and both-face Tsai-Hill stress make first-ply failure depend on stacking order.
-Independent anisotropic buckling review is pending.
+The standalone public-input reference uses thirteen seeded permutation starts followed by
+up to eight adjacent-exchange sweeps of the symmetric half stack, stopping on convergence.
+The independently computed score-one anchor uses tiled block-family seeds, a
+24-permutation adjacency warm start, eight random starts each refined by full pair exchange,
+and twelve iterated-local-search rounds. Neither search is claimed globally optimal or a
+published record. These budgets were preserved through the sign correction.
 
-## 2. Baseline and normalization (2026-09-07 second revision: run limit 2, three conflicting cases)
+Panels contain 36–48 plies, uneven fixed angle counts, three paired membrane/moment cases,
+and a synthetic maximum run of two equal plies. Symmetry removes extension/bending coupling;
+full A/D assembly and both-face stresses make bending and first-ply failure order-dependent.
+The buckling formula is a Navier-inspired screen with an absolute-shear denominator term;
+it omits anisotropic mode coupling and D16/D26 in buckling. Those terms still enter bending
+stress. Independent high-fidelity validation remains pending.
 
-Panels span 36-48 plies (symmetric half stacks of 18-24 plies) with deliberately uneven angle
-mixes; multinomial half-permutation counts are 3.1e8, 5.6e9, 1.3e11, 3.0e11 (development) and
-8.2e9, 5.5e11 (held out). Every instance carries THREE paired load/moment cases whose optima
-conflict: an axial case (0-dominant), a transverse case (90-dominant) and a shear/twisting case
-(Mxy-dominant, which punishes the D16/D26 coupling that clustered +/-45 blocks cannot zero).
-The manufacturing limit is now at most TWO consecutive equal plies, a standard matrix-cracking
-constraint that removes tiled width-3 block patterns outright.
+## Historical construction and shortcut diagnostics — not current calibration
 
-| entry | development | held-out policy |
-|---|---|---|
-| shipped baseline (`solution.py`) | **0.000000** (valid=1) | 0.000 |
-| runnable witness (`verification/reference.py`) | **0.740840** | 0.874556 |
-| block/clustered family (probe) | 0.557119 | 0.820202 |
-| lamination-parameter-guided family (probe) | 0.372152 | 0.597202 |
+**Every number in this section predates the 2026-09-08 sign correction.** These historical
+measurements cannot establish a current shortcut gap, admission threshold or runtime.
+Updated shortcut sweeps and capability ablations are pending; they were not rerun merely
+to preserve a previous score band. The algorithms in `tests/test_pr9_engineering_hardening.py`
+and `scripts/diagnose_pr9_engineering.py` retain the diagnostic paths for remeasurement.
 
-Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 20.4 s for the
-baseline entry (includes all six anchor searches, cached thereafter) and 0.3 s for the witness;
-the metadata envelope is 45 s and the wrapper timeout 300 s, leaving over 250 s of candidate
-search room. The witness score is sensitive to its start count (0.616 at ten starts, 0.784 at
-fourteen); thirteen starts are pinned by the regression tests.
+| historical 2026-09-07 entry | development | heldout |
+|---|---:|---:|
+| 13-start adjacent-exchange reference | 0.740840 | 0.874556 |
+| tiled block/cluster family | 0.557119 | 0.820202 |
+| 81-target lamination-parameter greedy family | 0.372152 | 0.597202 |
 
-## 3. Capability comparisons and ablations
+The old block-family gap of 0.184 and the claim that it closed the clustering shortcut are
+superseded until the corrected oracle is calibrated. Likewise, the historical reference
+scores 0.616 at ten starts and 0.784 at fourteen starts do not establish a scientific reason
+to target a score band. The current thirteen-start method is retained, not weakened.
+The historical 20.4-second anchor timing also belongs to the earlier oracle.
 
-Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json`.
-Revision history on this tree: the pre-2026-09-07 16-24-ply two-case panels carried a witness
-of 0.732584 against a 900-start anchor; the first scale-up (two cases, run limit 3) measured the
-ten-start witness at 0.768732 but let the block family reach 0.992897; the second revision
-(three conflicting cases, run limit 2) measures the thirteen-start witness at 0.740840 with the
-block family at 0.557119, 0.184 below the reference. Earlier measurements are retained here
-only as history.
+Earlier construction versions used smaller 16–24-ply panels (reference 0.732584 against a
+900-start random anchor), then larger two-case panels with a run limit of three (reference
+0.768732, clustered shortcut 0.992897), followed by the three-case/run-limit-two version
+above. These are historical task changes, not comparable current evidence. The run limit
+is a synthetic assumption; the former assertion that it is a universal matrix-cracking
+constraint is withdrawn.
 
-## 4. Shortcut probes
+## Remaining admission work
 
-### 2026-09-07 shortcut re-audit (measured on the current tree)
-
-Two families are implemented and run (`tmp/probe_laminate.py` on the builder tree;
-lamination-parameter-guided: 81 bending-lamination-parameter targets on a 9x9 grid with greedy
-outer-to-inner assembly, count-balance and run-cap rules; block/clustered: contiguous
-same-angle blocks of width 1-3 tiled round-robin over all 24 angle orders, 96-240 valid
-patterns per panel under the run limit):
-
-| family | development | held-out policy | gap to witness |
-|---|---|---|---|
-| lamination-parameter-guided greedy | 0.372152 | 0.597202 | 0.369 below |
-| block/clustered patterns (width 1-3, all angle orders) | **0.557119** | 0.820202 | **0.184 below** |
-| runnable witness (13-start adjacency to convergence) | 0.740840 | 0.874556 | — |
-
-**The near-ceiling clustering shortcut is closed.** On the pre-revision two-case run-limit-3
-panels the block family measured 0.992897, above the then-witness of 0.768732 - the same
-first-shot disease that led to PermutationFlowShop being withdrawn. Two physics changes fixed
-it: the run limit of two consecutive plies (a real matrix-cracking constraint) and the
-shear/twisting third load case whose Mxy-dominant moments punish clustered stacks through the
-bending-twisting coupling they cannot avoid. The best block variant now sits 0.184 below the
-reference, and the lamination-parameter family 0.369 below. These values are local
-diagnostics, not frozen benchmark evidence.
-
-## 5. Frontier-model calibration
-
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before exposure, must
-show that the first proposal does not reach the competent reference. Server-held panels and
-independent model review remain required.
-
-## 6. Construction errors and revisions
-
-2026-09-07 second hardening (admission-bar fix): the block-family probe at 0.992897 exceeded
-the witness; resolved by the run-limit-2 manufacturing constraint, three conflicting
-load/moment cases per panel (axial/transverse/shear-twist), a thirteen-start
-adjacency-to-convergence witness and a twenty-four-draw anchor warm start. All numbers
-re-measured and pinned.
-2026-09-07 first hardening: instances scaled to 36-48 plies with uneven mixes and per-instance
-load and moment cases; anchor rebuilt as block seeds plus multi-start full pair exchange plus
-ILS; witness/anchor spoilers removed from Task.md; probes measured and pinned.
-2026-09-05 hardening: the witness refines permutations rather than stopping after random
-screening; paired bending moments and both-face Tsai-Hill stress make first-ply failure depend
-on order; standalone references no longer import the hidden evaluator. Earlier measurements
-below belong to the pre-hardening version and are retained only as history.
-
-## 7. Robustness and reproducibility
-
-Development and heldout metrics remain separate. Two consecutive in-process evaluations of the
-witness are JSON-identical; all six shipped baselines and solution.py outputs validate. Formal
-Linux sandbox replay, global evidence refresh and independent scientific replication are still
-pending. See the task card citations for background; the explicitly declared reduced model is
-not certified by those publications.
-
-## Historical pre-hardening record (obsolete scores)
-
-The normalization witness performed 900 fixed-seed permutations of the public symmetric half
-laminate and retained the best valid sequence under the same nominal CLT oracle. It is
-truth-blind, deterministic and deliberately not a proof of global optimality. It defined score
-one in the historical version and stronger sequences could exceed one. No frontier-model or
-two-hour calibration has yet been run.
+The task remains `candidate`. No frozen frontier-model calibration draw or two-hour search
+study has been run. Corrected-model shortcut/ablation measurements, Linux sandbox replay,
+independent anisotropic buckling/first-ply review, Frontier-Eng overlap acceptance and
+server-held confirmation panels remain required. Public procedural generation cannot
+rule out contamination or heuristic transfer. The cited sources establish background
+mechanics, not the validity or difficulty of this particular reduced benchmark.

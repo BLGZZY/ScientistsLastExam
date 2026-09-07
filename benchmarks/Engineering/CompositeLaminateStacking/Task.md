@@ -98,8 +98,18 @@ still pending. This calibration does not certify difficulty.
 
 `moment_cases_n` has shape `[number_of_load_cases,3]`, with `[Mx,My,Mxy]` in N
 (N·m per metre of panel width), paired with `load_cases_n_per_m` in N/m. The
-symmetric laminate uses `strain=A^-1*N`, `curvature=D^-1*M` and global ply-face stress
-`Qbar*(strain+z*curvature)` before material-axis Tsai-Hill evaluation.
+normal resultants `Nx,Ny` are **positive in compression**; negative values represent
+tension. `Nxy` is signed engineering shear, positive when `tau_xy` is positive
+(positive y traction on the positive x face), and equals the thickness integral of
+`tau_xy`. CLT normal stresses and strains are positive in tension, so the symmetric
+laminate uses `strain=A^-1*[-Nx,-Ny,Nxy]`, `curvature=D^-1*[Mx,My,Mxy]`, and global
+ply-face stress `Qbar*(strain+z*curvature)` before material-axis Tsai-Hill evaluation.
+Here strain is `[epsilon_x,epsilon_y,gamma_xy]`; positive ply angles rotate from x
+toward y, and z increases from the first listed ply face at `-h/2` to the last at
+`+h/2`. Moments follow `[Mx,My,Mxy]=integral(z*[sigma_x,sigma_y,tau_xy] dz)` under
+the same stress convention. The normal compression conversion does not negate
+signed shear or moments. The standard tensile-positive CLT convention is described
+in Nettles, [NASA RP-1351, sections III.C-D](https://ntrs.nasa.gov/citations/19950009349).
 
 For clarity, the buckling screen for `x=m*pi/panel_length_m` and
 `y=n*pi/panel_width_m`, with `m,n` from 1 through 4, is exactly

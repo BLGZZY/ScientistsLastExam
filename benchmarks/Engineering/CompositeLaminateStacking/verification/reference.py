@@ -50,7 +50,10 @@ def _laminate(problem, sequence, material=None, loads=None, return_components=Fa
                 numerator = d_mat[0,0]*x**4 + 2*(d_mat[0,1]+2*d_mat[2,2])*x*x*y*y + d_mat[1,1]*y**4
                 denominator = max(nx*x*x + ny*y*y + 2*abs(nxy)*x*y, 1e-12)
                 best = min(best, numerator / denominator)
-        strain = np.linalg.solve(a_mat, np.asarray([nx, ny, nxy], dtype=float))
+        # Public normal resultants are compression-positive for the buckling screen.
+        # CLT normal stress/strain is tension-positive; signed engineering shear is
+        # unchanged (Nxy = integral(tau_xy dz)). Moments use integral(z * stress dz).
+        strain = np.linalg.solve(a_mat, np.asarray([-nx, -ny, nxy], dtype=float))
         curvature = np.linalg.solve(d_mat, np.asarray(problem["moment_cases_n"][load_index]))
         failure_index = 0.0
         for ply, (angle, q) in enumerate(zip(sequence, qbars)):
