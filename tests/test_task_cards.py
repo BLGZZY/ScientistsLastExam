@@ -18,6 +18,8 @@ RECORDED_LINEAGE = {
     "WaterDistribution/ResilientPumpScheduling",
     "WindEnergy/WakeAwareFarmCoDesign",
 
+    "Ecology/OccupancyDetectionDesign",
+    "Physics/CriticalPhenomenaLab",
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",
     "MaterialsScience/PhaseDiagramDiscovery",
@@ -41,6 +43,8 @@ RECORDED_LINEAGE = {
     "Exoplanets/TransmissionSpectrumSpecies",
     "DiscreteGeometry/SpherePackingCertificate",
     "QuantumFoundations/BellBoundCertificate",
+    "InformationTheory/ShannonCapacityCertificate",
+    "QuantumControl/ActiveNoiseSpectroscopy",
     "Mathematics/NonlinearCodeRecords",
     "Mathematics/CapSetFrontier",
     "ParticlePhysics/LookElsewhereAnomaly",
@@ -49,8 +53,10 @@ RECORDED_LINEAGE = {
     "Gravitation/PTAHellingsDowns",
     "Physics/ComplexBoseLaw",
     "MaterialsScience/QuinaryConvexHull",
+    "Mathematics/HeavyTailEvidence",
     "Mathematics/NarrowAdmissibleTuple",
     "Superconductivity/SuperconductorTcRecord",
+    "Geophysics/UPbConcordiaInference",
 }
 
 
