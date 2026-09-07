@@ -2,11 +2,12 @@
 
 ## Scientific setting
 
-The permutation flow shop is one of the oldest open problems in production scheduling:
+Permutation flow-shop makespan minimization is an established combinatorial scheduling problem:
 every job visits the same m machines in the same order, the candidate fixes the job
 sequence, and the makespan of the sequence is what a factory actually experiences.
-Taillard's random instances (processing times uniform on {1..99}) have anchored the
-field since 1993, and dozens of them remain unsolved to optimality after thirty years.
+Taillard-style random instances use processing times uniform on {1..99}. This
+package generates its own instances; it makes no claim that their optima are unknown
+or that their witness values are published research records.
 Verification is a pure simulation of the machine schedule, so a better sequence is
 unambiguously better — no cap applies.
 
@@ -29,8 +30,9 @@ processing_times   jobs-by-machines integer matrix; entry (j, k) is the time job
 
 The development set is four fresh-seeded instances (20x5, 30x10, 50x5, 50x10); the
 held-out set is three more (20x5, 30x5, 50x10). Instances are generated in the
-Taillard style by the frozen seeds — no published table, best solution or heuristic
-transfers, and memorization cannot help.
+Taillard style by frozen seeds. Published Taillard solution tables do not directly
+apply, but standard scheduling algorithms transfer and repository-visible seeds
+leave a fingerprinting risk until server-held instances are available.
 
 ## Evaluation
 
@@ -43,7 +45,8 @@ transfers, and memorization cannot help.
   and reproduction procedure are recorded in the maintainer-facing
   `references/known_best.md`.
 - Beating the frozen witness scores above one — the record is open and that is the point.
-  A malformed permutation (missing job, repeat, wrong length) scores zero.
+  Every index must be an integer; booleans, floating-point indices (even whole-valued),
+  strings, repeated jobs and wrong lengths are rejected with zero score.
 - `robustness_score` repeats the audit on the held-out instances.
 
 This is a combinatorial optimization benchmark; nothing here certifies real factory
@@ -54,8 +57,9 @@ data.
 Scoring simulates the schedule exactly in integers (completion-time recursion), so
 ties break deterministically and no floating point enters the verification. The
 difficulty is entirely in the search: the insertion neighborhood is deceptively
-tractable while the global problem is NP-hard and the tail between a good heuristic
-and the witness is exactly where thirty years of literature live.
+tractable while the general problem is NP-hard. Complexity of the general problem
+does not establish the difficulty of these small instances; admission requires
+measurement against competent standard methods and an independent first proposal.
 
 ## Rules
 
@@ -65,15 +69,15 @@ and the witness is exactly where thirty years of literature live.
 
 References: Taillard (1993), Eur. J. Oper. Res., doi:`10.1016/0377-2217(93)90182-M`;
 Gmys et al. (2022), INFORMS J. Comput., doi:`10.1287/ijoc.2022.1193`. These motivate
-the instance family and the open-record status; the benchmark uses fresh seeds.
+the instance family and exact scheduling methods; the benchmark uses its own seeds.
 
 ## 关系与区别 / Relationship to nearby tasks
 
 CirclePacking and NonlinearCodeRecords chase published mathematical records; this
 task chases a combinatorial scheduling record on fresh-seeded instances, where
 verification is an integer schedule simulation rather than a geometric or coding
-check, and the anti-memorization design is the instance generator itself. No other
-registry task covers production scheduling.
+check. Fresh seeds distinguish the inputs from published tables, but do not establish
+novelty or rule out contamination. No other registry task covers production scheduling.
 
 ## Admission and reference scope
 

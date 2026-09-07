@@ -48,7 +48,7 @@ class PermutationFlowShopTests(unittest.TestCase):
             self.assertEqual(fast, brute)
 
     def test_runnable_reference_budget_is_bounded(self):
-        self.assertEqual(self.ref.DEFAULT_ITERATIONS, 1)
+        self.assertEqual(self.ref.DEFAULT_ITERATIONS, 128)
         runner = (TASK / "frontier_eval" / "run_eval.py").read_text(encoding="utf-8")
         self.assertIn("EVAL_TIMEOUT_S = 300.0", runner)
 
@@ -81,8 +81,10 @@ class PermutationFlowShopTests(unittest.TestCase):
             self.assertAlmostEqual(self.ev._normalized_score(witness, neh, witness), 1.0)
             self.assertGreater(self.ev._normalized_score(witness - 1, neh, witness), 1.0)
         runnable = self.ev.evaluate(self.ref.schedule_flow_shop)
-        self.assertGreater(runnable["combined_score"], 0.60)
-        self.assertLess(runnable["combined_score"], 0.70)
+        # A complete bounded search should recover the measured heuristic plateau;
+        # do not deliberately weaken it to force an admission-band score.
+        self.assertGreater(runnable["combined_score"], 0.95)
+        self.assertLessEqual(runnable["combined_score"], 1.0)
         def witness(problem):
             return self.ref.schedule_flow_shop(problem, iterations=3000, seed=0)
         # Spot-check one small instance at full witness budget (fast) and verify the
@@ -98,6 +100,38 @@ class PermutationFlowShopTests(unittest.TestCase):
             result = self.ev.evaluate(candidate)
             self.assertEqual(result["valid"], 0.0)
             self.assertEqual(result["combined_score"], 0.0)
+
+    def test_indices_are_integers_without_coercion(self):
+        candidates = (
+            # Previously unique in floating point, then truncated to one cheap job.
+            lambda p: [min(range(p["jobs"]), key=lambda j: self.ev.makespan(
+                p["processing_times"], [j] * p["jobs"])) + (i + 1) / (p["jobs"] + 1)
+                for i in range(p["jobs"])],
+            lambda p: [float(i) for i in range(p["jobs"])],
+            lambda p: [False, True] + list(range(2, p["jobs"])),
+            lambda p: [str(i) for i in range(p["jobs"])],
+            lambda p: [float("nan")] * p["jobs"],
+            lambda p: [float("inf")] * p["jobs"],
+            lambda p: [complex(i, 0) for i in range(p["jobs"])],
+        )
+        for candidate in candidates:
+            with self.subTest(candidate=candidate):
+                result = self.ev.evaluate(candidate)
+                self.assertEqual(result["valid"], 0.0)
+                self.assertEqual(result["combined_score"], 0.0)
+        self.ev._check_order(np.arange(5, dtype=np.int64), 5)
+
+    def test_candidate_input_mutation_cannot_rewrite_the_scored_instance(self):
+        def mutating_candidate(problem):
+            jobs = problem["jobs"]
+            problem["processing_times"][:] = [[0] * problem["machines"] for _ in range(jobs)]
+            problem["jobs"] = 1
+            problem["seed"] = -1
+            return list(range(jobs))
+
+        ordinary = self.ev.evaluate(lambda p: list(range(p["jobs"])))
+        mutated = self.ev.evaluate(mutating_candidate)
+        self.assertEqual(mutated, ordinary)
 
     def test_neh_anchor_scores_zero(self):
         def neh_candidate(problem):

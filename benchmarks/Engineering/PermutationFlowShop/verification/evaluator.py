@@ -4,11 +4,14 @@ Minimize the makespan of a deterministic permutation flow shop: n jobs, m machin
 every job visits the machines in the same order, and the candidate fixes the job
 sequence. Instances are fresh-seeded in the Taillard style (processing times uniform on
 {1..99}), so no published table or memorized best solution transfers. The score is the
-fraction of the gap closed between the shipped baseline (as-given job order) and a
+fraction of the gap closed between the recomputed NEH zero anchor and a
 frozen truth-blind iterated-local-search record anchor; beating it scores above one.
 """
 
 from __future__ import annotations
+
+import copy
+import numbers
 
 import numpy as np
 
@@ -73,7 +76,13 @@ def _check_order(order, jobs):
     array = np.asarray(order)
     if array.shape != (jobs,):
         raise ValueError("permutation must list every job index exactly once")
-    if np.any(array < 0) or np.any(array >= jobs) or len(set(array.tolist())) != jobs:
+    # Validate before makespan converts indices: distinct fractional values can all
+    # truncate to the same cheap job and otherwise receive a spurious record score.
+    values = list(order)
+    if any(isinstance(item, (bool, np.bool_)) or not isinstance(item, numbers.Integral)
+           for item in values):
+        raise ValueError("job indices must be integers, not coerced numeric values")
+    if set(values) != set(range(jobs)):
         raise ValueError("permutation must list every job index exactly once")
 
 
@@ -112,7 +121,9 @@ def _run_split(candidate, specs, witness_table):
         entry = {"instance_id": problem["instance_id"], "valid": False,
                  "makespan": None, "score": 0.0}
         try:
-            order = candidate(problem)
+            # The candidate owns its input copy, including in direct local evaluations.
+            # Scoring must always use the original processing times and dimensions.
+            order = candidate(copy.deepcopy(problem))
             _check_order(order, problem["jobs"])
             achieved = makespan(problem["processing_times"], order)
             times = np.asarray(problem["processing_times"], dtype=int)

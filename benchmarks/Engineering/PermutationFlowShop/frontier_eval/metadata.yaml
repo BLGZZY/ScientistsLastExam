@@ -6,11 +6,12 @@ tier: T2
 oracle_type: analytical
 score_mode: uncapped
 gpu_required: false
-eval_time_seconds: 5
+eval_time_seconds: 180
 science_metric: makespan gap closed between NEH and a frozen 3000-iteration iterated
   local search record on fresh-seeded Taillard-style instances
 reference_baseline: NEH construction; the weaker as-given order is floored at zero
-reference_sota: NEH plus seeded accelerated ILS; one-cycle runnable witness scores
-  0.636 while frozen 3000-iteration makespans define the open record anchor
+reference_sota: NEH plus seeded accelerated ILS; the complete 128-cycle runnable
+  reference scores 0.982759 development / 0.963889 heldout against the original
+  3000-iteration makespan witness; expert-difficulty calibration remains pending
 citation: Taillard 1993 EJOR doi:10.1016/0377-2217(93)90182-M; Gmys et al. 2022 INFORMS
   J Comput doi:10.1287/ijoc.2022.1193

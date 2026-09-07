@@ -12,10 +12,11 @@ from __future__ import annotations
 
 import numpy as np
 
-# One complete perturb-and-descent cycle is a competent runnable witness and
-# scores in the middle of the scale.  The frozen 3000-iteration makespans remain
-# the stronger record anchor, so additional search has measurable value.
-DEFAULT_ITERATIONS = 1
+# Fixed CPU budget for a competent search, including repeated perturbation,
+# descent, acceptance and restart opportunities. The 2026-09-08 ladder found the
+# same results at 128 and 256 iterations; the former one-cycle default materially
+# understated standard-method capability. The 3000-cycle score-one anchors remain.
+DEFAULT_ITERATIONS = 128
 
 
 def makespan_of(times, order):
@@ -79,16 +80,14 @@ def _insertion_positions(times, job, e, f):
     """Makespan of inserting `job` at every position k, given prefix table e of the
     jobs before the hole and suffix table f from the job after it."""
     m = times.shape[1]
-    results = []
-    for k in range(len(e)):
-        prev = e[k]
-        cur = prev[0] + times[job, 0]
-        value = cur + f[k, 0]
-        for machine in range(1, m):
-            cur = max(cur, prev[machine]) + times[job, machine]
-            value = max(value, cur + f[k, machine])
-        results.append(int(value))
-    return results
+    # Positions are independent. Vectorizing that axis preserves the exact integer
+    # recurrence and tie order while making a competent multi-cycle CPU budget useful.
+    cur = e[:, 0] + times[job, 0]
+    value = cur + f[:, 0]
+    for machine in range(1, m):
+        cur = np.maximum(cur, e[:, machine]) + times[job, machine]
+        value = np.maximum(value, cur + f[:, machine])
+    return value.tolist()
 
 
 def _descent(times, order):

@@ -1,5 +1,5 @@
 schema_version: 2
-scientific_question: How much of the gap between a naive dispatch order and a frozen
+scientific_question: How much of the gap between the NEH construction and a frozen
   iterated-local-search witness can a searcher close on fresh-seeded permutation flow
   shops, and can it beat the witness?
 artifact: One job permutation per instance; the makespan is simulated exactly in
@@ -7,7 +7,7 @@ artifact: One job permutation per instance; the makespan is simulated exactly in
 oracle:
   model: deterministic Taillard-style fresh-seeded instances (processing times uniform
     on {1..99}), exact integer completion-time simulation, gap normalization against
-    an as-given-order baseline recomputed per instance and a frozen witness search
+    a NEH zero anchor recomputed per instance and a frozen witness search
   feasibility: a permutation listing every job index exactly once
   deterministic: true
   external_tooling: none beyond NumPy
@@ -18,18 +18,21 @@ difficulty_ladder:
 normalization:
   baseline: the NEH construction computed inside the oracle (zero anchor); the
     as-given order clips to zero as well
-  reference: NEH plus seeded ILS with accelerated insertion evaluation; 3000 iterations
-    freeze the witness makespans (20x5 1180, 30x10 2182, 50x5 3023, 50x10 2979;
-    held-out 1222, 1734, 3012); the runnable reference performs one complete ILS cycle
-    and scores 0.636 development in 0.93 s (2026-09-07 retest 0.71 s; the former
-    400-iteration default took 236 s on the maintainer's host)
+  reference: NEH plus seeded ILS with accelerated integer insertion evaluation;
+    3000 iterations define the original score-one witness. The runnable reference
+    now performs 128 cycles and scores 0.982759 development / 0.963889 heldout.
+    The 2026-09-08 256-cycle diagnostic gives the same scores. The former one-cycle
+    0.636 reference materially understated standard search and is historical.
   score: mean NEH-to-record gap closed per instance; beating the frozen 3000-iteration
     record anchor scores above one with no cap
-evaluation_budget: 5 s expected evaluation time (frontier_eval/metadata.yaml) and a
-  300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py, which shells
-  out to sle eval). The one-cycle runnable reference returns in under a second, so the
-  236 s the former reference consumed is returned to candidate search; the budget is
-  designed rather than accidental.
+evaluation_budget: 180 s declared evaluation envelope and a 300 s candidate timeout
+  (EVAL_TIMEOUT_S in frontier_eval/run_eval.py, which delegates to sle eval). The
+  128-cycle vectorized reference took 141.1 s in a local direct evaluation while
+  other diagnostics shared the CPU; this is not a clean Linux guarantee. Original-
+  loop 64/128/256-cycle trajectories took 75.7/144.9/287.8 s and the 128/256 scores
+  were identical, motivating the fixed 128-cycle budget. No score target was used
+  to weaken the method. The earlier 236 s / 400-cycle and subsecond / one-cycle
+  measurements describe historical implementations.
 citations:
 - id: doi:10.1016/0377-2217(93)90182-M
   title: Benchmarks for basic scheduling problems
@@ -39,25 +42,31 @@ invariants:
 - verification is integer simulation independent of the construction method
 - fresh seeds mean no published table or memorized solution transfers
 - the as-given order scores exactly zero and the witness exactly one
-known_shortcuts: NEH alone is the zero anchor, so the classic construction scores
-  zero and the difficulty above it is genuine search (50 ILS iterations reach 0.929,
-  150 reach 0.983). No low-dimensional parameterization applies because the artifact
-  is the permutation itself. Formal clean Linux calibration and independent review
-  remain pending.
+known_shortcuts: >-
+  NEH alone is the zero anchor. Historical local measurements give 0.849/0.805
+  development/heldout for two ILS iterations and 0.929/0.957 for twenty, already
+  above the historical one-cycle reference (0.636/0.773). The current 128-cycle
+  reference reaches 0.982759/0.963889, with 256 cycles giving the same result. The
+  near-ceiling standard-method plateau leaves the expert-difficulty gate unresolved. Priority-rule,
+  tie-breaking and bounded multi-start probes remain relevant for a permutation
+  artifact. The 2026-09-08 review also fixed fractional-index truncation (an invalid
+  repeated-job submission previously scored 15.675 development) and mutation of the
+  scoring input in direct evaluation. Local regressions are not frozen evidence.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
   note: Instances are generated from original repository code; cited publications are
     not redistributed.
 contamination:
-  status: cannot_be_contaminated
-  rationale: Instances are fresh-seeded by the frozen generator; published Taillard
-    instances, tables and best solutions do not transfer to these processing times.
+  status: cannot_be_ruled_out
+  rationale: Published Taillard solution tables do not directly transfer to these
+    processing times, but standard methods transfer and repository-visible fixed seeds
+    allow fingerprinting. Server-held instances and clean calibration remain pending.
 review:
   domain: pending_external_operations_research
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
 provenance:
-  class: public_data_replay
+  class: procedural
   target_source: Frozen truth-blind ILS witness makespans reproduced by the runnable
     reference in verification/ at 3000 iterations, seed 0.
   task_contract_public_before_evaluation: true
@@ -97,7 +106,10 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
     and clean frontier-model calibration before certification
-  remaining_risk: The witness sits roughly one to two percent above the best-known heuristic plateau for this size class; a frontier draw must show that first proposals do not reach it by construction alone.
+  remaining_risk: The restored 128-cycle reference nearly saturates the original
+    anchor at 0.982759/0.963889. Stronger instance design and clean first-proposal
+    calibration may be required; a low score from the historical one-cycle method
+    did not establish expert difficulty.
 
 frontier_eng_overlap_review:
   date: '2026-09-07'
