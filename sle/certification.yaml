@@ -10,6 +10,11 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
+  WaterDistribution/DistributionNetworkTopology:
+    status: candidate
+    reason: boolean network tomography over a 4x4 grid with several hundred monotone routes, signature-uniqueness-filtered break sets, twin-corridor refusal and seven-percent flip noise at the three-break level-3 default; the likelihood-tracked witness reaches 0.600 development while easier levels 1 and 2 reach 1.000 and 0.900; pending clean Linux calibration, independent water-systems review and a frozen frontier-model draw at the hardened default
+    citation_ids:
+      - doi:10.1061/(ASCE)0733-9496(2008)134:6(556)
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.
