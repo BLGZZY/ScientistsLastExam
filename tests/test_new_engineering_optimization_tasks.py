@@ -1,4 +1,4 @@
-"""Contract and normalization checks for the four engineering candidate tasks."""
+"""Contract and normalization checks for the three engineering candidate tasks."""
 from __future__ import annotations
 
 import importlib.util
@@ -12,7 +12,6 @@ TASKS = (
     "CompositeLaminateStacking",
     "ResilientPumpScheduling",
     "WakeAwareFarmCoDesign",
-    "BOPTESTSupervisoryControl",
 )
 
 
@@ -87,11 +86,6 @@ class EngineeringCandidateTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             wind._validate(problem, {"layout_xy_m": [[1.0, 1.0]] * n,
                                      "yaw_by_direction_deg": [[0.0] * n] * 12})
-
-        hvac = self.evaluators["BOPTESTSupervisoryControl"]
-        with self.assertRaises(ValueError):
-            hvac._validate_action({"heating_kw": [2.0, 2.0], "cooling_kw": [2.0, 2.0],
-                                   "ventilation_ach": [0.5, 0.5]})
 
 
 if __name__ == "__main__":

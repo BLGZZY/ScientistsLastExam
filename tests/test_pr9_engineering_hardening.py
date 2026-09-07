@@ -26,33 +26,9 @@ def load(domain, task, file="verification/evaluator.py"):
     return module
 
 
-def test_hvac_anchors_are_feasible_and_ordered_on_every_split():
-    m=load('Engineering','BOPTESTSupervisoryControl')
-    r=load('Engineering','BOPTESTSupervisoryControl','verification/reference.py')
-    solution=load('Engineering','BOPTESTSupervisoryControl','solution.py')
-    for spec in m.INSTANCE_SPECS:
-        p=m._problem(spec)
-        baseline=m._run(solution.make_hvac_controller,p,spec)
-        reference=m._run(r.make_hvac_controller,p,spec)
-        assert baseline['feasible'],spec[0]
-        assert reference['feasible'],spec[0]
-        assert reference['cost']<baseline['cost']
-    result=m.evaluate(r.make_hvac_controller)
-    assert result['heldout_feasibility_rate']==1
-    assert .65 < result['combined_score'] < .75
-    assert .75 < result['heldout_policy_score'] < .90
-
-
-def test_invalid_hvac_anchor_is_infrastructure_error_not_candidate_failure(monkeypatch):
-    m=load('Engineering','BOPTESTSupervisoryControl')
-    monkeypatch.setattr(m,'_baseline_factory',lambda p:lambda o:{'heating_kw':[0.,0.],'cooling_kw':[0.,0.],'ventilation_ach':[.15,.15]})
-    with pytest.raises(RuntimeError,match='normalization anchors'):
-        m._score_instance(m._reference_factory,m.INSTANCE_SPECS[0])
-
-
 @pytest.mark.parametrize('task',[
     'CompositeLaminateStacking','ResilientPumpScheduling',
-    'WakeAwareFarmCoDesign','BOPTESTSupervisoryControl'])
+    'WakeAwareFarmCoDesign'])
 def test_engineering_references_do_not_import_oracle(task):
     source=(ROOT/'benchmarks/Engineering'/task/'verification/reference.py').read_text()
     for node in ast.walk(ast.parse(source)):
@@ -62,7 +38,7 @@ def test_engineering_references_do_not_import_oracle(task):
             assert node.module.split('.')[0] in {'numpy','scipy','math','copy'}
 
 
-@pytest.mark.parametrize('domain,task', [('Engineering', 'CompositeLaminateStacking'), ('Engineering', 'ResilientPumpScheduling'), ('Engineering', 'WakeAwareFarmCoDesign'), ('Engineering', 'BOPTESTSupervisoryControl')])
+@pytest.mark.parametrize('domain,task', [('Engineering', 'CompositeLaminateStacking'), ('Engineering', 'ResilientPumpScheduling'), ('Engineering', 'WakeAwareFarmCoDesign')])
 def test_twelve_malformed_candidates_fail_closed(domain,task):
     m=load(domain,task)
     invalid=[None,{},'',True,12,float('nan'),float('inf'),[],[0],{'plans':[]},
@@ -71,19 +47,6 @@ def test_twelve_malformed_candidates_fail_closed(domain,task):
         result=m.evaluate(lambda *args,**kwargs:value)
         assert result['valid']==0,(task,value)
         assert result['combined_score']==0,(task,value)
-
-
-def test_hvac_requires_comfort_and_benefits_from_occupancy_forecast():
-    m=load('Engineering','BOPTESTSupervisoryControl')
-    ref=load('Engineering','BOPTESTSupervisoryControl','verification/reference.py')
-    def no_forecast(p):
-        return ref.make_hvac_controller(dict(p,occupancy_forecast=[[38.,38.]]*p['horizon_steps']))
-    result=m.evaluate(no_forecast)
-    assert result['valid']==1
-    assert result['heldout_feasibility_rate']==1
-    assert result['combined_score']<.9
-    # Increasing temperature tolerance is not silently encoded as a hidden scorer constant.
-    assert m._problem(m.INSTANCE_SPECS[0])['comfort_tolerance']['maximum_excursion_c']==.5
 
 
 def test_laminate_bending_activates_order_dependent_ply_strength():

@@ -21,7 +21,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from scripts.check_task_contribution import check_task
 
-TASKS = {'Engineering': ['CompositeLaminateStacking', 'ResilientPumpScheduling', 'WakeAwareFarmCoDesign', 'BOPTESTSupervisoryControl']}
+TASKS = {'Engineering': ['CompositeLaminateStacking', 'ResilientPumpScheduling', 'WakeAwareFarmCoDesign']}
 
 def load(path):
     spec=importlib.util.spec_from_file_location('diagnostic_'+path.parent.parent.name+'_'+path.stem,path)
@@ -113,13 +113,6 @@ def main():
                     x,y=p['source_location_m']
                     return {'plans':[[[x,y,0.,q]] for q in np.linspace(80.,950.,16)]}
                 row['single_source_shortcut']=summary(evaluator.evaluate(source))
-            if name=='BOPTESTSupervisoryControl' and args.sweeps:
-                row['thermostat_grid']=thermostat_sweep(evaluator)
-            if name=='BOPTESTSupervisoryControl':
-                def always_occupied(p):
-                    public=dict(p,occupancy_forecast=np.full((p['horizon_steps'],2),38.).tolist())
-                    return reference(public)
-                row['without_occupancy_forecast']=summary(evaluator.evaluate(always_occupied))
             report['tasks'][task_id]=row
             print(task_id,'baseline',row['baseline']['combined_score'],'reference',row['reference']['combined_score'],flush=True)
             target=Path(args.output);target.parent.mkdir(parents=True,exist_ok=True)
