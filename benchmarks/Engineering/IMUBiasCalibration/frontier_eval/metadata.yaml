@@ -1,0 +1,13 @@
+domain: Sensors
+task: IMUBiasCalibration
+scientific_role: discovery
+difficulty: medium
+tier: T2
+oracle_type: physical_sim
+score_mode: clipped
+gpu_required: false
+eval_time_seconds: 8
+science_metric: triaxial_bias_temperature_drift_recovery_with_fault_refusal
+reference_baseline: zero_calibration_with_undetermined_refusal
+reference_sota: robust_affine_fit_with_residual_based_nonlinearity_misalignment_and_motion_refusal
+citation: "Woodman, An introduction to inertial navigation, University of Cambridge (2007)"

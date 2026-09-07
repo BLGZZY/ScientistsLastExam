@@ -1,0 +1,66 @@
+schema_version: 2
+scientific_question: Can an agent recover triaxial inertial-sensor bias and temperature drift from static gravity observations while refusing nonlinear thermal response, cross-axis misalignment and motion contamination?
+artifact: Three bias components, three temperature-drift components, a sealed-temperature acceleration prediction, a fault diagnosis, confidence and immutable record evidence.
+oracle:
+  proxy: ordinary least-squares affine bias/drift fit with residual and temperature-pattern diagnostics
+  nominal: deterministic six-orientation, four-temperature accelerometer generator with Gaussian measurement noise and three unsupported fault families
+  feasibility: exact finite vectors, bounded confidence, one allowed diagnosis, complete unique evidence IDs and finite values
+  deterministic: true
+normalization:
+  baseline: zero calibration with valid undetermined abstention
+  reference: truth-blind affine fit, residual-based fault classification and sealed-temperature prediction
+  score: clipped development joint of bias/drift recovery, prediction and confidence; held-out transfer, refusal and false discovery remain separate
+citations:
+- id: book:woodman-2007-inertial-navigation
+  title: An introduction to inertial navigation
+- id: doi:10.1109/5.554205
+  title: Aided inertial navigation systems for autonomous land vehicles
+- id: doi:10.1109/TIM.2014.2325662
+  title: Temperature calibration of MEMS inertial sensors
+invariants:
+- stationary observations equal gravity plus additive bias and temperature drift in supported worlds
+- orientations are known unit vectors and the prediction temperature is outside the central calibration pair
+- quadratic thermal response, cross-axis matrix error and motion contamination are distinct unsupported mechanisms
+- every record has an immutable ID and candidates cannot fabricate evidence IDs
+- the baseline is valid and scores zero by construction
+- malformed, non-finite, incomplete and extra-key submissions fail closed
+- held-out worlds use different seeds, parameters and fault placement from development
+- reference output is generated from public records without reading hidden world labels
+known_shortcuts: The reduced-order laboratory omits coning, gyro coupling, scale-factor nonlinearity, vibration rectification and thermal hysteresis. The fixed public generator requires a future server-held split. The reference is an evaluation anchor, not a claim of field IMU calibration accuracy.
+review:
+  domain: pending_external_inertial_sensing_and_calibration_review
+  evaluator_security: automated_bad_candidate_crash_sweep_determinism_fault_refusal_and_metric_sealing_tests
+provenance:
+  class: procedural
+  target_source: Repository-visible deterministic inertial measurement generator with development and held-out supported and fault worlds.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+novelty_risk:
+  level: medium
+  rationale: Sensors/QuartzCrystalMicrobalanceLab reconstructs complex QCM admittance and deposition from resonance sweeps. This task uses triaxial accelerometer gravity vectors, temperature regression and inertial fault attribution; it shares a calibration theme but not the sensor physics, observation representation, artifact or score.
+lineage:
+  status: complete
+  builder_model_ids:
+  - codex-science-benchmark-construction
+  builder_scaffolds:
+  - deterministic_static_sensor_discovery
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: Initial task design; DeepSeek calibration evidence will be added after the authorized server run.
+  shortcut_discoverer: builder_self_audit
+  frozen_before_eval: false
+  freeze_timestamp: null
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
+construction_audit:
+  status: builder_audited_pending_external
+  author_domain: inertial_sensing
+  reviewer_domain: pending_external
+  expert_hours: null
+  red_team_rounds: 1
+  oracle_disagreement_status: not_quantified
+  independent_recomputation_status: reference and malformed-candidate checks are runnable from this package

@@ -1,0 +1,3 @@
+Only edit solution.py and keep infer_imu(problem).
+Use deterministic CPU-only Python with the standard library and NumPy.
+Do not read verification or create processes/network requests.
