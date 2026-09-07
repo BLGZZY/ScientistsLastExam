@@ -132,9 +132,12 @@ class _DatingLab:
             if proxy < 0 or proxy >= N_PROXY or indices.ndim != 1 or not 1 <= len(indices) <= 10:
                 self.violated = True
                 raise ValueError("invalid proxy or sample index vector")
-            if np.any(indices != indices.astype(int)):
+            if indices.dtype.kind not in "iu" or any(
+                not isinstance(value, (int, np.integer)) or isinstance(value, (bool, np.bool_))
+                for value in sample_indices
+            ):
                 self.violated = True
-                raise ValueError("sample indices must be integers")
+                raise ValueError("sample indices must be integers, not booleans or floats")
             indices = indices.astype(int)
             if len(np.unique(indices)) != len(indices) or np.any(indices < 0) or np.any(indices >= N_SAMPLE):
                 self.violated = True
@@ -187,6 +190,8 @@ def _validate(submission):
         raise ValueError("reconstruction arrays have the wrong shape")
     if np.any(~np.isfinite(mean)) or np.any(~np.isfinite(std)) or np.any(std <= 0.0) or np.any(~np.isfinite(offsets)):
         raise ValueError("reconstruction arrays must be finite and uncertainty positive")
+    if offsets.size and offsets.shape != (N_PROXY,):
+        raise ValueError("age offsets must have one entry per proxy when provided")
     if np.any(np.abs(offsets) > 300.0):
         raise ValueError("age offsets must lie in [-300,300] years")
     if curves.size:
@@ -239,13 +244,15 @@ def _evaluate_world(candidate, spec, split, index):
         supported = world["kind"] == "supported"
         if supported and not abstain:
             truth = world["climate"]
-            ce, rmse = _climate_field_metrics(mean, truth)
+            with np.errstate(over="raise", invalid="raise", divide="raise"):
+                ce, rmse = _climate_field_metrics(mean, truth)
             # Legacy offset submissions remain legal but are assessed as entire age-depth curves.
             estimated_ages = offsets if offsets.ndim == 2 else np.array([
                 np.clip(record["nominal_age_years"] + offset, 0., 2000.)
                 for record, offset in zip(world["catalog"], offsets)])
             age_mae = float(np.mean(np.abs(estimated_ages - world["true_ages"])))
-            crps = float(np.mean(_crps_normal(mean, std, truth)))
+            with np.errstate(over="raise", invalid="raise", divide="raise"):
+                crps = float(np.mean(_crps_normal(mean, std, truth)))
             ce_score = float(np.clip(ce, 0.0, 1.0))
             age_score = float(math.exp(-age_mae / 65.0))
             crps_score = float(math.exp(-crps / 0.45))
@@ -256,7 +263,7 @@ def _evaluate_world(candidate, spec, split, index):
             correct = bool(abstain)
             mechanism = 1.0 if correct else 0.0
             ce, rmse, age_mae, crps = (0.0, 0.0, 0.0, 0.0) if correct else (-1e6, 1e6, 1e6, 1e6)
-        target_confidence = 1.0 if supported and not abstain else 0.0
+        target_confidence = mechanism if supported and not abstain else 0.0
         row.update({"valid": True, "abstained": abstain, "mechanism_score": mechanism,
                     "coefficient_efficiency": ce, "rmse_c": rmse,
                     "age_mae_years": age_mae, "mean_crps_c": crps,
@@ -283,7 +290,7 @@ def _summary(rows, specs):
             "confidence": float(np.mean([r["confidence_score"] for r in rows])),
             "false_count": sum(r["false_discovery"] for r in unsupported),
             "refusal_count": sum(r["correct_refusal"] for r in unsupported),
-            "attempt_count": sum(not r["abstained"] for r in supported),
+            "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
             "supported_count": len(supported), "unsupported_count": len(unsupported)}
 
 
@@ -319,5 +326,11 @@ def evaluate(reconstruct_climate):
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
         "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
+        "heldout_supported_world_count": hold["supported_count"],
+        "heldout_unsupported_world_count": hold["unsupported_count"],
+        "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_false_discovery_count": hold["false_count"],
+        "heldout_correct_refusal_count": hold["refusal_count"],
+        "heldout_confidence_calibration_score": hold["confidence"],
         "per_world": development + heldout,
     }

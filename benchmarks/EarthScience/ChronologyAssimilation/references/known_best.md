@@ -16,7 +16,10 @@ must not be compared as if their score differences were model improvements.
 
 ## 3. Capability comparisons and ablations
 
-Run `python scripts/diagnose_pr9_earth.py --output tmp/hardening/diagnostics.json --sweeps`.
+Run `python -m pytest tests/test_chronology_assimilation.py -q` for the retained
+chronology artifact and shortcut comparisons. To measure the complete trusted reference,
+use the standalone command in the Reproduce section below. The former cross-task
+`diagnose_pr9_earth.py` script is not part of this split PR.
 On the current dirty macOS tree, the joint age-curve reference scores `0.736298` development
 (`mechanism_score=0.824199`) and `0.708775` robustness. Collapsing every inferred sample-age curve
 to one clipped scalar offset scores `0.519860` development (`mechanism_score=0.679906`) and
@@ -89,7 +92,22 @@ Both axes decrease monotonically as chronology span and proxy/dating noise incre
 
 ```bash
 python scripts/measure_reference.py \
-  --task Paleoclimate/ChronologyAssimilation \
+  --task EarthScience/ChronologyAssimilation \
   --reference verification/reference_solver.py \
   --entry reconstruct_climate
 ```
+
+### 2026-09-08 evaluator-contract re-review
+
+The external `frontier_eval/run_eval.py` entrypoint now delegates to the trusted
+`sle eval` sandbox path instead of importing candidate code in the oracle process.
+Malformed submissions no longer count as discovery attempts. Confidence calibration
+uses actual supported-world mechanism recovery as its target, and zero for refusals
+or unsupported worlds; the combined-score normalization is unchanged. These changes
+have targeted local regressions; they do not imply independent domain certification
+or replace clean Linux sandbox replay.
+Dating sample indices reject booleans and floating-point values even when integral;
+optional offsets must have the documented shape even alongside full curves. Floating-point
+overflow during reconstruction scoring fails closed with finite invalid metrics. The
+reference-reproduction instructions now use paths and tests actually present in this
+standalone PR.

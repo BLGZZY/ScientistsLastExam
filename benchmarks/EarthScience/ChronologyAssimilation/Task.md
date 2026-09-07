@@ -50,6 +50,12 @@ curves and scored on all 288 sample ages. With explicit curves, the offset vecto
 
 ## Evaluation
 
+Confidence is evaluated separately as `1 - (confidence - target)^2`. The target is
+the actual mechanism-recovery score on a supported, non-abstaining world, and zero
+for refusals or unsupported worlds. Thus a poor reconstruction with high confidence
+cannot earn perfect confidence calibration. Invalid artifacts do not count as discovery
+attempts; coverage counts valid, non-abstaining supported-world submissions.
+
 - `combined_score` is chronology-aware temperature mechanism recovery above always abstaining.
 - Supported worlds report coefficient of efficiency (CE), RMSE, sample-age MAE and CRPS.
 - Null and resolvable nonstationary/nonlinear proxy worlds reward calibrated refusal.
