@@ -12,7 +12,8 @@ from scripts.audit_tasks import LINEAGE_STATUSES, _task_card_issues, audit
 # recorded on the card rather than reconstructed after the fact. Everything else is inherited.
 RECORDED_LINEAGE = {
     "Algorithm/ScalingLawIdentification",
-
+    "Ecology/OccupancyDetectionDesign",
+    "Physics/CriticalPhenomenaLab",
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",
     "MaterialsScience/PhaseDiagramDiscovery",
@@ -36,6 +37,8 @@ RECORDED_LINEAGE = {
     "Exoplanets/TransmissionSpectrumSpecies",
     "DiscreteGeometry/SpherePackingCertificate",
     "QuantumFoundations/BellBoundCertificate",
+    "InformationTheory/ShannonCapacityCertificate",
+    "QuantumControl/ActiveNoiseSpectroscopy",
     "Mathematics/NonlinearCodeRecords",
     "Mathematics/CapSetFrontier",
     "ParticlePhysics/LookElsewhereAnomaly",
@@ -44,8 +47,10 @@ RECORDED_LINEAGE = {
     "Gravitation/PTAHellingsDowns",
     "Physics/ComplexBoseLaw",
     "MaterialsScience/QuinaryConvexHull",
+    "Mathematics/HeavyTailEvidence",
     "Mathematics/NarrowAdmissibleTuple",
     "Superconductivity/SuperconductorTcRecord",
+    "Geophysics/UPbConcordiaInference",
 }
 
 
