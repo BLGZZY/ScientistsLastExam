@@ -132,10 +132,13 @@ def _reference(problem):
 
 def _score_instance(candidate,spec):
     problem=_problem(spec); base=_baseline(problem); ref=_reference(problem)
-    low=_farm_value(problem,*base,expansion=.061); high=_farm_value(problem,*ref,expansion=.061)
+    # Development scoring runs the PUBLIC wake expansion exactly as published in the problem
+    # mapping; the widened-expansion, rotated-direction and turbulence variants are
+    # robustness-only and never control combined_score.
+    low=_farm_value(problem,*base); high=_farm_value(problem,*ref)
     try:
         layout,yaw=_validate(problem,candidate(copy.deepcopy(problem)))
-        value=_farm_value(problem,layout,yaw,expansion=.061)
+        value=_farm_value(problem,layout,yaw)
         score=(value-low)/max(high-low,1e-9)
         shifted=_farm_value(problem,layout,yaw,expansion=.074,direction_shift=7.0,turbulence_penalty=.7)
         sb=_farm_value(problem,*base,expansion=.074,direction_shift=7.0,turbulence_penalty=.7); sr=_farm_value(problem,*ref,expansion=.074,direction_shift=7.0,turbulence_penalty=.7)

@@ -5,13 +5,47 @@ Implement `design_wind_farm(problem)` and return a mapping containing `layout_xy
 turbine. Every turbine must lie inside the rectangular boundary, respect minimum Euclidean
 spacing, and stay within the yaw limit. Invalid designs are rejected, never repaired.
 
-The deterministic trusted model rotates the farm into each wind direction, combines upstream
-Gaussian/Jensen-style wake deficits, includes yaw-induced wake displacement and own-turbine power
-loss, caps rated power, and integrates the public wind rose. `combined_score` is annual-value
-improvement over a regular zero-yaw grid. The truth-blind runnable witness uses ten layout starts,
-coordinate yaw search and one 80 m layout-refinement scale, scoring `0.741392`; the oracle's
-180-start, 80/40/20 m search is score one. The scale remains uncapped. Held-out farm geometries and a sealed wind-direction,
-wake-expansion and turbulence shift are reported separately.
+## Complete objective (the score is a function of exactly what follows)
+
+For each public wind direction `d` (angle `θ_d`, speed `u_d`, probability `p_d`), rotate the
+layout into wind axes: `down = x·cosθ + y·sinθ`, `cross = −x·sinθ + y·cosθ`. Process turbines in
+order of increasing `down`. For turbine `j`, sum contributions from every turbine `i` strictly
+upwind of it (`dx = down_j − down_i > 0`), with the yaw angle `γ_i = yaw_by_direction_deg[d, i]`
+in radians:
+
+```
+σ      = R + k·dx                     with R = rotor_diameter_m/2, k = wake_expansion_public
+center = cross_i + 0.055·dx·sin(γ_i)   (yaw-induced wake displacement)
+δ_i    = 2a·cos²(γ_i) / (1 + k·dx/R)² · exp(−0.5·((cross_j − center)/σ)²)
+a      = 0.5·(1 − sqrt(1 − Ct)),  Ct = thrust_coefficient
+```
+
+The deficits superpose in root-sum-square and are floored:
+
+```
+u_eff,j = u_d · max(0.18, 1 − sqrt(Σ_i δ_i²))
+```
+
+Turbine power applies a `cos^1.88` yaw self-loss and a rated cap:
+
+```
+P_j = min(0.5·ρ·π·R²·Cp·u_eff,j³·cos(γ_j)^1.88, 3.6e6 W)      ρ = air_density_kg_m3, Cp = power_coefficient
+```
+
+Annual value and the structural-load proxy accumulate over the rose:
+
+```
+V = Σ_d p_d · (Σ_j P_j) · 8760 / 1e9                (GWh)
+L = Σ_d p_d · mean_j( (u_eff,j/u_d)² · (1 + 0.22·|γ_j|) )
+```
+
+The objective the score depends on is `value = V − 0.20·L`. Development scoring evaluates
+exactly this public model with the public `wake_expansion_public`. `combined_score` is the
+improvement of `value` over a regular zero-yaw grid, normalized by the improvement of a
+stronger reproducible oracle search; the scale is floored at zero and uncapped. Held-out farm
+geometries are scored separately, and a sealed robustness tier re-evaluates the design under a
+wider wake expansion, a rotated wind rose and a turbulence-value penalty; neither controls
+`combined_score`.
 
 The oracle is a reduced engineering wake model, not wind-tunnel or field truth. Before admission,
 the trajectories and rankings must be independently reproduced in a pinned FLORIS version and
@@ -55,7 +89,12 @@ This package remains **candidate**. The metadata difficulty is a target, not a c
 
 ### Current reference and remaining difficulty
 
-Ten seeded layout starts, coordinate yaw search and one 80 m feasible layout-refinement scale form the runnable witness; the evaluator independently uses 180 starts and 80/40/20 m refinement as score one. The witness scores `0.741392` development / `0.613817` held-out. More global restarts and finer feasible layout refinement are the explicit headroom. Cross-model robustness and independent FLORIS validation remain open. This calibration does not certify difficulty.
+The runnable witness is a truth-blind seeded layout-screening, coordinate yaw-search and feasible
+layout-refinement method; the evaluator independently recomputes a stronger multi-start,
+multi-scale anchor as score one. The witness reaches the 0.5–0.8 development band on the current
+panels; denser restarts, finer refinement scales and joint layout-yaw moves are the measured
+headroom. Cross-model robustness and independent FLORIS validation remain open. This calibration
+does not certify difficulty.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

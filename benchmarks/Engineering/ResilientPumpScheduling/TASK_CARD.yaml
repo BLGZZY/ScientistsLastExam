@@ -11,16 +11,18 @@ oracle:
   deterministic: true
 normalization:
   baseline: Conservative constant-speed schedule sized above mean public demand.
-  reference: Convex public-band dispatch on a conservative all-on commitment; it scores 0.569 against
-    the oracle's block-exchange commitment anchor.
-  score: Development energy-cost savings are uncapped above the block-search anchor; held-out networks, demand growth and four-hour
-    outage resilience remain separate.
-evaluation_budget: 120 s expected evaluation time (frontier_eval/metadata.yaml) and a
-  300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py). A direct
-  local evaluation on 2026-09-07 took 34.8 s for the baseline and 32.1 s for the
-  runnable reference; the maintainer observed 79 s for the baseline on another host,
-  which sits inside the declared envelope, so the runtime budget is designed rather
-  than accidental.
+  reference: Convex public-band dispatch on a conservative all-on commitment; it scores 0.641
+    against the oracle's one-sweep block-exchange commitment anchor on the twelve-system set.
+  score: Development energy-cost savings are uncapped above the block-search anchor; held-out
+    networks, demand growth and four-hour outage resilience remain separate.
+evaluation_budget: 150 s expected evaluation time (frontier_eval/metadata.yaml) and a
+  300 s candidate timeout (EVAL_TIMEOUT_S in frontier_eval/run_eval.py). A direct local
+  evaluation on 2026-09-07 with the twelve-system set took 62.1 s for the baseline entry
+  (including every anchor search, cached thereafter) and 0.5 s for the runnable reference.
+  The anchor was reduced from two block-exchange passes to one deterministic sweep (widths 2-4)
+  to hold that cost down when the instance count doubled; the maintainer previously observed a
+  2.3x slower host (79 s vs 34.8 s on the six-system set), so the declared envelope anticipates
+  slower machines while the 300 s wrapper still leaves well over half the budget to the candidate.
 citations:
 - id: url:https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10113EM.TXT
   title: EPANET 2.2 User Manual
@@ -32,11 +34,20 @@ invariants:
 - Invalid shapes, nonfinite speeds, bound violations, ramp violations and nominal hydraulic failures score
   zero.
 - Forecast growth and outage axes remain evaluator-only.
-known_shortcuts: The conservative constant-speed baseline scores 0. The all-on convex dispatch is both
-  the 0.569407 reference and the measured no-commitment-search probe; its gap to one is discrete-commitment
-  search headroom rather than independent model-difficulty evidence. Fixed tariff-window, two-block and
-  threshold on/off policies remain unmeasured. Single-pump/single-tank fidelity and global optimality remain
-  limited; clean Linux replay and independent water-network review are pending.
+- The true demand is the public forecast times a hidden two-frequency ripple whose amplitudes,
+  frequencies and phase constant live only in the instance spec; it is deterministic, not
+  reconstructible from the public problem (the visible phase no longer seeds it), and its peak
+  stays inside the +-4.5% band the public-band reference dispatches against, so band-robust
+  public schedules remain feasible on actual demand.
+known_shortcuts: 'Measured 2026-09-07 on the twelve-system set: the conservative constant-speed
+  baseline scores 0. Fixed-price-window charging (k cheapest hours, constant speed, k swept 12-22)
+  and threshold commitment (run iff price < tau, constant speed, tau swept) both fail closed on
+  development (0.0, valid=0: no member is simultaneously tank-, pressure- and terminal-feasible
+  on every development system). Two-block commitment with public-band convex dispatch on each
+  mask reaches 0.629644 development, just below the 0.640556 all-on witness but not the anchor,
+  so discrete commitment remains genuine search headroom. Single-pump/single-tank fidelity and
+  global optimality remain limited; clean Linux replay and independent water-network review are
+  pending.'
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
@@ -61,7 +72,11 @@ lineage:
   calibration_evidence_status: missing
   edits_triggered_by_model: No frontier-model draw has been run. Local code review replaced tariff
     coordinate moves with constrained convex dispatch, added stable-speed/minimum-run commitment and
-    start/auxiliary costs, and retained the invalid historical method as a failure record.
+    start/auxiliary costs, and retained the invalid historical method as a failure record. The
+    2026-09-07 internal difficulty audit decoupled the hidden demand ripple from the visible
+    phase, expanded the set to twelve systems, reduced the anchor to one block-exchange sweep for
+    runtime, deleted the Task.md anchor-heuristic spoiler paragraph, and measured price-window,
+    threshold and two-block shortcut probes.
   shortcut_discoverer: local_deterministic_probe_only
   frozen_before_eval: false
   freeze_timestamp: null

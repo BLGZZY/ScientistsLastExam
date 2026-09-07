@@ -97,12 +97,50 @@ def _validate(problem, value):
     return sequence
 
 def _baseline(problem):
-    half = []
+    """Largest-remaining-first interleaved half, capped at pairs, mirrored to symmetry.
+
+    The same construction as the shipped baseline: valid for uneven angle mixes.
+    """
     counts = {int(k): int(v)//2 for k, v in problem["required_angle_counts"].items()}
     order = (0, 45, -45, 90)
+    half = []
     while sum(counts.values()):
-        for angle in order:
-            if counts[angle]: half.append(angle); counts[angle] -= 1
+        choice = None
+        for angle in sorted(counts, key=lambda a: (-counts[a], order.index(a))):
+            if counts[angle] <= 0:
+                continue
+            run = 0
+            for item in reversed(half):
+                if item != angle:
+                    break
+                run += 1
+            if run >= 2:
+                continue
+            choice = angle
+            break
+        if choice is None:
+            choice = max(counts, key=lambda a: counts[a])
+        half.append(choice)
+        counts[choice] -= 1
+
+    def run_at(seq, angle, from_end):
+        run = 0
+        for item in (reversed(seq) if from_end else seq):
+            if item != angle:
+                break
+            run += 1
+        return run
+
+    if half[0] == half[-1] and run_at(half, half[0], True) + run_at(half, half[0], False) > MAX_RUN:
+        groupby = __import__("itertools").groupby
+        for i in range(len(half) - 2, -1, -1):
+            if half[i] == half[-1]:
+                continue
+            candidate = half.copy()
+            candidate[i], candidate[-1] = candidate[-1], candidate[i]
+            if max(len(list(group)) for _, group in groupby(candidate)) <= 2:
+                half = candidate
+                break
     return half + half[::-1]
 
 def _reference(problem):

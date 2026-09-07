@@ -11,9 +11,11 @@ oracle:
 normalization:
   baseline: Regular rectangular grid with zero yaw.
   reference: Ten seeded layout starts, coordinate yaw search and one 80 m feasible layout-refinement
-    scale; it scores 0.741 against the oracle's 180-start, three-scale anchor.
-  score: Development annual-value gain is uncapped above the stronger search anchor; held-out geometries and direction, wake-expansion
-    and turbulence shifts stay separate.
+    scale; it scores 0.742 development against the oracle's 180-start, three-scale anchor.
+  score: Development annual-value gain is scored under the PUBLIC wake expansion (wake_expansion_public,
+    0.055) exactly as published in Task.md, uncapped above the stronger search anchor; held-out
+    geometries and the widened-expansion/rotated-direction/turbulence tier stay separate and never
+    control combined_score.
 citations:
 - id: doi:10.1088/1742-6596/1618/2/022028
   title: Overview of FLORIS updates
@@ -24,12 +26,16 @@ invariants:
 - Yaw decreases own-turbine power while potentially deflecting its downstream wake.
 - Duplicated, too-close, out-of-bound, malformed and over-yawed layouts fail closed.
 - Held-out model-shift metrics never control combined_score.
-known_shortcuts: 'The regular-grid zero-yaw baseline scores 0, while the historical yaw-only search
-  reaches 0.490932 development and 0.347172 robustness against the current 0.741392/0.613817
-  co-design witness. Yaw is therefore a substantial partial shortcut; row staggering, boundary
-  packing and fixed-yaw grids remain unmeasured. The visible wind roses and reduced wake equations
-  may be overfit, and the oracle omits terrain, electrical balance, availability and loads; clean
-  Linux replay, pinned FLORIS comparison and server-held roses remain required.'
+known_shortcuts: 'Measured 2026-09-07 against the public-expansion co-design witness (0.741503
+  development): row-staggered grids with zero yaw reach 0.137746, pure equal-arc boundary packing
+  fails closed (0.000000: the perimeter of the denser farms cannot host every turbine at minimum
+  spacing) and uniform fixed-yaw grids score 0.000000. The historical yaw-only search reached
+  0.490932 on the pre-2026-09-07 hidden-expansion scoring; no measured low-dimensional layout
+  family reaches the witness. The complete objective (wake deficit, RSS superposition, 0.18 floor,
+  cos^1.88 yaw loss, 3.6 MW cap, 0.20 structural-load penalty) is public in Task.md; the sealed
+  widened-expansion/rotated-direction/turbulence tier remains evaluator-only. The oracle omits
+  terrain, electrical balance, availability and loads; clean Linux replay, pinned FLORIS
+  comparison and server-held roses remain required.'
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
@@ -54,7 +60,10 @@ lineage:
   calibration_evidence_status: missing
   edits_triggered_by_model: No frontier-model draw has been run. Local code review added feasible layout
     refinement after coordinate yaw selection, measured the historical yaw-only method and retained
-    cross-model FLORIS validation as an explicit open item.
+    cross-model FLORIS validation as an explicit open item. The 2026-09-07 revision moved
+    development scoring to the public wake expansion (the 0.061/0.074 variants are robustness-tier
+    only) and wrote the complete objective, including the 0.20 structural-load penalty, into the
+    public Task.md contract; pinned FLORIS cross-validation remains pending and open.
   shortcut_discoverer: local_deterministic_probe_only
   frozen_before_eval: false
   freeze_timestamp: null

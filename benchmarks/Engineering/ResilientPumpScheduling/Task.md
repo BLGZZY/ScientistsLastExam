@@ -12,11 +12,12 @@ wire-to-water efficiency. Every nominal hour must keep tank volume within bounds
 pressure above 20 m; terminal storage must recover to its published target. Submissions are
 rejected rather than clipped or repaired.
 
-`combined_score` is development energy-cost savings above a conservative constant-speed schedule.
-The truth-blind runnable witness solves convex public-demand-band dispatch on an all-on commitment
-and scores `0.569407`; the oracle's wider block-exchange commitment search is score one. The scale
-remains uncapped. Held-out systems, 12% demand growth and a four-hour peak-period pump outage are
-reported separately and cannot be selected against.
+`combined_score` is development energy-cost savings above a conservative constant-speed schedule,
+normalized by the savings of a stronger reproducible oracle commitment-dispatch search. The scale
+is floored at zero and uncapped. Held-out systems, 12% demand growth and a four-hour peak-period
+pump outage are reported separately and cannot be selected against. The true demand differs from
+the published forecast by a small hidden realization; a schedule robust to the published demand
+band stays feasible on it.
 
 This compact model preserves the storage, tariff, pressure and outage couplings needed for a local
 benchmark. It is not an EPANET hydraulic certification. Engineering claims require replay in a
@@ -57,7 +58,7 @@ All keys and shapes are part of the contract; forecasts contain exactly `horizon
 
 ## 关系与区别 / Relationship to nearby tasks
 
-GroundwaterRemediationDesign chooses remediation wells and an archive, and BOPTESTSupervisoryControl controls zone conditions. This task submits a 24-hour open-loop pump schedule for a single storage system; it has no pipe-network hydraulic solve.
+GroundwaterRemediationDesign chooses remediation wells and an archive. This task submits a 24-hour open-loop pump schedule for a single storage system; it has no pipe-network hydraulic solve.
 
 ## Admission and reference scope
 
@@ -65,16 +66,14 @@ This package remains **candidate**. The metadata difficulty is a target, not a c
 
 ### Current reference and remaining difficulty
 
-The runnable reference performs constrained convex dispatch for a conservative all-on commitment. The evaluator separately recomputes a public-demand-band block-exchange anchor with the same linear storage/pressure constraints and fixed-mask solver. The witness scores `0.569407` development / `0.493703` held-out; discrete pump commitment is therefore the explicit headroom. No invented fallback anchor is used: an invalid anchor is an infrastructure error. This remains a single-tank surrogate, not a pipe-network solver. The maintainer reported 79 seconds for the baseline on a different host; the package declares 120 seconds expected evaluation time and the black-box wrapper enforces a 300-second candidate timeout. This calibration and timing record do not certify difficulty.
+The runnable reference performs constrained convex dispatch for a conservative all-on commitment. The evaluator separately recomputes a public-demand-band block-exchange anchor with the same linear storage/pressure constraints and fixed-mask solver. On the twelve-system set the witness scores `0.640556` development / `0.596813` held-out; discrete pump commitment is therefore the explicit headroom. No invented fallback anchor is used: an invalid anchor is an infrastructure error. This remains a single-tank surrogate, not a pipe-network solver. A direct local evaluation on 2026-09-07 took 62.1 seconds for the baseline entry (all anchor searches included) and 0.5 seconds for the witness; the package declares 150 seconds expected evaluation time and the black-box wrapper enforces a 300-second candidate timeout. This calibration and timing record do not certify difficulty.
 
 The cost adds running auxiliary electricity at the current tariff and the startup charge to
 hydraulic electricity and speed variation. This creates a genuine discrete commitment decision:
 an all-on continuous optimum can lose to a schedule that stores water and shuts down at expensive
-hours. The public reference alternates feasible 2–4 hour commitment-block changes and bounded
-continuous dispatch, with two passes; it is a heuristic, not a global optimality certificate.
-Minimum speed, run time and auxiliary load are synthetic equipment assumptions requiring domain
-review. The model still has only one pump and one tank, and outage resilience remains a separate
-reported diagnostic rather than part of the nominal objective.
+hours. Minimum speed, run time and auxiliary load are synthetic equipment assumptions requiring
+domain review. The model still has only one pump and one tank, and outage resilience remains a
+separate reported diagnostic rather than part of the nominal objective.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 
