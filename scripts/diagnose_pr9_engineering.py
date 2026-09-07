@@ -21,7 +21,7 @@ ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
 from scripts.check_task_contribution import check_task
 
-TASKS = {'Engineering': ['CompositeLaminateStacking', 'ResilientPumpScheduling', 'WakeAwareFarmCoDesign']}
+TASKS = {'Engineering': ['CompositeLaminateStacking', 'WakeAwareFarmCoDesign']}
 
 def load(path):
     spec=importlib.util.spec_from_file_location('diagnostic_'+path.parent.parent.name+'_'+path.stem,path)
@@ -81,24 +81,17 @@ def main():
             if original.returncode==0 and 'import evaluator' not in original.stdout:
                 namespace={};exec(compile(original.stdout,'historical_reference','exec'),namespace)
                 row['historical_method_comparison']=summary(evaluator.evaluate(namespace[entry]))
-            if original.returncode == 0 and name in ('CompositeLaminateStacking','ResilientPumpScheduling','WakeAwareFarmCoDesign'):
+            if original.returncode == 0 and name in ('CompositeLaminateStacking','WakeAwareFarmCoDesign'):
                 old_oracle=subprocess.check_output(['git','show','8032e97:benchmarks/'+domain+'/'+name+'/verification/evaluator.py'],cwd=ROOT,text=True)
                 namespace={};exec(compile(old_oracle,'historical_public_method','exec'),namespace)
                 old_search=namespace['_reference']
                 if name=='CompositeLaminateStacking':
                     compare=lambda p:{'ply_angles_deg':old_search(p)}
-                elif name=='ResilientPumpScheduling':
-                    compare=lambda p:{'pump_speed':old_search(p).tolist()}
                 else:
                     def compare(p):
                         layout,yaw=old_search(p)
                         return {'layout_xy_m':layout.tolist(),'yaw_by_direction_deg':yaw.tolist()}
                 row['historical_method_comparison']=summary(evaluator.evaluate(compare))
-            if name=='ResilientPumpScheduling':
-                def always_on(p):
-                    speeds=evaluator._continuous_schedule(p,np.ones(24,dtype=bool))
-                    return {'pump_speed':speeds}
-                row['without_commitment_search']=summary(evaluator.evaluate(always_on))
             if name=='ChronologyAssimilation':
                 def curves_collapsed(grid,catalog,lab,budget):
                     answer=dict(reference(grid,catalog,lab,budget))

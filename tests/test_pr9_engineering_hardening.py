@@ -1,4 +1,4 @@
-"""Scientific regressions exposed by the ten-task construction review."""
+"""Scientific regressions for the two retained engineering candidate tasks."""
 
 
 import ast
@@ -32,7 +32,7 @@ def load(domain, task, file="verification/evaluator.py"):
 
 
 @pytest.mark.parametrize('task',[
-    'CompositeLaminateStacking','ResilientPumpScheduling',
+    'CompositeLaminateStacking',
     'WakeAwareFarmCoDesign'])
 def test_engineering_references_do_not_import_oracle(task):
     for path in (ROOT/'benchmarks/Engineering'/task/'verification').glob('reference*.py'):
@@ -43,7 +43,7 @@ def test_engineering_references_do_not_import_oracle(task):
                 assert node.module.split('.')[0] in {'numpy','scipy','math','copy','warnings'}
 
 
-@pytest.mark.parametrize('domain,task', [('Engineering', 'CompositeLaminateStacking'), ('Engineering', 'ResilientPumpScheduling'), ('Engineering', 'WakeAwareFarmCoDesign')])
+@pytest.mark.parametrize('domain,task', [('Engineering', 'CompositeLaminateStacking'), ('Engineering', 'WakeAwareFarmCoDesign')])
 def test_twelve_malformed_candidates_fail_closed(domain,task):
     m=load(domain,task)
     invalid=[None,{},'',True,12,float('nan'),float('inf'),[],[0],{'plans':[]},
@@ -67,37 +67,6 @@ def test_laminate_bending_activates_order_dependent_ply_strength():
     no_b=m._laminate(without,second,return_components=True)
     assert no_a['first_ply_reserve']==pytest.approx(no_b['first_ply_reserve'])
     assert no_a['first_ply_reserve']>10*a['first_ply_reserve']
-
-
-def test_pump_commitment_contract_and_auxiliary_cost():
-    m=load('Engineering','ResilientPumpScheduling')
-    p=m._problem(m.INSTANCE_SPECS[0])
-    with pytest.raises(ValueError,match='stable operating'):
-        m._validate(p,np.full(24,.4))
-    speed=np.zeros(24);speed[5]=.8
-    with pytest.raises(ValueError,match='run duration'):
-        m._validate(p,speed)
-    speed[6]=.8
-    m._validate(p,speed)  # Startup/shutdown is allowed within an hourly interval.
-    actual=np.asarray(p['demand_forecast_m3_h'])
-    with_cost=m._simulate(p,speed,actual)['cost']
-    no_aux=m._simulate(dict(p,running_auxiliary_power_kw=0.,startup_cost_usd=0.),speed,actual)['cost']
-    assert with_cost-no_aux==pytest.approx(.3+2.5*sum(p['electricity_usd_kwh'][5:7]))
-
-
-def test_pump_demand_ripple_is_not_derivable_from_the_public_phase():
-    """The hidden ripple seed must differ from the visible phase and never leave the problem."""
-    m=load('Engineering','ResilientPumpScheduling')
-    assert len(m.INSTANCE_SPECS)>=12
-    for spec in m.INSTANCE_SPECS:
-        phase,seed=spec[7],spec[14]
-        assert seed!=phase and seed not in (0,3,7,11,13,17,19,23),spec[0]
-        assert spec[10]>0 and spec[12]>0 and spec[10]+spec[12]<=.045,spec[0]
-    problem=m._problem(m.INSTANCE_SPECS[0])
-    assert not any('ripple' in key or 'seed' in key for key in problem)
-    tariffs={tuple(round(x,4) for x in np.roll(m.TARIFFS[spec[8]%len(m.TARIFFS)],spec[7]%3))
-             for spec in m.INSTANCE_SPECS}
-    assert len(tariffs)>=3,'tariff windows must vary across the instance set'
 
 
 # --- 2026-09-07 shortcut probe pins ---------------------------------------------------------
@@ -183,33 +152,6 @@ def test_witnesses_stay_in_the_admission_band(task):
     assert .5<result['combined_score']<.8,(task,result['combined_score'])
 
 
-def test_pump_reference_searches_commitment_and_improves_on_fixed_dispatch():
-    ev=load('Engineering','ResilientPumpScheduling')
-    ref=load('Engineering','ResilientPumpScheduling','verification/reference.py')
-    result=ev.evaluate(ref.schedule_pumps)
-    fixed=ev.evaluate(lambda p: {'pump_speed': ref._continuous_schedule(
-        p, np.ones(int(p['horizon_hours']),dtype=bool)).tolist()})
-    assert result['valid']==fixed['valid']==1
-    assert result['combined_score']>fixed['combined_score']+.1
-    # The independent global-commitment witness is a feasible stronger anchor.
-    # Do not weaken the reference solely to make it fit a 0.5--0.8 score band.
-    assert result['combined_score']<=1.+1e-7
-    assert any(np.any(np.asarray(ref.schedule_pumps(ev._problem(spec))['pump_speed'])==0.)
-               for spec in ev.INSTANCE_SPECS)
-
-
-def test_pump_global_anchor_is_an_independently_runnable_feasible_witness():
-    ev=load('Engineering','ResilientPumpScheduling')
-    global_ref=load('Engineering','ResilientPumpScheduling','verification/reference_global.py')
-    p=ev._problem(ev.INSTANCE_SPECS[0])
-    answer=global_ref.schedule_pumps(p)
-    speed=ev._validate(p,answer)
-    assert ev._simulate(p,speed,1.045*np.asarray(p['demand_forecast_m3_h']))['feasible']
-    assert ev._simulate(p,speed,.955*np.asarray(p['demand_forecast_m3_h']))['feasible']
-    assert np.array_equal(speed,ev._reference(p))
-    assert np.all(np.isfinite(speed))
-
-
 def test_laminate_shortcut_families_stay_pinned():
     ev=load('Engineering','CompositeLaminateStacking')
     lp_cache={}
@@ -239,84 +181,6 @@ def test_laminate_shortcut_families_stay_pinned():
     witness_score=ev.evaluate(ref.design_laminate)['combined_score']
     assert .48<block_score<.64,block_score
     assert witness_score-block_score>=.15,(witness_score,block_score)
-
-
-def _pump_constant_speeds(ev,problem,on):
-    demand=np.asarray(problem['demand_forecast_m3_h'],dtype=float)
-    hours=int(on.sum())
-    if hours==0: return None
-    speed=float(demand.sum()/(hours*float(problem['pump_capacity_m3_h'])))
-    if speed<float(problem['minimum_operating_speed']) or speed>1.: return None
-    return np.where(on,speed,0.)
-
-
-def _pump_best_valid(ev,problem,trials):
-    demand=np.asarray(problem['demand_forecast_m3_h'],dtype=float)
-    best,bc=None,float('inf')
-    for speeds in trials:
-        if speeds is None: continue
-        try:
-            speeds=ev._validate(problem,speeds)
-        except ValueError:
-            continue
-        sim=ev._simulate(problem,speeds,demand)
-        if sim['feasible'] and sim['cost']<bc: best,bc=speeds,sim['cost']
-    return best
-
-
-def test_pump_shortcut_families_stay_pinned():
-    ev=load('Engineering','ResilientPumpScheduling')
-
-    def price_window(problem):
-        prices=np.asarray(problem['electricity_usd_kwh'])
-        order=np.argsort(prices,kind='stable')
-        trials=[]
-        for k in range(12,23):
-            on=np.zeros(24,dtype=bool); on[order[:k]]=True
-            trials.append(_pump_constant_speeds(ev,problem,on))
-        return _pump_best_valid(ev,problem,trials)
-
-    def threshold(problem):
-        prices=np.asarray(problem['electricity_usd_kwh'])
-        trials=[]
-        for tau in np.unique(prices)[1:]:
-            trials.append(_pump_constant_speeds(ev,problem,prices<tau))
-        return _pump_best_valid(ev,problem,trials)
-
-    def as_candidate(factory):
-        def cand(problem):
-            speeds=factory(problem)
-            if speeds is None: raise ValueError('family has no feasible member')
-            return {'pump_speed':speeds.tolist()}
-        return cand
-
-    for factory,measured in ((price_window,0.0),(threshold,0.0)):
-        result=ev.evaluate(as_candidate(factory))
-        assert result['combined_score']==measured,(factory,result['combined_score'])
-        assert result['feasibility_rate']<1.,'constant-speed families must fail closed somewhere'
-
-    def two_block(problem):
-        demand=np.asarray(problem['demand_forecast_m3_h'],dtype=float)
-        best,bc=None,float('inf')
-        for total in (16,18,20):
-            for w1 in (6,8,10,12):
-                w2=total-w1
-                if w2<4 or w2>14: continue
-                for s1 in range(0,22,4):
-                    if s1+w1>24: continue
-                    for s2 in range(0,22,4):
-                        if s2<=s1 or s2+w2>24 or s2<s1+w1: continue
-                        on=np.zeros(24,dtype=bool); on[s1:s1+w1]=True; on[s2:s2+w2]=True
-                        edges=np.diff(np.r_[False,on,False].astype(int))
-                        if np.any(np.flatnonzero(edges==-1)-np.flatnonzero(edges==1)<2): continue
-                        speeds=ev._continuous_schedule(problem,on)
-                        if speeds is None: continue
-                        cost=ev._simulate(problem,speeds,demand)['cost']
-                        if cost<bc: best,bc=speeds,cost
-        return best
-
-    two_block_score=ev.evaluate(as_candidate(two_block))['combined_score']
-    assert .58<two_block_score<.68,two_block_score   # 0.607706 under the current four-pass anchor
 
 
 def test_wake_shortcut_families_stay_pinned():

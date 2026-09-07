@@ -4,18 +4,18 @@
 
 | | |
 |---|---:|
-| 任务包 | 85 |
-| optimization | 44 |
+| 任务包 | 84 |
+| optimization | 43 |
 | discovery | 41 |
 | certified | 5 |
-| candidate | 80 |
-| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 7,Engineering 15,Mathematics 19,Physics 16) |
+| candidate | 79 |
+| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 7,Engineering 14,Mathematics 19,Physics 16) |
 
 认证描述的是证据质量,不是难度。标 on-ramp 的任务首个前沿模型提案已够到参考解,不用于配对 Δ 测量。
 
-## Optimization(44)
+## Optimization(43)
 
-### 工程设计(engineering_design) — 19
+### 工程设计(engineering_design) — 18
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
@@ -30,7 +30,6 @@
 | [`MOSFETDoping`](benchmarks/Engineering/MOSFETDoping/)<br>MOSFET 掺杂剖面 | Engineering | Semiconductor | uncapped | physical_sim | candidate | design transferable silicon nMOS halo-profile Pareto archives | 设计可迁移的短沟道硅 nMOS 晕环掺杂剖面帕累托档案 | 驱动电流对漏电的帕累托超体积;密封留出迁移与最差偏移稳健性分列,无上限 |
 | [`NeutronDiffusionCriticality`](benchmarks/Engineering/NeutronDiffusionCriticality/)<br>中子扩散临界优化 | Engineering | NuclearEngineering | uncapped | physical_sim | candidate | optimize reactor fuel loading for maximum k-effective | 在平均富集度约束下优化堆芯燃料富集分布以最大化 k_eff | 相对均匀装载的 k_eff 提升;无上限 |
 | [`RANSCalibration`](benchmarks/Engineering/RANSCalibration/)<br>RANS 封闭标定 | Engineering | Turbulence | uncapped | physical_sim | candidate | calibrate a transferable algebraic channel-flow closure | 标定可迁移的代数通道流涡黏封闭,同时匹配平均速度与雷诺剪应力 | 真实 DNS 拟合;密封高雷诺数迁移与壁面坐标稳健性分列,无上限 |
-| [`ResilientPumpScheduling`](benchmarks/Engineering/ResilientPumpScheduling/)<br>供水管网韧性泵调度 | Engineering | WaterDistribution | uncapped | physical_sim | candidate | tariff-aware water-distribution operation | 根据需求和电价安排 24 小时泵速,满足水箱、压力、爬坡与终端储水约束 | 相对恒速基线的电费节省;需求增长与高峰泵故障韧性分列,无上限 |
 | [`RoomImpulseResponse`](benchmarks/Engineering/RoomImpulseResponse/)<br>房间声学处理设计 | Engineering | Acoustics | uncapped | physical_sim | candidate | robust room-acoustic treatment design | 布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度 | 清晰度/混响/均匀度综合效用;一阶反射代理与镜像源长程计算排序不同,含安装误差与老化偏移 |
 | [`TrussWeightMinimization`](benchmarks/Engineering/TrussWeightMinimization/)<br>桁架减重 | Engineering | StructuralEngineering | uncapped | analytical | candidate | general truss sizing under physical shifts | 给出跨结构通用的桁架截面尺寸策略,在应力、位移与欧拉屈曲约束下减重 | 标称减重;密封拓扑迁移与载荷/材料/制造稳健性分列,无上限 |
 | [`WakeAwareFarmCoDesign`](benchmarks/Engineering/WakeAwareFarmCoDesign/)<br>尾流感知风场协同设计 | Engineering | WindEnergy | uncapped | physical_sim | candidate | wind-farm layout and yaw co-design | 联合设计风机平面位置与分风向偏航策略,减弱尾流损失并保持布置可制造 | 相对规则零偏航风场的年发电价值提升;留出风况和尾流模型偏移分列,无上限 |

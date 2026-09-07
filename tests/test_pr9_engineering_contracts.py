@@ -17,7 +17,6 @@ ROOT = Path(__file__).resolve().parents[1]
 TASK_ROOT = ROOT / "benchmarks" / "Engineering"
 TASKS = {
     "AerospaceStructures/CompositeLaminateStacking": "design_laminate",
-    "WaterDistribution/ResilientPumpScheduling": "schedule_pumps",
     "WindEnergy/WakeAwareFarmCoDesign": "design_wind_farm",
 }
 

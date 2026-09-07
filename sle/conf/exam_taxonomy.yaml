@@ -34,7 +34,6 @@ discovery_kind:
 
 tasks:
   AerospaceStructures/CompositeLaminateStacking: {form: optimization, analogue: engineering_design}
-  WaterDistribution/ResilientPumpScheduling: {form: optimization, analogue: engineering_design}
   WindEnergy/WakeAwareFarmCoDesign: {form: optimization, analogue: engineering_design}
   Ecology/OccupancyDetectionDesign: {form: discovery, kind: evidence, note: latent_occupancy_and_repeat_detection_not_population_history_or_climate_fingerprinting}
   Physics/CriticalPhenomenaLab: {form: discovery, kind: parameter_inversion, note: finite_size_scaling_not_microscopic_law}

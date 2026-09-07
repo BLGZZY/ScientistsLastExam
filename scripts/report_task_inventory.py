@@ -35,7 +35,6 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 # directory name is the identifier and never changes; this is what a Chinese reader scans for.
 CHINESE_NAMES = {
     "AerospaceStructures/CompositeLaminateStacking": "复合材料层合板铺层",
-    "WaterDistribution/ResilientPumpScheduling": "供水管网韧性泵调度",
     "WindEnergy/WakeAwareFarmCoDesign": "尾流感知风场协同设计",
 
     "Acoustics/RoomImpulseResponse": "房间声学处理设计",
@@ -130,9 +129,6 @@ CHINESE_BRIEFS = {
     "AerospaceStructures/CompositeLaminateStacking": (
         "排列固定组成的对称平衡复合材料铺层,提高多载荷下的屈曲与首层失效裕度",
         "相对准各向同性基线的储备系数提升;留出板型与材料/载荷退化分列,无上限"),
-    "WaterDistribution/ResilientPumpScheduling": (
-        "根据需求和电价安排 24 小时泵速,满足水箱、压力、爬坡与终端储水约束",
-        "相对恒速基线的电费节省;需求增长与高峰泵故障韧性分列,无上限"),
     "WindEnergy/WakeAwareFarmCoDesign": (
         "联合设计风机平面位置与分风向偏航策略,减弱尾流损失并保持布置可制造",
         "相对规则零偏航风场的年发电价值提升;留出风况和尾流模型偏移分列,无上限"),

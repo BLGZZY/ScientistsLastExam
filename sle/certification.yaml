@@ -16,12 +16,6 @@ tasks:
     citation_ids:
       - doi:10.2514/3.11710
       - doi:10.1016/j.compstruct.2016.01.052
-  WaterDistribution/ResilientPumpScheduling:
-    status: candidate
-    reason: deterministic extended-period storage, pressure and energy scheduling with an uncapped public-forecast convex-optimization witness and separate demand-growth and pump-outage resilience; pending EPANET/WNTR replication, independent water-systems review, server-held networks and frontier-model calibration
-    citation_ids:
-      - url:https://nepis.epa.gov/Exe/ZyPURL.cgi?Dockey=P10113EM.TXT
-      - doi:10.5194/dwes-7-53-2014
   WindEnergy/WakeAwareFarmCoDesign:
     status: candidate
     reason: deterministic mixed continuous layout-yaw co-design with boundary and spacing hard gates, uncapped truth-blind search normalization and separate wake/direction/turbulence transfer; pending pinned FLORIS replication, independent wind-energy review, server-held wind roses and frontier-model calibration
