@@ -85,16 +85,12 @@ ResilientPumpScheduling optimizes time allocation, CompositeLaminateStacking opt
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
-
-### Current reference and remaining difficulty
-
-The runnable witness is a truth-blind seeded layout-screening, coordinate yaw-search and feasible
-layout-refinement method; the evaluator independently recomputes a stronger multi-start,
-multi-scale anchor as score one. The witness reaches the 0.5–0.8 development band on the current
-panels; denser restarts, finer refinement scales and joint layout-yaw moves are the measured
-headroom. Cross-model robustness and independent FLORIS validation remain open. This calibration
-does not certify difficulty.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-06)
 

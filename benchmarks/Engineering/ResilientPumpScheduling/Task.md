@@ -62,11 +62,14 @@ GroundwaterRemediationDesign chooses remediation wells and an archive. This task
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
-### Current reference and remaining difficulty
-
-The runnable reference performs constrained convex dispatch for a conservative all-on commitment. The evaluator separately recomputes a public-demand-band block-exchange anchor with the same linear storage/pressure constraints and fixed-mask solver. On the twelve-system set the witness scores `0.629968` development / `0.566628` held-out; discrete pump commitment is therefore the explicit headroom. No invented fallback anchor is used: an invalid anchor is an infrastructure error. This remains a single-tank surrogate, not a pipe-network solver. A direct local evaluation on 2026-09-07 took 41.1 seconds for the baseline entry (all anchor searches included) and 0.2 seconds for the witness; the package declares 150 seconds expected evaluation time and the black-box wrapper enforces a 300-second candidate timeout. This calibration and timing record do not certify difficulty.
+### Public model scope
 
 The cost adds running auxiliary electricity at the current tariff and the startup charge to
 hydraulic electricity and speed variation. This creates a genuine discrete commitment decision:

@@ -77,13 +77,15 @@ TrussWeightMinimization optimizes member sizes, HeatExchangerDesign optimizes th
 
 ## Admission and reference scope
 
-This package remains **candidate**. The metadata difficulty is a target, not a certified result. The runnable reference uses public inputs only. Local shortcut and ablation diagnostics are recorded in `references/known_best.md`; they do not replace clean Linux sandbox replay, independent domain review, Frontier-Eng overlap review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The metadata difficulty is a target, not a
+certified result. The runnable reference uses public inputs only. Reference methods,
+calibration measurements, shortcut probes and ablation diagnostics are recorded in
+the maintainer-facing `references/known_best.md`, which is not served to candidates.
+They do not replace clean Linux sandbox replay, independent domain review,
+Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
-### Current reference and remaining difficulty
+### Current task design and remaining validation
 
-The runnable witness is a truth-blind seeded permutation-search method with adjacent-exchange
-refinement over the symmetric half stack; the evaluator independently recomputes a stronger
-structured-seed, multi-start full pair-exchange plus iterated-local-search anchor as score one.
 Panels span 36–48 plies (half-stacks of 18–24 plies) with deliberately uneven angle mixes, so
 the half-permutation counts exceed 1e8 everywhere and exhaustive screening is out of reach.
 Every instance carries THREE paired load/moment cases whose optima conflict - an axial case, a
