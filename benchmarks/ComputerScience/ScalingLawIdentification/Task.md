@@ -75,12 +75,10 @@ polynomial classes from the exponential tail.
 
 ## Admission and reference scope
 
-This package remains **candidate**. The runnable reference uses public inputs only: an
-eight-call, six-unique-size ladder repeating size 16 three times, per-class
-log-space regression with an exponent penalty, a split-fit branch test and a
-repeat-estimated jitter gate. Local shortcut and ablation diagnostics are recorded in
-`references/known_best.md`; they do not replace clean Linux sandbox replay,
-independent review or a frozen frontier-model calibration draw.
+This package remains **candidate**. The runnable reference uses public inputs only.
+Its method, shortcut probes and ablation diagnostics are recorded in the
+maintainer-facing `references/known_best.md`; they do not replace clean Linux
+sandbox replay, independent review or a frozen frontier-model calibration draw.
 
 ## Frontier-Eng overlap comparison (2026-09-07)
 
