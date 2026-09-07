@@ -9,16 +9,23 @@ directly; sandbox-dependent behaviour is out of scope here.
 from __future__ import annotations
 
 
+import io
 import importlib.util
 
 
 import json
 
 
+import sys
+import tempfile
 import unittest
 
 
 from pathlib import Path
+from unittest import mock
+
+
+from contextlib import redirect_stdout
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +36,19 @@ TASKS = {'Electrochemistry/ChronoamperometryLawID': ('benchmarks/Chemistry/Chron
  'Electrophysiology/HodgkinHuxleyCurrentID': ('benchmarks/Biology/HodgkinHuxleyCurrentID',
                                               'recover_channel_parameters')}
 
+RUNNERS = {
+    "Electrophysiology/HodgkinHuxleyCurrentID":
+        "benchmarks/Biology/HodgkinHuxleyCurrentID",
+    "SyntheticBiology/OrthogonalDNACodewords":
+        "benchmarks/Biology/OrthogonalDNACodewords",
+    "Electrochemistry/ChronoamperometryLawID":
+        "benchmarks/Chemistry/ChronoamperometryLawID",
+    "Spectroscopy/MassFragmentationTree":
+        "benchmarks/Chemistry/MassFragmentationTree",
+    "ChemicalProcess/ThermochemicalCycleAudit":
+        "benchmarks/Chemistry/ThermochemicalCycleAudit",
+}
+
 
 def _load(path: Path, name: str):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -36,6 +56,36 @@ def _load(path: Path, name: str):
     assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
+
+
+class BlackBoxRunnerTests(unittest.TestCase):
+    def test_runners_delegate_to_sandbox_and_emit_valid_json(self):
+        expected = {"combined_score": 0.25, "valid": 1.0}
+        completed = mock.Mock(returncode=0, stdout=json.dumps(expected), stderr="")
+
+        for index, (task_id, directory) in enumerate(RUNNERS.items()):
+            runner_path = ROOT / directory / "frontier_eval/run_eval.py"
+            source = runner_path.read_text(encoding="utf-8")
+            self.assertNotIn("spec_from_file_location", source, task_id)
+            self.assertNotIn("import evaluator", source, task_id)
+            runner = _load(runner_path, "r4_runner_%d" % index)
+
+            with tempfile.TemporaryDirectory() as tmp:
+                metrics_path = Path(tmp) / "metrics.json"
+                argv = [str(runner_path), "--candidate", str(ROOT / directory / "solution.py"),
+                        "--metrics-out", str(metrics_path)]
+                output = io.StringIO()
+                with mock.patch.object(sys, "argv", argv), \
+                     mock.patch.object(runner.subprocess, "run", return_value=completed) as run, \
+                     redirect_stdout(output):
+                    self.assertEqual(runner.main(), 0, task_id)
+
+                command = run.call_args.args[0]
+                self.assertEqual(command[1:4], ["-m", "sle", "eval"], task_id)
+                self.assertEqual(command[command.index("--task") + 1], task_id)
+                self.assertEqual(json.loads(output.getvalue()), expected)
+                self.assertEqual(json.loads(metrics_path.read_text(encoding="utf-8")),
+                                 {**expected, "raw_score": 0.25})
 
 
 class RoundFourPackageTests(unittest.TestCase):

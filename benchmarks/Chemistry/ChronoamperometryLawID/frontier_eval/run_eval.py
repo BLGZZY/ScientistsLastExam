@@ -1,41 +1,38 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
 INVALID = -1e18
-TASK_DIR = Path(__file__).resolve().parent.parent
-
-
-def _load(path, name):
-    spec = importlib.util.spec_from_file_location("candidate", path)
-    if spec is None or spec.loader is None:
-        raise ImportError("cannot load candidate")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return getattr(module, name)
+TASK_ID = "Electrochemistry/ChronoamperometryLawID"
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
+    parser.add_argument("--timeout", type=float, default=300.0)
     args = parser.parse_args()
     metrics = {"combined_score": INVALID, "valid": 0.0}
     try:
-        sys.path.insert(0, str(TASK_DIR / "verification"))
-        import evaluator as oracle
-        candidate = _load(Path(args.candidate).resolve(), "identify_current_law")
-        result = oracle.evaluate(candidate)
-        metrics.update(result)
-        metrics["raw_score"] = result.get("combined_score")
-    except Exception as exc:
-        metrics["error_message"] = f"{{type(exc).__name__}}: {{exc}}"
+        completed = subprocess.run(
+            [sys.executable, "-m", "sle", "eval", "--task", TASK_ID, "--allow-uncertified",
+             "--candidate", str(Path(args.candidate).resolve()), "--timeout", str(args.timeout)],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=args.timeout + 120,
+            env={**os.environ, "PYTHONPATH": str(ROOT)})
+        if completed.returncode:
+            raise RuntimeError("sle eval exited %d: %s" % (completed.returncode, completed.stderr[-500:]))
+        metrics.update(json.loads(completed.stdout))
+        metrics.setdefault("raw_score", metrics.get("combined_score"))
+    except Exception as exc:  # noqa: BLE001
+        metrics["error_message"] = "%s: %s" % (type(exc).__name__, exc)
     Path(args.metrics_out).write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
-    print(json.dumps({{key: metrics.get(key) for key in ("combined_score", "valid")}}))
+    print(json.dumps({key: metrics.get(key) for key in ("combined_score", "valid")}))
     return 0
 
 
