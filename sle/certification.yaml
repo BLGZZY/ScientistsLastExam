@@ -526,6 +526,16 @@ tasks:
       - url:https://cohn.mit.edu/kissing-numbers/
       - arxiv:2506.13131
       - arxiv:2606.18984
+  Algorithm/SortingNetworkSize:
+    status: candidate
+    reason: 'candidate revised under PR reviewer guidance: Batcher zero anchor, cited size lower bounds
+      as ideal full-score targets, exact 0-1 verification and independent public-network reconstruction
+      reference; raw comparator counts and record gaps retained. Lower scores do not establish search difficulty.
+      Published lower-bound proof audit, general search reference, clean Linux model calibration and external
+      review remain pending.'
+    citation_ids:
+    - doi:10.1007/978-3-319-04921-2_19
+    - url:https://bertdobbelaere.github.io/sorting_networks.html
   Algorithm/TensorRank555:
     status: candidate
     reason: >-
