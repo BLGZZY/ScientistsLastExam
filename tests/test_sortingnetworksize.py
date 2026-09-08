@@ -310,6 +310,8 @@ class SortingNetworkSizeTests(unittest.TestCase):
         variants = {
             "tuples": lambda n: [tuple(p) for p in base[n]],
             "numpy": lambda n: np.array(base[n], dtype=int),
+            "numpy_float32": lambda n: np.array(base[n], dtype=np.float32),
+            "numpy_float64": lambda n: np.array(base[n], dtype=np.float64),
             "integral_floats": lambda n: [[float(i), float(j)] for i, j in base[n]],
             "generator": lambda n: (p for p in base[n]),
             "iterable_of_arrays": lambda n: [np.array(p) for p in base[n]],

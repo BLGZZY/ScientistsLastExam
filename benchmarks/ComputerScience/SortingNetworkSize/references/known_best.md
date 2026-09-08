@@ -100,6 +100,13 @@ suffix completion stayed at 48 gates for n=13 and 63 for n=16. These unsuccessfu
 explorations are not frozen/model calibration evidence and do not justify admission.
 The bounded executable prefix probe above is the reproducible positive search result.
 
+A further local n=13 greedy multistart experiment used seeds 0 through 1999,
+starting with adjacent comparators and repeatedly minimizing the number of distinct
+Boolean output patterns with random tie-breaking, then exact deletion. Its best
+result was 48 gates (first reached at seed 169), in 106.06 seconds on the development
+machine. This is another negative method diagnostic, not a new reference or a
+two-hour headroom measurement.
+
 ## 5. Frontier-model draw
 
 Not run. No current calibration IDs, clean first-proposal comparison, formal freeze,
@@ -124,6 +131,10 @@ Nearest-neighbor descriptions now refer to existing registered tasks.
 The exact checker is cross-checked against an independent Boolean simulator.
 Tests cover baseline reconstruction, licensed asset hashes, valid numeric formats,
 malformed and partial submissions, target semantics and deterministic evaluation.
+The evaluator itself uses only the Python standard library. Numeric abstract base
+classes preserve support for NumPy integer and floating-point candidate arrays;
+the format tests include float32 and float64 arrays. A separate `python -S` run
+verifies that the evaluator imports and scores the baseline without site packages.
 
 ```sh
 python -m pytest tests/test_sortingnetworksize.py -q

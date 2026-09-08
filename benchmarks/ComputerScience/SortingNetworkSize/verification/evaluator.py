@@ -9,9 +9,9 @@ from __future__ import annotations
 
 from itertools import islice
 from functools import lru_cache
+from numbers import Integral, Real
 
 INVALID_RAW_SCORE = -1e18
-import numpy as np
 
 
 def _normalized(value: float, baseline: float, target: float) -> float:
@@ -149,9 +149,9 @@ def _as_index(value):
     """Integral index or None (accepts int/numpy integer/5.0; rejects 5.5, bool, str)."""
     if isinstance(value, bool):
         return None
-    if isinstance(value, (int, np.integer)):
+    if isinstance(value, Integral):
         return int(value)
-    if isinstance(value, (float, np.floating)):
+    if isinstance(value, Real):
         f = float(value)
         return int(f) if f.is_integer() else None
     return None
@@ -229,8 +229,8 @@ def evaluate(build_network) -> dict:
     valid = n_valid == len(SIZES)
     contradictions = [r for r in per if r.get("bound_contradiction")]
     result = {
-        "combined_score": float(np.mean([r["score"] for r in per])) if valid else 0.0,
-        "raw_score": -float(np.mean([r["size"] for r in per])) if valid else INVALID_RAW_SCORE,
+        "combined_score": sum(r["score"] for r in per) / len(per) if valid else 0.0,
+        "raw_score": -sum(r["size"] for r in per) / len(per) if valid else INVALID_RAW_SCORE,
         "valid": 1.0 if n_valid == len(SIZES) else 0.0,
         "feasibility_rate": n_valid / len(SIZES),
         "beat_sota": bool(any(r.get("beats_known_record", False) for r in per)),

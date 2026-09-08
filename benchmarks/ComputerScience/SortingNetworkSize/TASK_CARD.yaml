@@ -11,7 +11,7 @@ oracle:
     and the network sorts all 2^n zero-one inputs; a purported construction strictly below the cited bound
     is flagged for audit
   deterministic: true
-  external_tooling: none beyond NumPy
+  external_tooling: Python standard library only; candidate NumPy arrays remain supported
 difficulty_ladder:
   default_level: 1
   levels:
