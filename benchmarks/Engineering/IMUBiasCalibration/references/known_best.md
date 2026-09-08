@@ -69,6 +69,11 @@ effective thinking configuration. DeepSeek evidence alone is not independent fro
 4. The active redesign removes the free table, expands six coefficients to twelve, moves faults
    toward single-measurement noise, and requires axis localization. Budget enforcement is sticky:
    catching the callback's exception cannot restore validity. Query evidence cannot be fabricated.
+5. The first active ablation showed no development benefit from the motion diagnostic. Its
+   centered-square basis had maximum 2/3 and smaller RMS than the other fault bases. Using the
+   standard second Legendre polynomial P2(u)=(3*u^2-1)/2 defines alpha as its aligned-pose
+   amplitude and gives a comparable directional RMS, without altering the public amplitude
+   range, measurement noise, seeds, calibration coefficients or reference decision threshold.
 
 No model program, provider configuration, prompt, key or raw request is committed. Historical
 failures are retained; they are not evidence for the current score or reference difficulty.

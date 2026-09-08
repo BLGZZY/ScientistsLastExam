@@ -55,7 +55,7 @@ def _infer_imu(problem, measure, *, measurement_limit=None, central_only=False,
         matrix[axis, components] += coef[2:]/g
         residual = Y-X@coef
         alternatives = [("thermal_nonlinearity", x*x),
-                        ("motion_contamination", u[:, (axis+1) % 3]**2-1/3)]
+                        ("motion_contamination", (3*u[:, (axis+1) % 3]**2-1)/2)]
         alternatives += [("axis_misalignment", x*u[:, j]) for j in range(3) if j != axis]
         for label, feature in alternatives:
             if label in disabled_faults:

@@ -23,7 +23,7 @@ PUBLIC_PROBLEM = {
     "fault_models": {
         "thermal_nonlinearity": "one response axis adds alpha*x*x",
         "axis_misalignment": "one response axis adds alpha*x*u[j], with j unequal to the response axis",
-        "motion_contamination": "one response axis k adds alpha*(u[(k+1)%3]**2-1/3)",
+        "motion_contamination": "one response axis k adds alpha*(3*u[(k+1)%3]**2-1)/2",
     },
     "fault_amplitude_range_mps2": [0.035, 0.065],
     "abstain_when": "one of the three declared non-affine fault terms is supported; identify its response axis",
@@ -83,7 +83,7 @@ def _clean(world, setting):
         driver = [j for j in range(3) if j != axis][world["driver"]]
         value[axis] += world["amplitude"] * x * u[driver]
     elif world["kind"] == "motion_contamination":
-        value[axis] += world["amplitude"] * (u[(axis+1) % 3]**2 - 1/3)
+        value[axis] += world["amplitude"] * (3*u[(axis+1) % 3]**2 - 1)/2
     return value
 
 

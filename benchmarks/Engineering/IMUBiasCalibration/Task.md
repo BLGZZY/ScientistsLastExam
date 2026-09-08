@@ -17,7 +17,7 @@ With `x=(T-T_ref)/temperature_scale_c`, each unsupported instrument adds exactly
 - `thermal_nonlinearity`: `alpha*x*x` on an unknown response axis;
 - `axis_misalignment`: `alpha*x*u[j]` on an unknown response axis `k`, with unknown `j != k`;
   this is temperature-dependent cross-axis response, not the constant non-orthogonality in M;
-- `motion_contamination`: `alpha*(u[(k+1)%3]**2-1/3)` on response axis `k`, a reduced-order
+- `motion_contamination`: `alpha*(3*u[(k+1)%3]**2-1)/2` on response axis `k`, a reduced-order
   orientation-dependent parasitic acceleration that no constant affine calibration can absorb.
 
 The signed fault coefficient has magnitude in `fault_amplitude_range_mps2`. Measurement noise

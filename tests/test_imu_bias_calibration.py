@@ -43,6 +43,13 @@ class IMUBiasCalibrationTests(unittest.TestCase):
             for metric in ("combined_score", "heldout_combined_score"):
                 self.assertGreater(full[metric]-ablated[metric], .02)
 
+    def test_every_fault_diagnostic_matters_in_both_splits(self):
+        full = self.oracle.evaluate(self.reference.infer_imu)
+        for fault in self.oracle.FAULTS:
+            ablated = self.oracle.evaluate(lambda p, m: self.reference._infer_imu(p, m, disabled_faults=(fault,)))
+            for metric in ("combined_score", "heldout_combined_score"):
+                self.assertGreater(full[metric]-ablated[metric], .01)
+
     def test_world_families_do_not_leak_through_public_problem(self):
         for worlds in (self.oracle.DEVELOPMENT_WORLDS, self.oracle.HELDOUT_WORLDS):
             self.assertEqual({s["kind"] for s in worlds}, {"supported", *self.oracle.FAULTS})
