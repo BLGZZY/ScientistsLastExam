@@ -60,9 +60,11 @@ before candidate calls, and resets sandbox sessions between worlds.
 
 ## Robustness and limitations
 
-The generator is unchanged in this review. It supplies all 24 six-orientation/four-temperature
-records, has only six affine parameters, strong fault signals, two supported worlds per split,
-and no held-out motion world. These are meaningful limitations: the high reference score and
+The review adds the missing held-out motion family after the initial shortcut replay exposed
+its absence. Existing world parameters, generator equations and reference thresholds are
+unchanged; the new world has an independent seed and bias/drift/motion vector. It supplies all
+24 six-orientation/four-temperature records, has only six affine parameters, strong fault signals
+and two supported worlds per split. These are meaningful limitations: the high reference score and
 simple diagnostics may put it at on-ramp difficulty, not expert-level admission. Adding a
 measurement budget, full scale/misalignment calibration or noise-overlapping faults would be a
 separate scientific redesign, not a bookkeeping fix. The task remains candidate pending

@@ -97,8 +97,9 @@ def main():
             report["probes"][name] = {"complete_metrics_identical_twice": True, "metrics": results[0]}
             print(name, results[0]["combined_score"], results[0]["heldout_combined_score"], flush=True)
     Path(args.output).write_text(json.dumps(report, indent=2) + "\n")
-    if report["probes"]["threshold_grid_winner"]["metrics"]["combined_score"] >= report["probes"]["reference"]["metrics"]["combined_score"]:
-        raise AssertionError("shortcut reaches reference; hardening required")
+    for metric in ("combined_score", "heldout_combined_score"):
+        if report["probes"]["threshold_grid_winner"]["metrics"][metric] >= report["probes"]["reference"]["metrics"][metric]:
+            raise AssertionError("shortcut reaches reference on " + metric + "; hardening required")
 
 
 if __name__ == "__main__":

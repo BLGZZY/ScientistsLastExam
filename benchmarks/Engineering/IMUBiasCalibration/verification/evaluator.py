@@ -43,6 +43,7 @@ HELDOUT_WORLDS = (
     {"kind": "supported", "seed": 2202, "bias": [-0.06, -0.16, 0.12], "drift": [0.0020, -0.0015, -0.0013]},
     {"kind": "thermal_nonlinearity", "seed": 2203, "bias": [0.05, -0.02, 0.10], "drift": [0.0012, 0.0010, -0.0014], "quadratic_axis": 2, "quadratic": 0.00017},
     {"kind": "axis_misalignment", "seed": 2204, "bias": [0.09, 0.07, -0.05], "drift": [-0.0011, 0.0013, 0.0016], "misalignment_scale": 0.38},
+    {"kind": "motion_contamination", "seed": 2205, "bias": [0.07, -0.08, 0.11], "drift": [0.0016, -0.0012, 0.0010], "motion": [0.16, -0.20, 0.14]},
 )
 
 

@@ -54,8 +54,9 @@ lineage:
     0.462/0.647 development/held-out for Flash and 0.599/0.733 for Pro, below the
     0.989/0.988 reference but above the zero baseline on the historical objective. The September 8
     maintainer review subsequently changed abstention normalization and diagnostic bookkeeping,
-    not the world generator or numerical reference. Historical model scores are not current
-    measurements; a fresh Linux replay/calibration is recorded separately.
+    not the numerical reference. A development-selected shortcut exposed the missing held-out
+    motion family; a fresh seeded motion world was added before final replay. Historical model
+    scores are not current measurements; fresh Linux calibration is recorded separately.
   shortcut_discoverer: builder_self_audit
   frozen_before_eval: false
   freeze_timestamp: null

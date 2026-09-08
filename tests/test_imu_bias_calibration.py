@@ -19,6 +19,18 @@ def _load(name: str, path: Path):
 
 
 class IMUBiasCalibrationTests(unittest.TestCase):
+    def test_each_split_covers_each_fault_and_each_diagnostic_matters(self):
+        oracle = _load("imu_split", TASK / "verification/evaluator.py")
+        reference = _load("imu_split_ref", TASK / "verification/reference_solver.py")
+        faults = {"thermal_nonlinearity", "axis_misalignment", "motion_contamination"}
+        for worlds in (oracle.DEVELOPMENT_WORLDS, oracle.HELDOUT_WORLDS):
+            self.assertEqual({s["kind"] for s in worlds}, faults | {"supported"})
+        full = oracle.evaluate(reference.infer_imu)
+        for fault in faults:
+            ablated = oracle.evaluate(lambda p: reference._infer_imu(p, disabled_faults=(fault,)))
+            for key in ("combined_score", "heldout_combined_score"):
+                self.assertGreater(full[key] - ablated[key], .1)
+
     def test_reference_is_deterministic_and_baseline_is_zero(self):
         oracle = _load("imu_evaluator", TASK / "verification" / "evaluator.py")
         reference = _load("imu_reference", TASK / "verification" / "reference_solver.py")
