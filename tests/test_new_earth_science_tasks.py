@@ -62,6 +62,16 @@ class NewEarthSciencePackageTests(unittest.TestCase):
             self.assertGreater(result["combined_score"], 0.05, task_id)
             self.assertGreater(result["combined_score"], 0.3, task_id)
             self.assertLess(result["combined_score"], 0.8, task_id)
+            if directory == "ActiveFullWaveformInversion":
+                one_shot = evaluator.evaluate(lambda *args: reference.invert_velocity_model(
+                    *args[:-1], min(args[-1], 1)))
+                self.assertEqual(one_shot["valid"], 1.0)
+                self.assertGreater(result["combined_score"], one_shot["combined_score"] + 0.10)
+                self.assertGreater(result["robustness_score"], one_shot["robustness_score"])
+                self.assertTrue(all(row["shot_calls"] == 1 for row in one_shot["per_world"]))
+                self.assertTrue(all(row["shot_calls"] == 3 for row in result["per_world"]))
+                self.assertEqual(result["development_correct_refusal_rate"], 1.0)
+                self.assertEqual(result["heldout_correct_refusal_rate"], 1.0)
 
     def test_bad_candidates_score_invalid_without_crashing_evaluator(self):
         def raises(*args, **kwargs):

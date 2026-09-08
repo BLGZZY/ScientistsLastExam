@@ -28,7 +28,9 @@ The grid spacing and time increment are the supplied `spacing_m` and successive
 the velocity anomalies and sealed assessment shots remain hidden.
 
 The evaluator contains supported velocity anomalies, a no-anomaly null world, and data with
-attenuation/phase effects outside the public acoustic family. Hidden worlds, noise and sealed
+attenuation/phase effects outside the public acoustic family. Out-of-family attenuation may
+coexist with velocity anomalies; neither visible structure nor total signal energy alone
+establishes that an acoustic interpretation is adequate. Hidden worlds, noise and sealed
 source frequencies are not visible to the candidate.
 
 ## Your task
@@ -73,6 +75,15 @@ attempts; coverage counts valid, non-abstaining supported-world submissions.
 - Waveform relative L2 error, travel-time behavior, confidence, false discovery, correct refusal
   and supported-world discovery coverage are retained separately.
 - `robustness_score` uses held-out anomaly topologies, noise and velocity contrasts.
+
+Structural recovery measures improvement over the supplied background. Let `r` be the
+depth-weighted L2 velocity error divided by the background's error, using depth weights
+linearly spaced from 0.7 to 1.3. Its score is
+`max(0, (exp(-1.5*r) - exp(-1.5)) / (1 - exp(-1.5)))`.
+Exact recovery scores one; the background or a worse reconstruction scores zero.
+The supported-world mechanism score is the geometric mean of this structural score
+and the sealed-waveform score. Correctly rejecting unsupported worlds cannot by itself
+give a positive aggregate score without supported-world recovery.
 
 The grid is deliberately small enough for deterministic CPU evaluation. It is a controlled
 acoustic benchmark, not a claim of field-scale seismic imaging.

@@ -53,12 +53,9 @@ def test_caught_malformed_instrument_call_still_invalidates_world():
 
 
 # ---------------------------------------------------------------------------
-# 2026-09-07 FWI shortcut re-audit. The three first-shot probes below are the
-# no-inversion families named in references/known_best.md. Measured development
-# scores on the shipped evaluator: zero-inversion background return 0.327769,
-# constant-lens family 0.379232, travel-time-only update 0.068824, against the
-# 0.615339 grid-continuation reference. Bounds are pinned so an oracle change
-# that quietly lifts one of these families above the reference fails here.
+# FWI shortcut re-audit. The 2026-09-09 background-relative structure score and
+# structured attenuation worlds supersede the older 0.327769/0.379232/0.068824
+# measurements. Keep these candidate methods unchanged to compare revisions.
 # ---------------------------------------------------------------------------
 
 def _probe_ricker(time_s, frequency_hz):
@@ -177,17 +174,17 @@ def _fwi_travel_time_only(grid_shape, spacing_m, background_velocity_m_s,
             "confidence": 0.8, "abstain": False}
 
 
-@pytest.mark.parametrize('probe,bound', [
-    (_fwi_zero_inversion, 0.35),      # measured 0.327769 on 2026-09-07
-    (_fwi_constant_lens, 0.40),       # measured 0.379232 on 2026-09-07
-    (_fwi_travel_time_only, 0.10),    # measured 0.068824 on 2026-09-07
+@pytest.mark.parametrize('probe,bound,false_discovery', [
+    (_fwi_zero_inversion, 0.001, 1.0 / 3.0),
+    (_fwi_constant_lens, 0.20, 0.0),
+    (_fwi_travel_time_only, 0.001, 0.0),
 ])
-def test_fwi_shortcut_probes_stay_far_below_reference(probe, bound):
+def test_fwi_shortcut_probes_stay_far_below_reference(probe, bound, false_discovery):
     fwi = load('EarthScience', 'ActiveFullWaveformInversion')
     result = fwi.evaluate(probe)
     assert result["valid"] == 1.0
-    assert result["development_false_discovery_rate"] == 0.0
+    assert result["development_false_discovery_rate"] == pytest.approx(false_discovery)
     print("fwi probe", probe.__name__, "combined=%.6f" % result["combined_score"])
-    # The grid-continuation reference measures 0.615339 development; every
+    # The grid-continuation reference measures about 0.437 development; every
     # no-spatial-inversion family must stay clearly below it.
     assert result["combined_score"] < bound, probe.__name__

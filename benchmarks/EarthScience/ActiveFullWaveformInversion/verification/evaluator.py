@@ -33,6 +33,7 @@ DEVELOPMENT_SPECS = (
     (41039, "supported", 3),
     (41047, "null", 0),
     (41051, "misspecified", 1),
+    (41023, "structured_attenuation", 2),
 )
 HELDOUT_SPECS = (
     (51001, "supported", 4),
@@ -40,6 +41,7 @@ HELDOUT_SPECS = (
     (51019, "supported", 6),
     (51031, "null", 0),
     (51043, "misspecified", 2),
+    (51053, "structured_attenuation", 8),
 )
 
 
@@ -58,7 +60,7 @@ def _background():
 
 def _velocity(seed, variant, kind):
     base = _background()
-    if kind != "supported":
+    if kind not in ("supported", "structured_attenuation"):
         return base
     rng = np.random.default_rng(int(seed))
     zz, xx = np.mgrid[0:GRID_SHAPE[0], 0:GRID_SHAPE[1]]
@@ -155,7 +157,7 @@ class _Acquisition:
                 raise RuntimeError("shot budget exceeded")
             self.used += 1
             self.calls.append(source)
-            attenuation = 1.8 if self.world["kind"] == "misspecified" else 0.0
+            attenuation = 1.8 if self.world["kind"] in ("misspecified", "structured_attenuation") else 0.0
             clean = simulate_waveforms(self.world["velocity"], source, 12.0, attenuation)
             scale = max(float(np.std(clean)), 1e-8)
             sigma = self.world["noise"] * scale
@@ -200,7 +202,10 @@ def _supported_scores(world, predicted):
     weight = np.linspace(0.7, 1.3, GRID_SHAPE[0])[:, None]
     rel = np.sqrt(np.sum(weight * (predicted - truth) ** 2) /
                   max(np.sum(weight * (truth - _background()) ** 2), 1.0))
-    model_score = float(math.exp(-1.5 * rel))
+    # Skill above the supplied background: exact truth=1, background or worse=0.
+    # Subtract the old background floor continuously, avoiding a jump at rel=1.
+    floor = math.exp(-1.5)
+    model_score = float(max(0.0, (math.exp(-1.5 * rel) - floor) / (1.0 - floor)))
     errors = []
     for frequency, source in ((8.0, 6), (15.0, 25)):
         observed = simulate_waveforms(truth, source, frequency)

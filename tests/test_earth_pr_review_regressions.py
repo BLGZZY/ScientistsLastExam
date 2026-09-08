@@ -135,3 +135,50 @@ def test_fwi_zero_baseline_makes_claims_while_full_refusal_is_separate():
     assert refusal["valid"] == 1.0
     assert refusal["combined_score"] == 0.0
     assert refusal["discovery_attempt_count"] == 0
+
+
+def test_fwi_structure_requires_improvement_over_background():
+    oracle = load("ActiveFullWaveformInversion")
+    world = oracle._world(oracle.DEVELOPMENT_SPECS[0])
+    truth, background = world["velocity"], oracle._background()
+    values = []
+    for fraction in (0.0, 0.001, 0.5, 1.0):
+        model = background + fraction * (truth - background)
+        structure, _, mechanism = oracle._supported_scores(world, model)
+        values.append(structure)
+        if fraction == 0:
+            assert structure == 0.0
+            assert mechanism == 0.0
+    assert values == sorted(values)
+    assert values[1] < 0.001  # continuous at the background, not a 0.223 jump
+    assert values[-1] == pytest.approx(1.0)
+    worse = background - 0.1 * (truth - background)
+    assert oracle._supported_scores(world, worse)[0] == 0.0
+
+
+def test_fwi_structured_attenuation_is_present_in_both_splits():
+    oracle = load("ActiveFullWaveformInversion")
+    for specs in (oracle.DEVELOPMENT_SPECS, oracle.HELDOUT_SPECS):
+        cases = [spec for spec in specs if spec[1] == "structured_attenuation"]
+        assert cases
+        for spec in cases:
+            world = oracle._world(spec)
+            assert not np.array_equal(world["velocity"], oracle._background())
+            source = int(oracle.SOURCE_INDICES[2])
+            row = oracle._Acquisition(world).acquire(source)
+            acoustic = oracle.simulate_waveforms(world["velocity"], source)
+            discrepancy = np.sqrt(np.mean((acoustic - row["pressure"]) ** 2))
+            assert discrepancy > 20 * row["noise_std"]
+
+
+def test_fwi_structured_case_is_not_rejected_by_old_global_energy_gate():
+    oracle = load("ActiveFullWaveformInversion")
+    spec = next(s for s in oracle.DEVELOPMENT_SPECS if s[1] == "structured_attenuation")
+    acquisition = oracle._Acquisition(oracle._world(spec))
+    sources = oracle.SOURCE_INDICES[[0, 2, 4]]
+    observed = np.asarray([acquisition.acquire(int(s))["pressure"] for s in sources])
+    background = np.asarray([oracle.simulate_waveforms(oracle._background(), int(s)) for s in sources])
+    ratio = np.linalg.norm(observed) / np.linalg.norm(background)
+    relative = np.linalg.norm(observed - background) / np.linalg.norm(background)
+    assert ratio > 0.95
+    assert relative > 0.006
