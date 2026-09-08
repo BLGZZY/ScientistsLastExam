@@ -16,6 +16,8 @@ from scripts.audit_tasks import (
 # Tasks built inside this repository, whose builder model, scaffold and red-team history are
 # recorded on the card rather than reconstructed after the fact. Everything else is inherited.
 RECORDED_LINEAGE = {
+    "Ecology/OccupancyDetectionDesign",
+    "Physics/CriticalPhenomenaLab",
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",
     "MaterialsScience/PhaseDiagramDiscovery",
@@ -39,6 +41,8 @@ RECORDED_LINEAGE = {
     "Exoplanets/TransmissionSpectrumSpecies",
     "DiscreteGeometry/SpherePackingCertificate",
     "QuantumFoundations/BellBoundCertificate",
+    "InformationTheory/ShannonCapacityCertificate",
+    "QuantumControl/ActiveNoiseSpectroscopy",
     "Mathematics/NonlinearCodeRecords",
     "Mathematics/CapSetFrontier",
     "ParticlePhysics/LookElsewhereAnomaly",
@@ -47,15 +51,17 @@ RECORDED_LINEAGE = {
     "Gravitation/PTAHellingsDowns",
     "Physics/ComplexBoseLaw",
     "MaterialsScience/QuinaryConvexHull",
+    "Mathematics/HeavyTailEvidence",
     "Mathematics/NarrowAdmissibleTuple",
     "Superconductivity/SuperconductorTcRecord",
+    "Geophysics/UPbConcordiaInference",
 }
 
 
 class TaskCardAuditTests(unittest.TestCase):
     def test_metadata_enums_fail_closed(self):
         self.assertEqual(_metadata_issues({
-            "difficulty": "on_ramp", "tier": "candidate", "score_mode": "uncapped",
+            "difficulty": "hard", "tier": "T2", "score_mode": "uncapped",
         }), [])
         self.assertEqual(_metadata_issues({
             "difficulty": "unmeasured", "tier": "candidate", "score_mode": "clipped",

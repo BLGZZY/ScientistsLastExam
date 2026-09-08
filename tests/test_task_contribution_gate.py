@@ -55,6 +55,7 @@ class TaskContributionGateTests(unittest.TestCase):
             "Gravitation/PTAHellingsDowns",
             "Physics/ComplexBoseLaw",
             "MaterialsScience/QuinaryConvexHull",
+            "Mathematics/HeavyTailEvidence",
         ):
             self._assert_structural_gate(task_id)
 

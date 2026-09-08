@@ -17,7 +17,17 @@ on:
 
 jobs:
   sandbox:
-    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-22.04
+            numpy: "1.24.4"
+            scipy: "1.10.1"
+          - os: ubuntu-24.04
+            numpy: "1.26.4"
+            scipy: "1.11.4"
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,8 +45,8 @@ jobs:
       - name: Python dependencies into the system interpreter
         run: |
           /usr/bin/python3 --version
-          sudo /usr/bin/python3 -m pip install --upgrade pip
-          sudo /usr/bin/python3 -m pip install "numpy==1.24.4" "scipy==1.10.1" pyyaml pytest
+          sudo env PIP_BREAK_SYSTEM_PACKAGES=1 /usr/bin/python3 -m pip install --upgrade pip
+          sudo /usr/bin/python3 -m pip install --break-system-packages "numpy==${{ matrix.numpy }}" "scipy==${{ matrix.scipy }}" pyyaml pytest
           # The sandbox resolves site-packages for the interpreter it execs; prove they are there.
           /usr/bin/python3 -c "import numpy, scipy, yaml; print(numpy.__file__)"
       - name: Inventory and card audits
