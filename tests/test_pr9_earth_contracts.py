@@ -30,8 +30,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 TASKS = {'WavePropagation/ActiveFullWaveformInversion':
          ('benchmarks/EarthScience/ActiveFullWaveformInversion', 'invert_velocity_model'),
-         'Hydrology/GroundwaterRemediationDesign':
-         ('benchmarks/EarthScience/GroundwaterRemediationDesign', 'design_remediation')}
+         'Geophysics/FocalMechanismStressInversion':
+         ('benchmarks/EarthScience/FocalMechanismStressInversion', 'infer_stress_orientation')}
 
 
 def _load(path: Path, name: str):
@@ -52,7 +52,7 @@ class EarthPackageContractTests(unittest.TestCase):
             first = evaluator.evaluate(getattr(baseline, entrypoint))
             second = evaluator.evaluate(getattr(baseline, entrypoint))
             self.assertEqual(first["valid"], 1.0, task_id)
-            self.assertLessEqual(abs(first["combined_score"]), 0.01, task_id)
+            self.assertEqual(first["combined_score"], 0.0, task_id)
             self.assertEqual(json.dumps(first, sort_keys=True, default=str),
                              json.dumps(second, sort_keys=True, default=str), task_id)
 

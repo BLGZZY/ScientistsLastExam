@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+EVAL_TIMEOUT_S = 300
 INVALID = -1e18
 TASK_ID = "WavePropagation/ActiveFullWaveformInversion"
 ROOT = Path(__file__).resolve().parents[4]
@@ -17,7 +18,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
-    parser.add_argument("--timeout", type=float, default=300.0)
+    parser.add_argument("--timeout", type=float, default=EVAL_TIMEOUT_S)
     args = parser.parse_args()
     metrics = {"combined_score": INVALID, "valid": 0.0}
     try:

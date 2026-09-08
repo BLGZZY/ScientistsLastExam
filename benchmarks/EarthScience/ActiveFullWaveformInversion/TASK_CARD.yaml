@@ -18,8 +18,7 @@ difficulty_ladder:
     3: 65 percent more observation noise and two additional anomalies
 normalization:
   baseline: one central shot followed by a confident background-velocity claim on every world
-  reference: Coarse-to-fine grid-continuation least squares (3x5 then 5x8 velocity correction grids,
-    cubic-spline interpolation, smoothed-to-unsmoothed waveform stages).
+  reference: Standalone public-input acoustic inversion witness; algorithm and measured comparisons are recorded in references/known_best.md.
   score: depth-weighted structure and sealed-frequency waveform recovery normalized above always abstaining;
     refusal, calibration and held-out transfer remain separate
 citations:
@@ -60,8 +59,7 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: The exact hidden parameters are procedural, but the small acoustic family and public scaffold
-    remain visible and builder-model independence is not established.
+  rationale: Geophysics/GravityInversion also uses paid observations and model-inadequacy refusal, but recovers potential-field parameters. This task returns a two-dimensional acoustic velocity grid and tests transfer to sealed shots and frequencies. Geophysics/FocalMechanismStressInversion instead returns a stress tensor and discrete event-plane assignments. The public acoustic scaffold remains a contamination risk; builder-model independence is not established.
 lineage:
   status: complete
   builder_model_ids:
@@ -107,4 +105,12 @@ frontier_eng_overlap_review:
     adequacy; FE selects car pressure sensors or designs optical phase masks. Neither
     recovers acoustic velocity from acquired waveforms.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
-  status: source_count_discrepancy_pending_maintainer_confirmation
+  status: available_catalog_scope_confirmed_by_maintainer
+
+public_model_disclosure: The finite-difference stencil, damping, wavelet and acquisition geometry are deliberately public so the task measures inversion rather than guessing the simulator. Hidden structures, noise and sealed shots/frequencies remain evaluator-only.
+
+evaluation_budget:
+  timeout_seconds: 300
+  acquisition_units: 3
+  reference_wall_seconds_linux: [89.9, 94.2, 115.9, 146.3]
+  measurement_source: Maintainer PR 20 review at 1589232 on 2026-09-08; timings are host-load dependent, not a new calibration run.

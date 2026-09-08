@@ -23,7 +23,6 @@ def load(task, relative="verification/evaluator.py"):
 @pytest.mark.parametrize("task,task_id", [
     ("ActiveFullWaveformInversion", "WavePropagation/ActiveFullWaveformInversion"),
     ("FocalMechanismStressInversion", "Geophysics/FocalMechanismStressInversion"),
-    ("GroundwaterRemediationDesign", "Hydrology/GroundwaterRemediationDesign"),
 ])
 def test_external_entrypoints_delegate_without_importing_candidate(task, task_id, tmp_path, monkeypatch):
     runner = load(task, "frontier_eval/run_eval.py")
@@ -119,32 +118,6 @@ def test_confidence_tracks_recovered_mechanism_not_only_world_support(task, monk
     row = oracle._evaluate_world(candidate, spec, "development", 0)
     assert row["valid"]
     assert row["confidence_score"] == 0.0
-
-
-
-def test_groundwater_difficulty_recomputes_transport_stresses(monkeypatch):
-    oracle = load("GroundwaterRemediationDesign")
-    easy = oracle._stress_shifts()
-    monkeypatch.setattr(oracle, "DIFFICULTY", 3)
-    hard = oracle._stress_shifts()
-    for first, last in zip(easy, hard):
-        for parameter in first:
-            assert abs(last[parameter] - 1.) >= abs(first[parameter] - 1.)
-    assert hard != easy
-
-
-
-def test_complete_groundwater_archive_retains_useful_pareto_coverage():
-    oracle = load("GroundwaterRemediationDesign")
-    reference = load("GroundwaterRemediationDesign", "verification/reference_solver.py")
-    problem = oracle._public_problem(oracle.DEVELOPMENT_SPECS[0])
-    answer = reference.design_remediation(problem)
-    plans = oracle._validate_archive(answer, problem)
-    full, _ = oracle._hypervolume(problem, plans)
-    prefix, _ = oracle._hypervolume(problem, plans[:5])
-    assert len(plans) == problem["archive_size_bounds"][1]
-    assert full > prefix
-
 
 
 def test_fwi_zero_baseline_makes_claims_while_full_refusal_is_separate():

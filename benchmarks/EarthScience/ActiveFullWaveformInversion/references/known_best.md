@@ -14,7 +14,7 @@ must not be compared as if their score differences were model improvements.
 
 ## 3. Capability comparisons and ablations
 
-Run `python scripts/diagnose_pr9_earth.py --output tmp/hardening/diagnostics.json --sweeps`.
+Run `python -m pytest tests/test_pr9_earth_hardening.py -k fwi_shortcut -s` for the three no-inversion probes. Run `python -m pytest tests/test_new_earth_science_tasks.py -k truth_blind -s` for the complete references. These are local method diagnostics, not frontier-model calibration.
 On the current dirty macOS tree the grid-continuation reference scores `0.615339` development
 (`mechanism_score=0.743559`) and `0.427110` robustness; replaying the historical public
 smooth-lens method on the current oracle scores `0.249539` development

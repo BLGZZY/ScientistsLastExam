@@ -15,7 +15,6 @@ RECORDED_LINEAGE = {
     "Physics/CriticalPhenomenaLab",
     "WavePropagation/ActiveFullWaveformInversion",
     "Geophysics/FocalMechanismStressInversion",
-    "Hydrology/GroundwaterRemediationDesign",
 
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",

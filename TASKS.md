@@ -4,18 +4,18 @@
 
 | | |
 |---|---:|
-| 任务包 | 86 |
-| optimization | 42 |
+| 任务包 | 85 |
+| optimization | 41 |
 | discovery | 44 |
 | certified | 5 |
-| candidate | 81 |
-| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 10,Engineering 13,Mathematics 19,Physics 16) |
+| candidate | 80 |
+| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 9,Engineering 13,Mathematics 19,Physics 16) |
 
 认证描述的是证据质量,不是难度。标 on-ramp 的任务首个前沿模型提案已够到参考解,不用于配对 Δ 测量。
 
-## Optimization(42)
+## Optimization(41)
 
-### 工程设计(engineering_design) — 17
+### 工程设计(engineering_design) — 16
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
@@ -23,7 +23,6 @@
 | [`DistillationColumnDesign`](benchmarks/Chemistry/DistillationColumnDesign/)<br>精馏塔设计 | Chemistry | ChemicalProcess | uncapped | equilibrium_stage_process_sim | candidate | robust mixed-integer equilibrium-stage design | 混合整数精馏塔设计:塔板数与进料位置离散,兼顾纯度回收约束与再沸冷凝能耗 | 年化成本;留出迁移与密封变工况分列,无上限 |
 | [`ElectrolyteConductivityDesign`](benchmarks/Chemistry/ElectrolyteConductivityDesign/)<br>电解液电导率设计 | Chemistry | Electrochemistry | uncapped | real_data_replay | candidate | allocate EIS assays and select a robust formulation batch | 在高通量电解液数据回放里分配阻抗测定预算,选出稳健的配方批次 | 温度剖面电导率 + 批次多样性 + 重复稳健性 + 留出迁移;无上限 |
 | [`SparseRecovery`](benchmarks/ComputerScience/SparseRecovery/)<br>压缩感知稀疏恢复 | ComputerScience | SignalProcessing | clipped | analytical | candidate | compressed sensing signal recovery | 从远少于奈奎斯特的测量里恢复 k 稀疏信号 | 平均恢复信噪比 |
-| [`GroundwaterRemediationDesign`](benchmarks/EarthScience/GroundwaterRemediationDesign/)<br>地下水修复设计 | EarthScience | Hydrology | uncapped | physical_sim | candidate | build a robust pump-and-treat Pareto archive | 设计抽水处理井与运行方案,权衡全生命周期成本、污染物去除和受体达标 | 成本对残余污染质量的帕累托超体积;受体合规硬门控与密封输运偏移分列,无上限 |
 | [`HeatExchangerDesign`](benchmarks/Engineering/HeatExchangerDesign/)<br>换热器帕累托设计 | Engineering | Thermodynamics | uncapped | physical_sim | candidate | discover a multi-fidelity Pareto design archive | 发现换热器的多保真帕累托设计档案,权衡换热量、成本与泵功 | 成本对换热量的帕累托超体积;密封代理一致性、留出迁移与结垢/制造/堵塞稳健性分列,无上限 |
 | [`InvertedPendulumSwingUp`](benchmarks/Engineering/InvertedPendulumSwingUp/)<br>倒立摆摆起控制 | Engineering | ControlTheory | clipped | physical_sim | candidate | swing up and robustly stabilize a cart-pole | 设计小车倒立摆的摆起与稳定控制律,兼顾轨道限位与作动器约束 | 摆起效用;偏移工况稳健性分列 |
 | [`LowThrustTransfer`](benchmarks/Engineering/LowThrustTransfer/)<br>小推力轨道转移 | Engineering | Astrodynamics | uncapped | physical_sim | candidate | design transferable finite-thrust orbit transfers | 设计可迁移的小推力多圈轨道转移策略,兼顾终端精度与推进剂 | 标称转移效用;留出任务相位与执行误差稳健性分列,无上限 |

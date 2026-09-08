@@ -37,7 +37,6 @@ tasks:
   Physics/CriticalPhenomenaLab: {form: discovery, kind: parameter_inversion, note: finite_size_scaling_not_microscopic_law}
   WavePropagation/ActiveFullWaveformInversion: {form: discovery, kind: parameter_inversion}
   Geophysics/FocalMechanismStressInversion: {form: discovery, kind: structure, note: stress_tensor_behind_nodal_plane_ambiguity}
-  Hydrology/GroundwaterRemediationDesign: {form: optimization, analogue: engineering_design}
   # --- optimization / frontier-eng ------------------------------------------
   Thermodynamics/HeatExchangerDesign: {form: optimization, analogue: engineering_design}
   StructuralEngineering/TrussWeightMinimization: {form: optimization, analogue: engineering_design}

@@ -20,6 +20,23 @@ axes, ratio and plane row scores one.
 
 ## 3. Capability comparisons and ablations
 
+Current shipped level-3 replay (2026-09-08):
+
+| variant | development | held out |
+|---|---:|---:|
+| complete reference | 0.622620 | 0.573022 |
+| same solver, no paid re-analysis | 0.469429 | 0.139507 |
+| same solver, no refusal gates | 0.022620 | 0.000000 |
+| best of twelve constant regimes | 0.000000 | 0.000000 |
+
+Reproduce with `python .research/pr20_diagnostics.py --output /tmp/pr20-focal.json`.
+The script uses the public-input reference and charged interface, keeps the evaluator
+unchanged, and reports host/runtime details. This is method diagnostic evidence,
+not a clean frontier-model draw. Paid re-analysis adds 0.153192 development and
+0.433516 held out; refusal contributes separately. Historical tables below are
+retained with their original dates and do not describe the current default.
+
+
 Historical level-1 oracle-direct ablations, measured 2026-09-05 (no longer the shipped default):
 
 | variant | development | robustness | FDR | refusal |
@@ -45,7 +62,7 @@ ladder):
 |---:|---:|---:|
 | 1 | 0.6983 / 0.7307 | 0.7195 / 0.6874 |
 | 2 | 0.5293 / 0.6130 | 0.6304 / 0.6270 |
-| 3 | 0.6226 / 0.5730 | 0.4811 / 0.1395 |
+| 3 (historical run) | 0.6226 / 0.5730 | 0.4811 / 0.1395 |
 
 The paid re-analysis is not uniformly necessary: at levels 1–2 the free path matches or beats
 it, so "paid precision matters" would have been an overstatement at the former level-1 default. It becomes
@@ -53,6 +70,8 @@ decisive only at level 3 (8.5° coarse noise), where the free path loses 0.14 de
 0.43 robustness. Recorded honestly; no oracle or reference change was made.
 
 ## 4. Shortcut probes
+
+Current level-3 values are in section 3. The following two numbers are historical level-1 measurements, not the shipped level-3 default.
 
 - Constant-regime family (twelve fixed azimuths, R = 0.5, plane-a everywhere):
   **0.000** best.

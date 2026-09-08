@@ -36,7 +36,6 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 CHINESE_NAMES = {
     "WavePropagation/ActiveFullWaveformInversion": "主动全波形反演",
     "Geophysics/FocalMechanismStressInversion": "震源机制应力反演",
-    "Hydrology/GroundwaterRemediationDesign": "地下水修复设计",
 
     "Acoustics/RoomImpulseResponse": "房间声学处理设计",
     "Algorithm/GraphFromDistances": "距离查询重建图",
@@ -134,9 +133,6 @@ CHINESE_BRIEFS = {
     "Geophysics/FocalMechanismStressInversion": (
         "在高角噪声和双节面歧义下付费复测并反演主应力轴、形状比与断层面;混合机制或无信号须拒答",
         "轴/形状比/平面指派几何均值;误发现与拒答分列,全面弃权为零"),
-    "Hydrology/GroundwaterRemediationDesign": (
-        "设计抽水处理井与运行方案,权衡全生命周期成本、污染物去除和受体达标",
-        "成本对残余污染质量的帕累托超体积;受体合规硬门控与密封输运偏移分列,无上限"),
 
     "Acoustics/RoomImpulseResponse": (
         "布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度",

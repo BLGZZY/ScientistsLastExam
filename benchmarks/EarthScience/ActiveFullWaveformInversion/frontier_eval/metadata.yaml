@@ -10,7 +10,5 @@ eval_time_seconds: 150
 science_metric: charged-shot acoustic velocity mechanism recovery with sealed waveform transfer and calibrated
   model-inadequacy refusal
 reference_baseline: one central shot followed by a confident background-velocity claim on every world
-reference_sota: Coarse-to-fine grid-continuation least squares (3x5 then 5x8 velocity correction grids,
-  cubic-spline interpolation, smoothed-to-unsmoothed waveform stages). This is a runnable witness, not
-  a published SoTA claim.
+reference_sota: Standalone public-input acoustic inversion witness; see references/known_best.md for the algorithm and measured comparisons. Not a published SoTA claim.
 citation: Virieux and Operto 2009, DOI 10.1190/1.3238367; Symes 2020, arXiv:2003.14181

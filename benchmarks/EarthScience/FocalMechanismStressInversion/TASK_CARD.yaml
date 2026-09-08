@@ -38,10 +38,7 @@ invariants:
 - invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
 - a full abstention scores exactly zero after normalization
 - re-analysis is charged, once per event, and overspending invalidates the world
-known_shortcuts: A constant-regime family (twelve azimuths, fixed R and plane-a
-  assignment) scores 0.000. Removing the refusal gates drops the score to 0.098 with
-  false-discovery rate 1.0. Formal clean Linux calibration and independent seismology
-  review remain pending.
+known_shortcuts: At the shipped level-3 default, twelve constant-regime candidates (fixed azimuth, R=0.5, plane-a assignments) all score 0.000000 development and held out. The complete reference scores 0.622620/0.573022; removing paid re-analysis gives 0.469429/0.139507 and removing refusal gives 0.022620/0.000000 with false-discovery rate 1.0. Recomputed with .research/pr20_diagnostics.py on 2026-09-08; these are method probes, not frontier-model calibration. Independent seismology review remains pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -63,9 +60,7 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Stress inversion from focal mechanisms is a mature field; the hidden
-    procedural catalogs, budgeted re-analysis and refusal worlds are original to this
-    package and builder-model independence is not established.
+  rationale: Geophysics/GravityInversion shares paid observations and model-inadequacy refusal, but fits potential-field parameters. This task recovers a second-order stress tensor and one of two nodal planes for each event, refusing mixed-regime and incoherent catalogs. WavePropagation/ActiveFullWaveformInversion instead returns a spatial velocity grid and predicts sealed waveforms. Public catalog construction remains a contamination risk; builder-model independence is not established.
 lineage:
   status: complete
   builder_model_ids:
@@ -109,4 +104,10 @@ frontier_eng_overlap_review:
     refusal; FE fits force-field torsion energy scales. Both fit numbers, but neither
     the observable nor latent scientific structure is shared.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
-  status: source_count_discrepancy_pending_maintainer_confirmation
+  status: available_catalog_scope_confirmed_by_maintainer
+
+evaluation_budget:
+  timeout_seconds: 300
+  reanalysis_units: 16
+  reference_wall_seconds_linux: 3
+  measurement_source: Maintainer PR 20 review at 1589232 on 2026-09-08; not a frontier-model calibration run.

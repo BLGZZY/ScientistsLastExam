@@ -39,12 +39,6 @@ tasks:
     citation_ids:
       - doi:10.1029/JB089iB13p11517
       - doi:10.1017/S0016756800059987
-  Hydrology/GroundwaterRemediationDesign:
-    status: candidate
-    reason: deterministic pump-and-treat archive optimization over cost, remaining contaminant mass and receptor compliance with evaluator-only transport shifts and risk diagnostics; pending MODFLOW replication, independent hydrogeology review, server-held aquifers and model calibration
-    citation_ids:
-      - doi:10.1186/2193-2697-2-6
-      - doi:10.1016/S0309-1708(01)00020-3
 
   Mathematics/NarrowAdmissibleTuple:
     status: candidate
