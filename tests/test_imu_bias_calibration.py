@@ -1,175 +1,175 @@
 from __future__ import annotations
-
-import importlib.util
 import copy
-import unittest
+import importlib.util
 from pathlib import Path
+import unittest
+
+import numpy as np
+
+TASK = Path(__file__).resolve().parents[1]/"benchmarks/Engineering/IMUBiasCalibration"
 
 
-ROOT = Path(__file__).resolve().parents[1]
-TASK = ROOT / "benchmarks" / "Engineering" / "IMUBiasCalibration"
-
-
-def _load(name: str, path: Path):
+def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
     spec.loader.exec_module(module)
     return module
 
 
 class IMUBiasCalibrationTests(unittest.TestCase):
-    def test_each_split_covers_each_fault_and_each_diagnostic_matters(self):
-        oracle = _load("imu_split", TASK / "verification/evaluator.py")
-        reference = _load("imu_split_ref", TASK / "verification/reference_solver.py")
-        faults = {"thermal_nonlinearity", "axis_misalignment", "motion_contamination"}
-        for worlds in (oracle.DEVELOPMENT_WORLDS, oracle.HELDOUT_WORLDS):
-            self.assertEqual({s["kind"] for s in worlds}, faults | {"supported"})
-        full = oracle.evaluate(reference.infer_imu)
-        for fault in faults:
-            ablated = oracle.evaluate(lambda p: reference._infer_imu(p, disabled_faults=(fault,)))
-            for key in ("combined_score", "heldout_combined_score"):
-                self.assertGreater(full[key] - ablated[key], .1)
+    @classmethod
+    def setUpClass(cls):
+        cls.oracle = load("imu_eval", TASK/"verification/evaluator.py")
+        cls.reference = load("imu_ref", TASK/"verification/reference_solver.py")
+        cls.baseline = load("imu_base", TASK/"solution.py")
 
-    def test_reference_is_deterministic_and_baseline_is_zero(self):
-        oracle = _load("imu_evaluator", TASK / "verification" / "evaluator.py")
-        reference = _load("imu_reference", TASK / "verification" / "reference_solver.py")
+    def test_reference_deterministic_and_baseline_zero(self):
+        first = self.oracle.evaluate(self.reference.infer_imu)
+        self.assertEqual(first, self.oracle.evaluate(self.reference.infer_imu))
+        self.assertEqual(first["valid"], 1)
+        self.assertGreater(first["combined_score"], 0)
+        self.assertGreater(first["heldout_combined_score"], 0)
+        base = self.oracle.evaluate(self.baseline.infer_imu)
+        self.assertEqual(base["valid"], 1)
+        self.assertEqual(base["combined_score"], 0)
+        self.assertEqual(base["heldout_combined_score"], 0)
 
-        def ref(problem):
-            return reference.infer_imu(problem)
+    def test_world_families_do_not_leak_through_public_problem(self):
+        for worlds in (self.oracle.DEVELOPMENT_WORLDS, self.oracle.HELDOUT_WORLDS):
+            self.assertEqual({s["kind"] for s in worlds}, {"supported", *self.oracle.FAULTS})
+        for fault in self.oracle.FAULTS:
+            self.assertEqual(self.oracle.public_problem({"seed": 913, "kind": fault}),
+                             self.oracle.public_problem({"seed": 913, "kind": "supported"}))
 
-        first = oracle.evaluate(ref)
-        second = oracle.evaluate(ref)
-        self.assertEqual(first, second)
-        self.assertGreater(first["combined_score"], 0.95)
-        self.assertGreater(first["heldout_combined_score"], 0.95)
-        unsupported = [row for row in first["per_instance"] if row["kind"] != "supported"]
-        supported = [row for row in first["per_instance"] if row["kind"] == "supported"]
-        self.assertTrue(all(row["correct_refusal"] for row in unsupported))
-        self.assertTrue(all(not row["false_discovery"] for row in unsupported))
-        self.assertTrue(all(not row["abstained"] for row in supported))
+    def test_twelve_parameter_model_and_independent_prediction(self):
+        spec = {"seed": 77, "kind": "supported"}
+        world, problem = self.oracle._world(spec), self.oracle.public_problem(spec)
+        setting = problem["prediction_settings"][0]
+        expected = world["matrix"]@(self.oracle.GRAVITY*np.array(setting["orientation"])) + world["bias"] + world["drift"]*(setting["temperature_c"]-25)
+        np.testing.assert_allclose(self.oracle._clean(world, setting), expected)
+        self.assertEqual(np.count_nonzero(np.tril(world["matrix"], -1)), 0)
+        design = self.reference._features(problem, problem["settings"])
+        self.assertEqual(np.linalg.matrix_rank(design), design.shape[1])
 
-        baseline = _load("imu_baseline", TASK / "solution.py")
-        base = oracle.evaluate(baseline.infer_imu)
-        self.assertEqual(base["combined_score"], 0.0)
-        self.assertEqual(base["valid"], 1.0)
+    def test_budget_charged_repeats_noisy_and_overrun_sticky(self):
+        spec = {"seed": 5, "kind": "supported"}
+        problem = self.oracle.public_problem(spec)
+        campaign = self.oracle._Campaign(self.oracle._world(spec), problem)
+        one, two = campaign(0), campaign(0)
+        self.assertEqual(campaign.calls, 2)
+        self.assertNotEqual(one["accel_mps2"], two["accel_mps2"])
+        for _ in range(problem["measurement_budget"]-2):
+            campaign(0)
+        with self.assertRaises(RuntimeError):
+            campaign(0)
+        self.assertTrue(campaign.violated)
+        def overspend(p, measure):
+            answer = self.baseline.infer_imu(p, measure)
+            ids = []
+            for _ in range(p["measurement_budget"]+1):
+                try:
+                    ids.append(measure(0)["query_id"])
+                except RuntimeError:
+                    pass
+            answer["evidence_ids"] = ids
+            return answer
+        result = self.oracle.evaluate(overspend)
+        self.assertEqual(result["valid"], 0)
+        self.assertEqual(result["combined_score"], 0)
 
-    def test_malformed_submission_is_invalid(self):
-        oracle = _load("imu_evaluator_bad", TASK / "verification" / "evaluator.py")
-        result = oracle.evaluate(lambda problem: {})
-        self.assertEqual(result["valid"], 0.0)
-        self.assertEqual(result["combined_score"], 0.0)
+    def test_invalid_settings_fail_closed_even_when_caught(self):
+        for setting in (-1, True, 1.5, 100000, "0"):
+            def bad(p, measure):
+                try:
+                    measure(setting)
+                except ValueError:
+                    pass
+                return self.baseline.infer_imu(p, measure)
+            self.assertEqual(self.oracle.evaluate(bad)["valid"], 0)
 
-    def test_fault_matrix_fails_closed(self):
-        oracle = _load("imu_faults", TASK / "verification/evaluator.py")
-        baseline = _load("imu_base_faults", TASK / "solution.py")
-        variants = [None, {}, [], "wrong"]
-        mutations = [
-            ("bias_mps2", [0, 0]), ("bias_mps2", [0, 0, float("nan")]),
-            ("temperature_drift_mps2_per_c", [0, float("inf"), 0]),
-            ("prediction_accel_mps2", [[0], [0], [0]]),
-            ("confidence", float("nan")), ("confidence", -1), ("confidence", True),
-            ("abstain", 1), ("diagnosis", []), ("diagnosis", "unknown"),
-            ("evidence_ids", []), ("evidence_ids", ["fake"]),
-            ("evidence_ids", [["r00_00"]]), ("evidence_ids", ["r00_00", "r00_00"]),
-            ("extra", 1),
-        ]
+    def test_fault_matrix(self):
+        mutations = [("bias_mps2", [0, 0]), ("bias_mps2", [0, 0, float("nan")]),
+                     ("temperature_drift_mps2_per_c", [0, float("inf"), 0]),
+                     ("prediction_accel_mps2", [0, 0, 0]), ("confidence", True),
+                     ("confidence", -1), ("confidence", float("nan")), ("abstain", 1),
+                     ("diagnosis", []), ("diagnosis", "fake"), ("evidence_ids", ["fake"]),
+                     ("evidence_ids", [["q001"]]), ("fault_axis", 5), ("extra", 1),
+                     ("calibration_matrix", [[1, 0, 0], [.1, 1, 0], [0, 0, 1]])]
         for key, value in mutations:
-            def bad(problem, key=key, value=value):
-                answer = baseline.infer_imu(problem)
-                answer[key] = value
-                return answer
-            variants.append(bad)
-        for variant in variants:
-            with self.subTest(variant=variant):
-                result = oracle.evaluate(variant if callable(variant) else lambda p: variant)
+            def bad(p, measure):
+                return {**self.baseline.infer_imu(p, measure), key: value}
+            with self.subTest(key=key, value=value):
+                result = self.oracle.evaluate(bad)
                 self.assertEqual(result["valid"], 0)
                 self.assertEqual(result["combined_score"], 0)
+        for output in ({}, None, [], "bad"):
+            result = self.oracle.evaluate(lambda p, m: output)
+            self.assertEqual(result["valid"], 0)
+            self.assertEqual(result["combined_score"], 0)
+
+    def test_blanket_refusal_for_any_diagnosis_is_zero(self):
+        for diagnosis in self.oracle.VALID_DIAGNOSES:
+            for axis in range(3):
+                def refuse(p, m):
+                    result = self.baseline.infer_imu(p, m)
+                    result.update(abstain=True, diagnosis=diagnosis,
+                                  fault_axis=axis if diagnosis in self.oracle.FAULTS else None)
+                    return result
+                result = self.oracle.evaluate(refuse)
+                self.assertEqual(result["valid"], 1)
+                self.assertEqual(result["combined_score"], 0)
                 self.assertEqual(result["heldout_combined_score"], 0)
+                self.assertEqual(result["attempted_discovery"], 0)
 
-    def test_valid_blanket_strategies_are_zero(self):
-        oracle = _load("imu_blanket", TASK / "verification/evaluator.py")
-        reference = _load("imu_ref_blanket", TASK / "verification/reference_solver.py")
-        for abstain in (True, False):
-            for diagnosis in oracle.VALID_DIAGNOSES:
-                for confidence in (0.0, 0.5, 1.0):
-                    def policy(problem):
-                        answer = reference.infer_imu(problem)
-                        answer.update(abstain=abstain, diagnosis=diagnosis, confidence=confidence)
-                        return answer
-                    result = oracle.evaluate(policy)
-                    self.assertEqual(result["valid"], 1)
-                    self.assertEqual(result["combined_score"], 0)
-                    self.assertEqual(result["heldout_combined_score"], 0)
-                    self.assertEqual(result["attempted_discovery"], float(not abstain))
+    def test_mechanism_quality_is_not_composite_and_denominators_include_misses(self):
+        empty = {"kind": "supported", "valid": True, "abstained": False,
+                 "mechanism_correct": True, "matrix_score": .6, "science_score": .8,
+                 "bias_score": 1, "drift_score": 1, "prediction_score": 1,
+                 "combined_score": .8, "correct_refusal": False, "false_discovery": False,
+                 "fault_axis_correct": False, "measurements_used": 3, "confidence_calibration_score": 1}
+        rows = [empty, {**empty, "abstained": True, "mechanism_correct": False, "matrix_score": 0},
+                {**empty, "valid": False, "abstained": True, "mechanism_correct": False, "matrix_score": 0},
+                {**empty, "kind": "thermal_nonlinearity", "false_discovery": True},
+                {**empty, "kind": "axis_misalignment", "abstained": True, "correct_refusal": True}]
+        result = self.oracle._summary(rows)
+        self.assertAlmostEqual(result["mechanism_score"], .2)
+        self.assertEqual(result["mechanism_denominator"], 3)
+        self.assertEqual(result["discovery_coverage"], 1/3)
+        self.assertEqual(result["discovery_denominator"], 3)
+        self.assertEqual(result["false_discovery_rate"], 1/2)
+        self.assertEqual(result["false_discovery_denominator"], 2)
+        self.assertEqual(result["correct_refusal_rate"], 1/2)
+        self.assertEqual(result["correct_refusal_denominator"], 2)
 
-    def test_supported_abstention_and_wrong_diagnosis_get_no_credit(self):
-        oracle = _load("imu_score", TASK / "verification/evaluator.py")
-        spec = {"kind": "supported", "bias": [0, 0, 0], "drift": [0, 0, 0]}
-        answer = {"abstain": False, "diagnosis": "supported", "confidence": 1,
-                  "bias_mps2": [0, 0, 0], "temperature_drift_mps2_per_c": [0, 0, 0],
-                  "prediction_accel_mps2": [0, 0, oracle.GRAVITY]}
-        good = oracle._score(spec, answer, oracle.PUBLIC_PROBLEM)
-        self.assertEqual(good["combined_score"], 1)
-        for changes in ({"abstain": True}, {"diagnosis": "thermal_nonlinearity"}):
-            row = oracle._score(spec, {**answer, **changes}, oracle.PUBLIC_PROBLEM)
-            self.assertEqual(row["combined_score"], 0)
-            self.assertEqual(row["prediction_score"], 0)
-        fault = oracle._score({"kind": "axis_misalignment"},
-                             {**answer, "abstain": True, "diagnosis": "thermal_nonlinearity"}, {})
-        self.assertEqual(fault["combined_score"], 0)
-        self.assertEqual(fault["prediction_score"], 0)
+    def test_localization_is_required_for_refusal_credit(self):
+        spec = {"seed": 9, "kind": "thermal_nonlinearity"}
+        world, problem = self.oracle._world(spec), self.oracle.public_problem(spec)
+        answer = self.baseline.infer_imu(problem, None)
+        answer.update(abstain=True, diagnosis=spec["kind"], fault_axis=(world["axis"]+1) % 3)
+        self.assertEqual(self.oracle._score(world, answer, problem)["combined_score"], 0)
+        answer["fault_axis"] = world["axis"]
+        self.assertEqual(self.oracle._score(world, answer, problem)["combined_score"], 1)
 
-    def test_metric_denominators_include_missed_and_invalid_worlds(self):
-        oracle = _load("imu_counts", TASK / "verification/evaluator.py")
-        template = {"kind": "supported", "valid": True, "abstained": False,
-                    "mechanism_correct": True, "correct_refusal": False, "false_discovery": False,
-                    "combined_score": .4, "science_score": .3, "confidence_calibration_score": .5}
-        rows = [template, {**template, "mechanism_correct": False, "false_discovery": True},
-                {**template, "abstained": True, "mechanism_correct": False},
-                {**template, "valid": False, "abstained": True, "mechanism_correct": False},
-                {**template, "kind": "thermal_nonlinearity", "mechanism_correct": False,
-                 "abstained": True, "correct_refusal": True},
-                {**template, "kind": "axis_misalignment", "mechanism_correct": False,
-                 "false_discovery": True}]
-        metrics = oracle._summary(rows)
-        self.assertEqual(metrics["mechanism_score"], 1/4)
-        self.assertEqual(metrics["mechanism_denominator"], 4)
-        self.assertEqual(metrics["discovery_coverage"], 2/4)
-        self.assertEqual(metrics["discovery_denominator"], 4)
-        self.assertEqual(metrics["false_discovery_rate"], 2/3)
-        self.assertEqual(metrics["false_discovery_denominator"], 3)
-        self.assertEqual(metrics["correct_refusal_rate"], 1/2)
-        self.assertEqual(metrics["correct_refusal_denominator"], 2)
-        self.assertNotEqual(metrics["mechanism_score"], metrics["science_score"])
+    def test_input_mutation_does_not_change_budget(self):
+        def bad(problem, measure):
+            problem["measurement_budget"] = 0
+            problem["settings"][0]["temperature_c"] = 999
+            answer = self.baseline.infer_imu(problem, measure)
+            answer["evidence_ids"] = [measure(0)["query_id"]]
+            return answer
+        self.assertEqual(self.oracle.evaluate(bad)["valid"], 1)
 
-    def test_candidate_cannot_mutate_validation_records_or_shared_problem(self):
-        oracle = _load("imu_mutation", TASK / "verification/evaluator.py")
-        baseline = _load("imu_mutation_base", TASK / "solution.py")
-        original = copy.deepcopy(oracle.PUBLIC_PROBLEM)
-        def mutate(problem):
-            problem["prediction_orientation"][0] = 999
-            problem["records"][0]["record_id"] = "fabricated"
-            return baseline.infer_imu(problem)
-        result = oracle.evaluate(mutate)
-        self.assertEqual(result["valid"], 0)
-        self.assertEqual(oracle.PUBLIC_PROBLEM, original)
-
-    def test_fresh_session_and_metric_key_parity(self):
-        oracle = _load("imu_session", TASK / "verification/evaluator.py")
-        baseline = _load("imu_session_base", TASK / "solution.py")
+    def test_metric_key_parity_and_session_reset(self):
+        baseline = self.baseline.infer_imu
         class Candidate:
             count = 0
             def reset_session(self):
                 self.count += 1
-            def __call__(self, problem):
-                return baseline.infer_imu(problem)
+            def __call__(self, problem, measure):
+                return baseline(problem, measure)
         candidate = Candidate()
-        good = oracle.evaluate(candidate)
-        bad = oracle.evaluate(lambda p: {})
+        good = self.oracle.evaluate(candidate)
+        bad = self.oracle.evaluate(lambda p, m: {})
         self.assertEqual(candidate.count, len(good["per_instance"]))
         self.assertEqual(set(good), set(bad))
         self.assertEqual(set(good["per_instance"][0]), set(bad["per_instance"][0]))
-        for split in ("development", "heldout"):
-            for key in ("mechanism_score", "false_discovery_rate", "correct_refusal_rate", "discovery_coverage"):
-                self.assertIn(split + "_" + key, good)

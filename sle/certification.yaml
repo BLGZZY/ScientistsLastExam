@@ -25,8 +25,8 @@ tasks:
       - doi:10.1103/PhysRevLett.132.207301
   Sensors/IMUBiasCalibration:
     status: candidate
-    reason: deterministic triaxial accelerometer bias and temperature-drift recovery with explicit refusal for nonlinear thermal response, cross-axis misalignment, and motion contamination; retained pending server-held sensor regimes and independent inertial-sensing review
-    citation_ids: [doi:10.48456/tr-696]
+    reason: budgeted pose-temperature experiments for twelve-parameter accelerometer calibration and non-affine fault-axis attribution; retained pending independent inertial-sensing review and server-held regimes
+    citation_ids: [doi:10.48456/tr-696, doi:10.4153/CJM-1960-030-4, doi:10.1214/aoms/1177732360]
   Mathematics/NarrowAdmissibleTuple:
     status: candidate
     reason: exact admissibility/diameter oracle scored uncapped against Polymath8b's own published narrow-admissible-tuple diameters (246 at k=50, direct primary-source quote; 270 at k=54, secondary-source only, disclosed); no frontier searcher draw yet, pending external number-theory review

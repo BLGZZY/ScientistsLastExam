@@ -1,94 +1,124 @@
-# IMUBiasCalibration — recover bias and temperature drift from static IMU records
+# IMUBiasCalibration - design a temperature/pose calibration and attribute its failure
 
 ## Scientific setting
 
-An inertial measurement unit reports specific force, so a stationary device should measure the
-gravity vector plus sensor bias. Bias and temperature sensitivity are coupled calibration terms;
-cross-axis misalignment, nonlinear thermal response, and motion contamination can make a linear
-calibration misleading.
+A stationary accelerometer has bias, temperature drift, scale error and non-orthogonal sensing
+axes. Fitting thermal drift to a poorly chosen set of poses can absorb a different physical
+effect. You control a limited calibration campaign, then must either publish a transferable
+12-parameter calibration or identify the unsupported fault and its response axis.
 
-## Your task
+The supported model is `a = M @ (g*u) + b + d*(T-T_ref) + noise`. `M` is upper triangular
+with positive diagonal: three scale factors and three non-orthogonality coefficients. The
+rigid mounting rotation is pre-registered, fixing this coordinate convention. Together with
+three bias and three drift components there are twelve free coefficients.
 
-Implement:
+With `x=(T-T_ref)/temperature_scale_c`, each unsupported instrument adds exactly one term:
+
+- `thermal_nonlinearity`: `alpha*x*x` on an unknown response axis;
+- `axis_misalignment`: `alpha*x*u[j]` on an unknown response axis `k`, with unknown `j != k`;
+  this is temperature-dependent cross-axis response, not the constant non-orthogonality in M;
+- `motion_contamination`: `alpha*(u[(k+1)%3]**2-1/3)` on response axis `k`, a reduced-order
+  orientation-dependent parasitic acceleration that no constant affine calibration can absorb.
+
+The signed fault coefficient has magnitude in `fault_amplitude_range_mps2`. Measurement noise
+is independent Gaussian with the supplied per-axis standard deviations. Both signs occur;
+faults need not be conspicuous in a single measurement. Uncertainty and available poses do
+not announce the fault family. These are synthetic error models, not device specifications.
+
+## Entrypoint and measurement budget
 
 ```python
-def infer_imu(problem):
-    """Return a calibrated bias, drift, prediction and diagnosis."""
+def infer_imu(problem, measure):
+    ...
 ```
 
-`problem` contains `schema_version`, `gravity_mps2`, `reference_temperature_c`,
-`prediction_temperature_c`, `prediction_orientation`, `diagnosis_values`, `measurement_model`,
-`abstain_when`, and `records`. Each record has `record_id`, `temperature_c`, `orientation`, and
-`accel_mps2`; orientations are known unit vectors and accelerations are three-element vectors.
+No accelerations are supplied for free. Call `measure(setting_id)` to acquire one three-axis
+measurement at a listed pose and temperature. Each call costs one unit, including repeats;
+repeats have independent, deterministically seeded noise. You have `measurement_budget` units.
+An invalid setting or any attempted overrun invalidates the submission even if you catch the
+exception. A fresh candidate session is used for every instrument. Do not assume world order.
 
-Return exactly these keys:
+### Every problem key
 
-- `bias_mps2`: three bias components at the reference temperature;
-- `temperature_drift_mps2_per_c`: three linear drift components;
-- `prediction_accel_mps2`: predicted acceleration at the supplied prediction temperature and
-  orientation;
-- `diagnosis`: one of `supported`, `thermal_nonlinearity`, `axis_misalignment`,
-  `motion_contamination`, or `undetermined`;
-- `confidence`: a finite number in `[0, 1]`;
-- `abstain`: a boolean; unsupported or contaminated records should be refused;
-- `evidence_ids`: unique IDs drawn from the supplied records.
+| Key | Meaning |
+|---|---|
+| `schema_version` | 2, the active calibration contract |
+| `gravity_mps2` | known gravity magnitude g |
+| `reference_temperature_c` | temperature at which bias is defined |
+| `temperature_scale_c` | normalization scale used only in the fault equations |
+| `measurement_budget` | maximum number of callback calls |
+| `measurement_model` | declared supported equation |
+| `calibration_convention` | upper-triangular matrix and pre-registered mounting rotation |
+| `diagnosis_values` | allowed diagnosis strings |
+| `fault_models` | mapping with keys `thermal_nonlinearity`, `axis_misalignment`, `motion_contamination`, containing the equations above |
+| `fault_amplitude_range_mps2` | lower and upper bounds on absolute fault coefficient |
+| `abstain_when` | supported reason for refusing the affine calibration |
+| `parameter_tolerances` | zero-credit error scales: `bias_mps2`, `drift_mps2_per_c`, `matrix_frobenius`, `prediction_mps2` |
+| `settings` | available settings, each with `setting_id`, `temperature_c`, unit-vector `orientation`, and three-axis `noise_std_mps2` |
+| `prediction_settings` | three transfer queries, each with `temperature_c` and unit-vector `orientation` |
 
-For a supported world, fit the declared affine model and publish the bias, drift and prediction.
-For nonlinear thermal response, cross-axis misalignment, or motion contamination, identify the
-failure and set `abstain=True`. Do not assume record order, hidden seeds, or a fixed fault.
+The measurement response contains `setting_id`, `temperature_c`, `orientation`,
+`noise_std_mps2`, unique `query_id`, and the three-element measured `accel_mps2`.
 
-## Evaluation
+### Exact output keys
 
-On supported worlds, abstention or a diagnosis other than `supported` receives zero. A correct
-claim receives `q = 0.70*s + 0.20*p + 0.10*c`. With Euclidean bias, drift and prediction errors
-`eb`, `ed`, `ep`, `s = clip(1 - 0.55*eb/0.35 - 0.30*ed/0.006 - 0.15*ep/0.5, 0, 1)`,
-`p = clip(1 - ep/0.5, 0, 1)` and `c = 1 - abs(confidence-s)`.
-An unsupported world contributes one only for abstention with the correct fault diagnosis;
-wrong-label abstention receives no prediction or confidence credit.
+- `bias_mps2`: three finite numbers;
+- `temperature_drift_mps2_per_c`: three finite numbers;
+- `calibration_matrix`: finite 3-by-3 upper-triangular matrix with positive diagonal;
+- `prediction_accel_mps2`: three finite three-axis predictions, in `prediction_settings` order;
+- `diagnosis`: `supported`, `thermal_nonlinearity`, `axis_misalignment`, `motion_contamination`,
+  or `undetermined`;
+- `fault_axis`: integer 0, 1 or 2 for a fault diagnosis; otherwise `None`;
+- `confidence`: finite numeric value in [0,1];
+- `abstain`: boolean; true to decline publishing a supported calibration;
+- `evidence_ids`: every acquired `query_id` exactly once, and no fabricated IDs. Empty is
+  valid only when no measurements were taken.
 
-For each split, let `S` and `U` be the supported and unsupported counts, and `R` the number of
-correctly attributed refusals. The headline is
-`clip((sum(q)-U)/S, 0, 1) * R/U`. The subtraction removes the maximum reward available from
-blanket refusal; the additional refusal multiplier also makes never-refusing calibration zero.
-Both splits contain supported and unsupported worlds. Invalid submissions receive zero.
+All keys are required even when declining. A numerical placeholder is allowed when abstaining;
+it must still satisfy shape and finiteness. Faults require both the correct diagnosis and axis.
 
-Separate development/held-out diagnostics publish numerators and denominators:
-`mechanism_score` is correct non-abstained supported diagnoses / all supported worlds, not
-parameter recovery; `false_discovery_rate` is false claims / actual non-abstained claims (zero
-if none); `correct_refusal_rate` is correct fault-labelled refusals / all unsupported worlds;
-`discovery_coverage` is supported claims, including wrong ones / all supported worlds.
-`attempted_discovery` indicates any valid non-abstained claim. Invalid and abstained supported
-worlds remain in the mechanism and coverage denominators. Composite `science_score`, confidence
-calibration and normalized held-out `robustness_score` are separate diagnostics and are not
-search-visible feedback.
+## Scoring
 
-## Contract and rules
+On a supported instrument, an abstention or non-supported diagnosis scores zero. Otherwise
+bias, drift and matrix qualities are `clip(1-error/tolerance,0,1)`, using Euclidean vector errors
+and Frobenius matrix error. Prediction error is the RMS Euclidean error over the three transfer
+queries. Supported quality q weighs bias 0.25, drift 0.25, matrix 0.30 and prediction 0.20.
+Confidence is a separate squared-error calibration diagnostic, not free headline credit.
+An unsupported instrument contributes one only for correctly labelled and localized refusal.
 
-`sle.contract_lint` can check mapping, finite vectors, ranges and evidence IDs before spending an
-evaluation call. Only edit `solution.py`; use deterministic CPU-only Python, NumPy and the standard
-library. Do not read `verification/` or create network requests/processes.
+For S supported and U unsupported instruments, with R correct fault refusals, the split score
+is `clip((sum(q)-U)/S,0,1) * R/U`. Both splits contain each family. This removes all reward
+available from blanket abstention; the refusal multiplier also makes never-refusing fits zero.
+Any invalid submission makes that split invalid with score zero.
 
-## Inputs
+Separate development/held-out axes include:
 
-Every candidate-visible key is listed here: `schema_version`, `gravity_mps2`,
-`reference_temperature_c`, `prediction_temperature_c`, `prediction_orientation`,
-`diagnosis_values`, `measurement_model`, `abstain_when`, and `records`; each record key is
-`record_id`, `temperature_c`, `orientation`, and `accel_mps2`.
+- `mechanism_score`: matrix recovery quality summed over all supported instruments / S,
+  including zero for missed or invalid claims; this is not the joint score;
+- `false_discovery_rate`: wrong model-family claims / actual non-abstained claims, zero if none;
+- `correct_refusal_rate`: correctly labelled and localized fault refusals / U;
+- `discovery_coverage`: supported-world claims, including wrong diagnoses / S.
 
-## References
-
-Woodman, *An introduction to inertial navigation*, University of Cambridge, 2007. The affine bias,
-scale and thermal-drift calibration problem follows standard IMU error modeling; the oracle is a
-small deterministic reduced-order laboratory rather than a field deployment prescription.
-Report UCAM-CL-TR-696, DOI `10.48456/tr-696`. The thermal polynomial and sparse motion faults
-are synthetic error-model approximations, not fitted device measurements.
+Their numerators and denominators, supported model accuracy, fault-axis accuracy, bias/drift/
+prediction qualities and `attempted_discovery` are reported independently. Held-out and
+mechanism diagnostics are not search-visible. The headline uses development only.
 
 ## Relations and differences
 
-- `StructuralEngineering/ModalDamageAttribution` also separates thermal confounding from
-  out-of-family failure, but localizes stiffness loss from budgeted modal measurements; this task
-  estimates sensor bias and thermal drift from supplied static vector records.
-- `HeatTransfer/ConvectionDiffusionOpt` identifies transport and designs heaters through charged
-  PDE experiments; this task diagnoses a measurement model without controlling a thermal field.
-- `Sensors/QuartzCrystalMicrobalanceLab` reconstructs resonance admittance and deposition,
-  rather than gravitational accelerometer calibration.
+- `StructuralEngineering/ModalDamageAttribution` localizes stiffness loss using modal ratios;
+  here the design must separate tensor calibration, thermal drift and non-affine sensor error.
+- `HeatTransfer/ConvectionDiffusionOpt` couples PDE identification to heater design; here the
+  artifact is an inertial calibration matrix and a sensor-fault attribution, not a thermal field.
+- `Sensors/QuartzCrystalMicrobalanceLab` infers resonance admittance and deposition from sweeps,
+  rather than vector sensor calibration from temperature/pose interventions.
+
+## Rules and sources
+
+Only edit `solution.py`. Deterministic CPU Python, NumPy and SciPy are available.
+`sle.contract_lint` provides free shape checks. No network, subprocesses, oracle inspection,
+hidden-world assumptions or access to `verification/` are allowed.
+
+Woodman, *An introduction to inertial navigation*, UCAM-CL-TR-696 (2007),
+DOI `10.48456/tr-696`, motivates the sensor-error setting. Kiefer and Wolfowitz,
+*The Equivalence of Two Extremum Problems* (1960), DOI `10.4153/CJM-1960-030-4`,
+provides an experimental-design foundation. Exact fault polynomials are synthetic approximations.
