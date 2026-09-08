@@ -134,9 +134,9 @@ def test_sidecar_mismatch_is_infrastructure_failure(project):
 def test_generator_emits_standard_library_wrapper_and_handles_broken_helper(project):
     from scripts.gen_task import RUN_EVAL_TEMPLATE
     root, outside = project
-    wrapper = root / 'benchmarks/Physics/Example/frontier_eval/run_eval.py'
+    wrapper = root / 'benchmarks/Example/Task/frontier_eval/run_eval.py'
     wrapper.parent.mkdir(parents=True)
-    wrapper.write_text(RUN_EVAL_TEMPLATE.format(task_id='Example/Task', timeout=41.0))
+    wrapper.write_text(RUN_EVAL_TEMPLATE.format(task_id='Example/Task', eval_timeout=41.0))
     shutil.copy(HELPER, root / 'sle/frontier_eval_entrypoint.py')
     args = [sys.executable, str(wrapper), '--candidate', 'candidate.py', '--metrics-out', 'metrics.json']
     p = subprocess.run(args, cwd=outside, capture_output=True, text=True)
@@ -157,7 +157,7 @@ def test_generator_renders_complete_task_budget(tmp_path):
     source = (task / 'frontier_eval/run_eval.py').read_text()
     compile(source, str(task), 'exec')
     assert "TASK_ID = 'Physics/Example'" in source
-    assert 'EVAL_TIMEOUT_S = 720.0' in source
+    assert 'EVAL_TIMEOUT_S = 2160' in source
     assert 'importlib' not in source and '{{' not in source
 
 

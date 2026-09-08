@@ -34,6 +34,8 @@ sys.path.insert(0, str(REPO))
 
 from sle.benchmark_layout import discipline_for_domain  # noqa: E402
 
+DEFAULT_EVAL_TIME_SECONDS = 100
+
 RUN_EVAL_TEMPLATE = '''"""Launch the shared trusted evaluator without importing project code."""
 import argparse
 import subprocess
@@ -42,7 +44,19 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[4]
 TASK_ID = {task_id!r}
-EVAL_TIMEOUT_S = {timeout!r}
+EVAL_TIMEOUT_S = {eval_timeout!r}
+
+
+# The task id is written in, where the previous template derived everything from __file__.
+# That is deliberate - `sle eval` needs the registered id, not a path - but it means a wrapper
+# copied to a neighbouring task keeps pointing at the task it came from, and scores the new
+# candidate against the old oracle without complaining. The directory name is the second half
+# of the id, so the copy is cheap to catch here rather than in whoever reads the numbers.
+_expected_task = Path(__file__).resolve().parents[1].name
+if TASK_ID.split("/")[-1] != _expected_task:
+    raise SystemExit(
+        "TASK_ID %r does not name this directory (%r); this wrapper was copied from another"
+        " task and would score against that task's oracle" % (TASK_ID, _expected_task))
 
 
 def main():
@@ -123,8 +137,20 @@ def create_task(spec: dict, repo: Path = REPO) -> Path:
 
     # frontier_eval contract files
     entrypoint = spec.get("entrypoint", "solve")
+    # The wrapper timeout is a review quantity set by how hard the task is, so a spec may name
+    # it outright. The fallback reproduces what the 66 existing wrappers already do (64 of them
+    # exactly): three times the expected evaluation, floored at the repository's usual 300 s.
+    # `eval_time_seconds` is defaulted once, here, so metadata.yaml and run_eval.py cannot
+    # disagree about it - an earlier draft let one fall back to empty and the other to 300.
+    eval_time_seconds = int(spec.get("eval_time_seconds") or DEFAULT_EVAL_TIME_SECONDS)
+    spec = {**spec, "eval_time_seconds": eval_time_seconds}
+    eval_timeout = int(spec.get("eval_timeout_s")
+                       or max(300, 3 * eval_time_seconds))
     (eval_dir / "run_eval.py").write_text(
-        RUN_EVAL_TEMPLATE.format(task_id=domain + "/" + task, timeout=float(spec["eval_time_seconds"])), encoding="utf-8")
+        RUN_EVAL_TEMPLATE.format(
+            task=task, task_id="%s/%s" % (domain, task),
+            eval_timeout=eval_timeout,
+        ), encoding="utf-8")
     (eval_dir / "metadata.yaml").write_text(
         METADATA_TEMPLATE.format(**{k: spec.get(k, "") for k in
             ["domain","task","difficulty","oracle_type","score_mode",
