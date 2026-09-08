@@ -68,7 +68,8 @@ def _infer_imu(problem, measure, *, measurement_limit=None, central_only=False,
     statistic, label, axis = max(hypotheses, default=(0, "undetermined", None))
     # Known-noise nested Gaussian models add one parameter. Bonferroni controls
     # the familywise false-refusal rate without fitting thresholds to worlds.
-    pvalue = min(1.0, len(hypotheses)*erfc(sqrt(statistic/2)))
+    # Keep the full twelve-test correction when a diagnostic is ablated too.
+    pvalue = min(1.0, 12*erfc(sqrt(statistic/2)))
     abstain = pvalue < .05
     prediction = [matrix @ (g*np.asarray(s["orientation"])) + bias
                   + drift*(s["temperature_c"]-problem["reference_temperature_c"])
