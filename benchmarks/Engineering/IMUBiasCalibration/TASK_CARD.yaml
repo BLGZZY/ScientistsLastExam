@@ -28,7 +28,7 @@ invariants:
 - malformed, non-finite, incomplete and extra-key submissions fail closed
 - held-out worlds use different seeds, parameters and fault placement from development
 - reference output is generated from public records without reading hidden world labels
-known_shortcuts: Two registered 900-policy residual-RMS/peak threshold grids use sequential and information-designed measurements; compare their replayed maxima against the reference before admission. Constant factory calibration, blanket refusal and never-refusing fits must score zero. Procedural worlds and a declared finite fault family still require independent review and server-held tests.
+known_shortcuts: Two development-selected 900-policy residual-RMS/peak grids reach 0.072900/0.024859 with information-designed measurements and 0.025579/0.075309 with sequential measurements, versus reference 0.718699/0.552215. Fixing the fault axis gives 0.134237/0.004212. Factory calibration, blanket refusal and never-refusing fits are zero. These measured grid maxima are not exhaustive bounds; procedural worlds still require server-held tests.
 review:
   domain: pending_external_inertial_sensing_and_calibration_review
   evaluator_security: automated_bad_candidate_crash_sweep_determinism_fault_refusal_and_metric_sealing_tests
@@ -36,7 +36,7 @@ provenance:
   class: procedural
   target_source: Repository-visible deterministic inertial measurement generator with development and held-out supported and fault worlds.
   task_contract_public_before_evaluation: true
-  fresh_confirmation_status: active_schema_revalidation_in_progress
+  fresh_confirmation_status: linux_sandbox_replay_and_deepseek_calibration_completed
 novelty_risk:
   level: medium
   rationale: StructuralEngineering/ModalDamageAttribution uses temperature-invariant modal ratios to localize structural damage; this task must jointly identify a sensor tensor and thermal drift while designing discriminating poses and temperatures. HeatTransfer/ConvectionDiffusionOpt couples PDE identification to heater design; Sensors/QuartzCrystalMicrobalanceLab uses resonance admittance and deposition. Neither has this triangular inertial-calibration artifact or response-axis fault localization. The former passive version was on-ramp difficulty and is superseded by the active contract.
@@ -45,12 +45,13 @@ lineage:
   builder_model_ids:
   - codex-science-benchmark-construction
   builder_scaffolds:
-  - deterministic_static_sensor_discovery
+  - active_sensor_experimental_design_and_fault_attribution
   calibrator_model_ids:
   - deepseek-v4-flash
   - deepseek-v4-pro
   calibration_runs:
   - experiments/imu_bias_calibration_deepseek_calibration_2026-09-07.json
+  - experiments/imu_bias_calibration_active_deepseek_2026-09-08.json
   calibration_evidence_status: current_or_migration_replayed
   edits_triggered_by_model: >-
     Historical passive-schema Flash runs exposed an inadequate first reference. September 8
@@ -59,7 +60,12 @@ lineage:
     score 0.986466 against the passive reference 0.985196. At the user's request the task was
     therefore scientifically redesigned: paid pose-temperature measurements, twelve-parameter
     calibration, weaker overlapping non-affine effects and fault-axis attribution. Historical
-    records are not calibration of the active schema. No reference is tuned to hidden labels.
+    records are not calibration of the active schema. An ablation then exposed weak directional
+    fault scaling; the conventional P2 basis fixed that before final source 835db79. On that
+    source Pro's first proposal is valid at 0/0.016946. Flash's first has a weight-shape bug;
+    its independent retry is valid at 0/0 with supported science quality 0.673478. The prior
+    three-step Flash search's unchanged selected program replays at 0.020591/0.056366. No
+    scientific code changed after those final draws; subsequent edits document their evidence.
   shortcut_discoverer: builder_self_audit
   frozen_before_eval: false
   freeze_timestamp: null
@@ -73,6 +79,6 @@ construction_audit:
   author_domain: inertial_sensing
   reviewer_domain: pending_external
   expert_hours: null
-  red_team_rounds: 2
+  red_team_rounds: 5
   oracle_disagreement_status: not_quantified
   independent_recomputation_status: reference and malformed-candidate checks are runnable from this package

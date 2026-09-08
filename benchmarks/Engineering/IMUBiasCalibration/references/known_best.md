@@ -15,6 +15,13 @@ is evaluated exactly as erfc(sqrt(statistic/2)), using the standard math library
 headroom comes from finite information, noisy coefficient recovery and near-threshold model
 separation, not an intentionally missing calibration step. It is not a published sensor SoTA.
 
+At executable revision `835db79c9f0709a466ff5f6978bd29f30a81af13`, reference development /
+held-out scores are **0.7186990470 / 0.5522152347**. Matrix recovery alone is 0.632562 / 0.658447;
+coverage is 12/12 / 11/12, correctly localized refusal is 9/9 / 8/9, and false claims are
+0/12 / 1/12. The complete metrics match across two sandbox runs for all fifteen policies.
+The external trusted-subprocess wrapper returns the same score; one isolated reference
+evaluation took 8.01 seconds on the ali Linux host (Python 3.10.12, NumPy 1.26.4).
+
 ## Baseline
 
 The baseline makes a confident supported claim for the factory identity matrix with zero
@@ -37,6 +44,23 @@ of each fault diagnostic. It also tests fixing every predicted fault axis, blank
 and never-refusing claims. Every selected policy is independently replayed twice through the
 Linux trusted driver and bubblewrap; the complete metrics must match.
 
+| Policy | Development | Held-out |
+|---|---:|---:|
+| Full reference, eighteen measurements | 0.718699 | 0.552215 |
+| Six measurements | 0.000000 | 0.004345 |
+| Twelve measurements | 0.356836 | 0.254128 |
+| Central temperatures only | 0.047489 | 0.169275 |
+| Sequential settings | 0.165670 | 0.434979 |
+| Diagonal-only calibration | 0.000000 | 0.000000 |
+| Without thermal nonlinearity test | 0.312466 | 0.206246 |
+| Without thermal cross-axis test | 0.312466 | 0.348838 |
+| Without parasitic-acceleration test | 0.312466 | 0.206246 |
+| Fixed fault axis | 0.134237 | 0.004212 |
+| Baseline / all-abstain / never-refuse | 0.000000 | 0.000000 |
+
+The multiplicity correction remains fixed at twelve in all diagnostic ablations, so removing
+a test does not silently loosen the remaining tests' decision threshold.
+
 ## Shortcut probes
 
 Two 900-policy grids fit the supported triangular calibration but use only whitened residual
@@ -45,6 +69,11 @@ uses the reference's public-input design and one takes settings sequentially. Th
 and fault labels are selected using development only. Public transcripts of this fixed
 trusted probe are cached for grid scoring; the selected policies are independently sandboxed.
 The registered grid is not an exhaustive upper bound over all possible algorithms.
+
+Selected information-designed probe: **0.072900 / 0.024859**. Selected sequential probe:
+**0.025579 / 0.075309**. Exact parameter grids, selected thresholds and aggregated diagnostics
+are in `experiments/imu_bias_calibration_active_review_2026-09-08.json`; the code reproduces
+the selection and replay without inspecting held-out data during selection.
 
 ## Model calibration
 
@@ -57,6 +86,27 @@ was invalid because its generated abstention path called .tolist() on a Python l
 Those observations triggered the scientific redesign rather than a reference-score adjustment.
 Fresh active-schema model results must identify their exact clean source revision and
 effective thinking configuration. DeepSeek evidence alone is not independent frontier admission.
+
+Final source `835db79`, seed 29, temperature 0, 16000-token cap, thinking disabled in every
+actual chat request, greedy_rewrite with normal feedback and calibration role:
+
+- Pro: one fresh valid proposal, development 0 / held-out 0.016946. It uses all eighteen
+  observations; supported science quality is 0.455583 / 0.454794, but correctly localized
+  refusals are 0/9 / 4/9 and drift recovery is zero.
+- Flash: initial proposal invalid because a three-axis weight matrix was passed to a per-axis
+  fit. A separately logged one-proposal retry is valid at 0/0, uses all eighteen observations,
+  and has development supported science quality 0.673478 but no correctly attributed refusals.
+  The invalid draw is not scientific difficulty evidence; zero does not mean no useful recovery.
+- Earlier active source `3f34617`: a separate three-step Flash search progressed from zero to
+  0.001036; the third proposal was invalid. Pro's three-step search remained at zero. These are
+  historical runs, not final-oracle values. The unchanged development-selected Flash program
+  was migrated to final source and scores **0.020591 / 0.056366**. This is a replay, not a new draw.
+
+All eleven review-era runs and their fifteen proposals, including the failures, are compactly
+recorded in `experiments/imu_bias_calibration_active_deepseek_2026-09-08.json`. No failed
+draws were silently excluded. Scientific code was frozen before the final draws; later
+documentation adds the measured ladder to Task.md, without changing candidate input data,
+scoring or search-visible keys. These small-sample checks do not replace independent review.
 
 ## Construction errors
 
@@ -89,6 +139,22 @@ real-device replication; unknown mounting rotation, hysteresis, mixed faults and
 six-degree-of-freedom motion are outside scope. A server-held family and external domain
 review are still required for certification. No full-repository test suite or maintainer-owned
 global evidence refresh is run for this contribution.
+
+Final executable validation: full task gate 15/15; related pytest 74 passed plus 18 subtests;
+nineteen malformed-output variants and sticky invalid-setting/over-budget tests; CLI
+raises/empty/wrong_type all scored invalid with zero evaluator crashes. Mechanism and
+held-out diagnostics remain outside the closed SEARCH_VISIBLE_KEYS allowlist. Baseline,
+reference, ablation and probe determinism compare complete metrics, not only the headline.
+
+Reproduce from a clean Linux checkout:
+
+```bash
+python -m sle eval --allow-uncertified --task Sensors/IMUBiasCalibration
+python benchmarks/Engineering/IMUBiasCalibration/verification/calibrate.py --output /tmp/imu-review.json
+python scripts/check_task_contribution.py --task Sensors/IMUBiasCalibration
+python scripts/check_evaluator_survives_bad_candidates.py --task Sensors/IMUBiasCalibration
+python -m pytest tests/test_imu_bias_calibration.py tests/test_task_cards.py tests/test_discovery_contract_lint_is_documented.py tests/test_benchmark_layout.py tests/test_measurement_health_preflight.py tests/test_scientific_materiality.py tests/test_batch_runner.py -q
+```
 
 ## Verified sources
 
