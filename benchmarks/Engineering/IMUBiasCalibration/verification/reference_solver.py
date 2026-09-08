@@ -8,6 +8,10 @@ T_REF = 25.0
 
 
 def infer_imu(problem):
+    return _infer_imu(problem)
+
+
+def _infer_imu(problem, disabled_faults=()):
     rows = problem["records"]
     X = np.asarray([[1.0, r["temperature_c"] - T_REF] for r in rows], dtype=float)
     Y = np.asarray([np.asarray(r["accel_mps2"], dtype=float) - GRAVITY * np.asarray(r["orientation"], dtype=float) for r in rows])
@@ -40,11 +44,11 @@ def infer_imu(problem):
 
     diagnosis = "supported"
     abstain = False
-    if float(np.max(norms)) > max(0.10, 4.5 * robust_scale):
+    if "motion_contamination" not in disabled_faults and float(np.max(norms)) > max(0.10, 4.5 * robust_scale):
         diagnosis, abstain = "motion_contamination", True
-    elif quadratic_detected:
+    elif "thermal_nonlinearity" not in disabled_faults and quadratic_detected:
         diagnosis, abstain = "thermal_nonlinearity", True
-    elif coupling_detected:
+    elif "axis_misalignment" not in disabled_faults and coupling_detected:
         diagnosis, abstain = "axis_misalignment", True
     prediction = GRAVITY * np.asarray(problem["prediction_orientation"]) + bias + drift * (problem["prediction_temperature_c"] - T_REF)
     return {

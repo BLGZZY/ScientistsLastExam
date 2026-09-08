@@ -9,14 +9,11 @@ oracle:
 normalization:
   baseline: zero calibration with valid undetermined abstention
   reference: truth-blind affine fit, residual-based fault classification and sealed-temperature prediction
-  score: clipped development joint of bias/drift recovery, prediction and confidence; held-out transfer, refusal and false discovery remain separate
+  score: supported correct-claim quality plus correct fault refusal, minus the maximum blanket-refusal reward, divided by supported count and multiplied by correct-refusal rate; four discovery axes and counts are reported separately
 citations:
-- id: book:woodman-2007-inertial-navigation
+- id: doi:10.48456/tr-696
   title: An introduction to inertial navigation
-- id: doi:10.1109/5.554205
-  title: Aided inertial navigation systems for autonomous land vehicles
-- id: doi:10.1109/TIM.2014.2325662
-  title: Temperature calibration of MEMS inertial sensors
+  url: https://www.cl.cam.ac.uk/techreports/UCAM-CL-TR-696.html
 invariants:
 - stationary observations equal gravity plus additive bias and temperature drift in supported worlds
 - orientations are known unit vectors and the prediction temperature is outside the central calibration pair
@@ -37,7 +34,7 @@ provenance:
   fresh_confirmation_status: local_model_calibration_completed
 novelty_risk:
   level: medium
-  rationale: Sensors/QuartzCrystalMicrobalanceLab reconstructs complex QCM admittance and deposition from resonance sweeps. This task uses triaxial accelerometer gravity vectors, temperature regression and inertial fault attribution; it shares a calibration theme but not the sensor physics, observation representation, artifact or score.
+  rationale: StructuralEngineering/ModalDamageAttribution is the nearest in temperature confounding and out-of-family refusal, but localizes structural damage using budgeted modal measurements. HeatTransfer/ConvectionDiffusionOpt infers transport and designs heaters using charged PDE experiments. Sensors/QuartzCrystalMicrobalanceLab reconstructs QCM admittance and deposition. This task instead recovers accelerometer bias/drift from a supplied static vector table; the simpler, unbudgeted OLS setting may be on-ramp difficulty and still requires independent admission review.
 lineage:
   status: complete
   builder_model_ids:
@@ -55,8 +52,10 @@ lineage:
     the unsupported effects were reduced and the truth-blind diagnostics were strengthened before
     the final oracle freeze. After commit ab207d8, fresh thinking-disabled first proposals reached
     0.462/0.647 development/held-out for Flash and 0.599/0.733 for Pro, below the
-    0.989/0.988 reference but above the zero baseline. No oracle or public-contract change followed
-    these frozen-source runs.
+    0.989/0.988 reference but above the zero baseline on the historical objective. The September 8
+    maintainer review subsequently changed abstention normalization and diagnostic bookkeeping,
+    not the world generator or numerical reference. Historical model scores are not current
+    measurements; a fresh Linux replay/calibration is recorded separately.
   shortcut_discoverer: builder_self_audit
   frozen_before_eval: false
   freeze_timestamp: null

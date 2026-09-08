@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import math
+import copy
 from typing import Any
 
 import numpy as np
@@ -73,7 +74,7 @@ def _records(spec: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def public_problem(spec: dict[str, Any]) -> dict[str, Any]:
-    problem = dict(PUBLIC_PROBLEM)
+    problem = copy.deepcopy(PUBLIC_PROBLEM)
     problem["records"] = _records(spec)
     return problem
 
@@ -86,14 +87,18 @@ def _validate(submission: Any, problem: dict[str, Any]) -> dict[str, Any]:
         raise ValueError("submission keys must match the public contract exactly")
     if not isinstance(submission["abstain"], bool):
         raise ValueError("abstain must be boolean")
-    if submission["diagnosis"] not in VALID_DIAGNOSES:
+    if not isinstance(submission["diagnosis"], str) or submission["diagnosis"] not in VALID_DIAGNOSES:
         raise ValueError("unknown diagnosis")
+    if isinstance(submission["confidence"], bool) or not isinstance(submission["confidence"], (int, float)):
+        raise ValueError("confidence must be numeric")
     confidence = float(submission["confidence"])
     if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
         raise ValueError("confidence must be in [0,1]")
     def vector(name: str) -> np.ndarray:
         value = submission[name]
-        if not isinstance(value, (list, tuple)) or len(value) != 3:
+        if not isinstance(value, (list, tuple)) or len(value) != 3 or any(
+            isinstance(x, bool) or not isinstance(x, (int, float)) for x in value
+        ):
             raise ValueError(f"{name} must have length three")
         arr = np.asarray(value, dtype=float)
         if not np.all(np.isfinite(arr)):
@@ -102,30 +107,22 @@ def _validate(submission: Any, problem: dict[str, Any]) -> dict[str, Any]:
     result = {name: vector(name) for name in ("bias_mps2", "temperature_drift_mps2_per_c", "prediction_accel_mps2")}
     ids = submission["evidence_ids"]
     allowed = {row["record_id"] for row in problem["records"]}
-    if not isinstance(ids, list) or not ids or len(ids) != len(set(ids)) or not set(ids).issubset(allowed):
+    if not isinstance(ids, list) or not ids or not all(isinstance(x, str) for x in ids) or len(ids) != len(set(ids)) or not set(ids).issubset(allowed):
         raise ValueError("evidence_ids must be unique record IDs")
     result.update({"diagnosis": submission["diagnosis"], "confidence": confidence, "abstain": submission["abstain"], "evidence_ids": ids})
     return result
 
 
-def _fit_reference(problem: dict[str, Any]) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-    rows = problem["records"]
-    X = np.asarray([[1.0, row["temperature_c"] - T_REF] for row in rows], dtype=float)
-    Y = np.asarray([np.asarray(row["accel_mps2"]) - GRAVITY * np.asarray(row["orientation"]) for row in rows])
-    coef, *_ = np.linalg.lstsq(X, Y, rcond=None)
-    bias, drift = coef[0], coef[1]
-    residual = Y - X @ coef
-    return bias, drift, residual, float(np.sqrt(np.mean(residual ** 2)))
-
-
 def _score(spec: dict[str, Any], result: dict[str, Any], problem: dict[str, Any]) -> dict[str, Any]:
     unsupported = spec["kind"] != "supported"
     correct_refusal = unsupported and result["abstain"] and result["diagnosis"] == spec["kind"]
-    false_discovery = unsupported and not result["abstain"]
+    claimed = not result["abstain"]
+    mechanism_correct = not unsupported and claimed and result["diagnosis"] == "supported"
+    false_discovery = claimed and not mechanism_correct
     if unsupported:
         science = 1.0 if correct_refusal else 0.0
-        prediction = 1.0 if result["abstain"] else 0.0
-    else:
+        prediction = 0.0
+    elif mechanism_correct:
         truth_b = np.asarray(spec["bias"])
         truth_d = np.asarray(spec["drift"])
         be = float(np.linalg.norm(result["bias_mps2"] - truth_b))
@@ -134,32 +131,74 @@ def _score(spec: dict[str, Any], result: dict[str, Any], problem: dict[str, Any]
         pe = float(np.linalg.norm(result["prediction_accel_mps2"] - target))
         science = float(np.clip(1.0 - 0.55 * be / 0.35 - 0.30 * de / 0.006 - 0.15 * pe / 0.5, 0.0, 1.0))
         prediction = float(np.clip(1.0 - pe / 0.5, 0.0, 1.0))
+    else:
+        science = prediction = 0.0
     confidence_score = float(np.clip(1.0 - abs(result["confidence"] - science), 0.0, 1.0))
-    combined = float(np.clip(0.70 * science + 0.20 * prediction + 0.10 * confidence_score, 0.0, 1.0))
-    return {"science_score": round(science, 6), "prediction_score": round(prediction, 6), "confidence_calibration_score": round(confidence_score, 6), "correct_refusal": bool(correct_refusal), "false_discovery": bool(false_discovery), "combined_score": round(combined, 6)}
+    # Refusals earn one unit only for correct fault attribution. No free confidence
+    # or prediction credit is awarded to missed or incorrectly labelled findings.
+    combined = float(correct_refusal) if unsupported else (
+        0.70 * science + 0.20 * prediction + 0.10 * confidence_score if mechanism_correct else 0.0
+    )
+    return {"science_score": round(science, 6), "prediction_score": round(prediction, 6), "confidence_calibration_score": round(confidence_score, 6), "correct_refusal": bool(correct_refusal), "false_discovery": bool(false_discovery), "mechanism_correct": bool(mechanism_correct), "combined_score": round(combined, 6)}
 
 
 def _evaluate_world(spec: dict[str, Any], split: str, index: int, candidate) -> dict[str, Any]:
     problem = public_problem(spec)
     base = {"split": split, "world_index": index, "kind": spec["kind"]}
     try:
-        result = _validate(candidate(problem), problem)
+        if hasattr(candidate, "reset_session"):
+            candidate.reset_session()
+        result = _validate(candidate(copy.deepcopy(problem)), problem)
         row = dict(base)
         row.update(_score(spec, result, problem))
-        row.update({"valid": True, "abstained": result["abstain"], "confidence": round(result["confidence"], 6), "evidence_count": len(result["evidence_ids"])})
+        row.update({"valid": True, "abstained": result["abstain"], "confidence": round(result["confidence"], 6), "evidence_count": len(result["evidence_ids"]), "reason": ""})
         return row
     except Exception as exc:  # noqa: BLE001
         row = dict(base)
-        row.update({"combined_score": 0.0, "science_score": 0.0, "prediction_score": 0.0, "confidence_calibration_score": 0.0, "correct_refusal": False, "false_discovery": False, "valid": False, "abstained": True, "confidence": 0.0, "evidence_count": 0, "reason": f"{type(exc).__name__}: {exc}"})
+        row.update({"combined_score": 0.0, "science_score": 0.0, "prediction_score": 0.0, "confidence_calibration_score": 0.0, "correct_refusal": False, "false_discovery": False, "mechanism_correct": False, "valid": False, "abstained": True, "confidence": 0.0, "evidence_count": 0, "reason": f"{type(exc).__name__}: {exc}"})
         return row
+
+
+def _summary(rows):
+    supported = [r for r in rows if r["kind"] == "supported"]
+    unsupported_count = len(rows) - len(supported)
+    claims = sum(r["valid"] and not r["abstained"] for r in rows)
+    supported_claims = sum(r["valid"] and not r["abstained"] for r in supported)
+    mechanism_count = sum(r["mechanism_correct"] for r in supported)
+    refusal_count = sum(r["correct_refusal"] for r in rows)
+    false_count = sum(r["false_discovery"] for r in rows)
+    raw = float(np.mean([r["combined_score"] for r in rows]))
+    refusal_rate = refusal_count / unsupported_count if unsupported_count else 1.0
+    # Subtract the maximum reward available without any supported finding.
+    # The additional refusal multiplier makes never-refusing fits score zero too.
+    normalized = float(np.clip((sum(r["combined_score"] for r in rows) - unsupported_count)
+                              / max(1, len(supported)), 0.0, 1.0)) * refusal_rate
+    valid = float(all(r["valid"] for r in rows))
+    return {
+        "combined_score": round(normalized, 6) if valid else 0.0,
+        "raw_combined_score": round(raw, 6), "valid": valid,
+        "science_score": round(float(np.mean([r["science_score"] for r in rows])), 6),
+        "mechanism_score": mechanism_count / max(1, len(supported)),
+        "mechanism_correct_count": mechanism_count, "mechanism_denominator": len(supported),
+        "false_discovery_rate": false_count / max(1, claims),
+        "false_discovery_count": false_count, "false_discovery_denominator": claims,
+        "correct_refusal_rate": refusal_rate,
+        "correct_refusal_count": refusal_count, "correct_refusal_denominator": unsupported_count,
+        "discovery_coverage": supported_claims / max(1, len(supported)),
+        "discovery_count": supported_claims, "discovery_denominator": len(supported),
+        "attempted_discovery": float(claims > 0), "claim_count": claims,
+        "confidence_calibration_score": float(np.mean([r["confidence_calibration_score"] for r in rows])),
+        "world_count": len(rows),
+    }
 
 
 def evaluate(candidate) -> dict[str, Any]:
     development = [_evaluate_world(spec, "development", i, candidate) for i, spec in enumerate(DEVELOPMENT_WORLDS)]
     heldout = [_evaluate_world(spec, "heldout", i, candidate) for i, spec in enumerate(HELDOUT_WORLDS)]
-    def summary(rows):
-        raw = float(np.mean([r["combined_score"] for r in rows]))
-        normalized = float(np.clip((raw - 0.22) / 0.78, 0.0, 1.0))
-        return {"combined_score": round(normalized, 6), "raw_combined_score": round(raw, 6), "valid": float(all(r["valid"] for r in rows)), "science_score": round(float(np.mean([r["science_score"] for r in rows])), 6), "correct_refusal_rate": round(float(np.mean([r["correct_refusal"] for r in rows if r["kind"] != "supported"])), 6), "false_discovery_rate": round(float(np.mean([r["false_discovery"] for r in rows if r["kind"] != "supported"])), 6), "world_count": len(rows)}
-    dev, held = summary(development), summary(heldout)
-    return {"combined_score": dev["combined_score"], "valid": dev["valid"], "raw_score": dev["combined_score"], "development": dev, "heldout": held, "development_combined_score": dev["combined_score"], "heldout_combined_score": held["combined_score"], "per_instance": development + heldout}
+    dev, held = _summary(development), _summary(heldout)
+    metrics = {"combined_score": dev["combined_score"], "valid": min(dev["valid"], held["valid"]), "raw_score": dev["combined_score"], "development": dev, "heldout": held, "robustness_score": held["combined_score"], "attempted_discovery": dev["attempted_discovery"], "per_instance": development + heldout}
+    for split, summary in (("development", dev), ("heldout", held)):
+        metrics.update({f"{split}_{key}": value for key, value in summary.items()})
+    if not metrics["valid"]:
+        metrics["combined_score"] = metrics["raw_score"] = 0.0
+    return metrics

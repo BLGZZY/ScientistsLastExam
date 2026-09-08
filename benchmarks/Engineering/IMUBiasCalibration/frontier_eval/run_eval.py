@@ -2,27 +2,34 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
-from sle.secure_eval import CandidateProxy
-
 INVALID = -1e18
-TASK_DIR = Path(__file__).resolve().parent.parent
+TASK_ID = "Sensors/IMUBiasCalibration"
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
+    parser.add_argument("--timeout", type=float, default=300)
     args = parser.parse_args()
     metrics = {"combined_score": INVALID, "valid": 0.0}
     try:
-        sys.path.insert(0, str(TASK_DIR / "verification"))
-        import evaluator
-        candidate = CandidateProxy(Path(args.candidate).resolve(), "infer_imu", timeout_s=300)
-        metrics.update(evaluator.evaluate(candidate))
+        completed = subprocess.run(
+            [sys.executable, "-m", "sle", "eval", "--task", TASK_ID, "--allow-uncertified",
+             "--candidate", str(Path(args.candidate).resolve()), "--timeout", str(args.timeout)],
+            cwd=str(ROOT), capture_output=True, text=True, timeout=args.timeout + 120,
+            env={**os.environ, "PYTHONPATH": str(ROOT)},
+        )
+        if completed.returncode != 0:
+            raise RuntimeError("sle eval exited %d: %s" % (
+                completed.returncode, (completed.stderr or "").strip()[-500:]))
+        metrics.update(json.loads(completed.stdout))
     except Exception as exc:  # noqa: BLE001
         metrics["error_message"] = f"{type(exc).__name__}: {exc}"
     Path(args.metrics_out).write_text(json.dumps(metrics, indent=2), encoding="utf-8")

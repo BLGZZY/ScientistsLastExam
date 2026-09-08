@@ -39,11 +39,28 @@ failure and set `abstain=True`. Do not assume record order, hidden seeds, or a f
 
 ## Evaluation
 
-The clipped `combined_score` averages parameter recovery, sealed-temperature prediction and
-confidence calibration. Development and held-out worlds contain supported affine calibration and
-three distinct unsupported mechanisms. Correct refusal, false discovery, validity and held-out
-transfer are reported separately. The reference is a truth-blind robust affine fit with residual
-diagnostics; it is an evaluation anchor, not a claim of field calibration accuracy.
+On supported worlds, abstention or a diagnosis other than `supported` receives zero. A correct
+claim receives `q = 0.70*s + 0.20*p + 0.10*c`. With Euclidean bias, drift and prediction errors
+`eb`, `ed`, `ep`, `s = clip(1 - 0.55*eb/0.35 - 0.30*ed/0.006 - 0.15*ep/0.5, 0, 1)`,
+`p = clip(1 - ep/0.5, 0, 1)` and `c = 1 - abs(confidence-s)`.
+An unsupported world contributes one only for abstention with the correct fault diagnosis;
+wrong-label abstention receives no prediction or confidence credit.
+
+For each split, let `S` and `U` be the supported and unsupported counts, and `R` the number of
+correctly attributed refusals. The headline is
+`clip((sum(q)-U)/S, 0, 1) * R/U`. The subtraction removes the maximum reward available from
+blanket refusal; the additional refusal multiplier also makes never-refusing calibration zero.
+Both splits contain supported and unsupported worlds. Invalid submissions receive zero.
+
+Separate development/held-out diagnostics publish numerators and denominators:
+`mechanism_score` is correct non-abstained supported diagnoses / all supported worlds, not
+parameter recovery; `false_discovery_rate` is false claims / actual non-abstained claims (zero
+if none); `correct_refusal_rate` is correct fault-labelled refusals / all unsupported worlds;
+`discovery_coverage` is supported claims, including wrong ones / all supported worlds.
+`attempted_discovery` indicates any valid non-abstained claim. Invalid and abstained supported
+worlds remain in the mechanism and coverage denominators. Composite `science_score`, confidence
+calibration and normalized held-out `robustness_score` are separate diagnostics and are not
+search-visible feedback.
 
 ## Contract and rules
 
@@ -63,3 +80,15 @@ Every candidate-visible key is listed here: `schema_version`, `gravity_mps2`,
 Woodman, *An introduction to inertial navigation*, University of Cambridge, 2007. The affine bias,
 scale and thermal-drift calibration problem follows standard IMU error modeling; the oracle is a
 small deterministic reduced-order laboratory rather than a field deployment prescription.
+Report UCAM-CL-TR-696, DOI `10.48456/tr-696`. The thermal polynomial and sparse motion faults
+are synthetic error-model approximations, not fitted device measurements.
+
+## Relations and differences
+
+- `StructuralEngineering/ModalDamageAttribution` also separates thermal confounding from
+  out-of-family failure, but localizes stiffness loss from budgeted modal measurements; this task
+  estimates sensor bias and thermal drift from supplied static vector records.
+- `HeatTransfer/ConvectionDiffusionOpt` identifies transport and designs heaters through charged
+  PDE experiments; this task diagnoses a measurement model without controlling a thermal field.
+- `Sensors/QuartzCrystalMicrobalanceLab` reconstructs resonance admittance and deposition,
+  rather than gravitational accelerometer calibration.
