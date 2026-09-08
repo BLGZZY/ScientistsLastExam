@@ -1,8 +1,9 @@
-"""Generic zero anchor: sentinel-window Batcher construction, exactly pruned.
+"""Deterministic truth-blind search probe; not yet a qualifying reference.
 
-Sweep every contiguous real-wire window in the next power of two. Negative
-sentinels precede the window and positive sentinels follow it. Remove redundant
-comparators until no single deletion preserves sorting. No stored networks.
+Generate a generic baseline, prepend random comparator prefixes, and exactly
+prune the resulting valid networks. Neutral/uphill moves allow structural changes.
+No data files, known network tables, evaluator imports, or external processes.
+The bounded iteration count makes the artifact deterministic across hosts.
 """
 from functools import lru_cache
 
@@ -93,5 +94,28 @@ def _baseline(n):
     return tuple(best)
 
 
-def build_network(n: int):
-    return [list(pair) for pair in _baseline(n)]
+
+SEARCH_TRIALS = 300
+
+
+def search_network(n, trials=SEARCH_TRIALS, seed=0, max_extra=2):
+    import random
+    rng = random.Random(seed)
+    best = list(_baseline(n))
+    current = list(best)
+    for step in range(trials):
+        prefix = [tuple(sorted(rng.sample(range(n), 2)))
+                  for _ in range(rng.randrange(1, 5))]
+        # A sorting network accepts every possible output of the prefix.
+        trial = _prune(prefix + current, n)
+        if len(trial) <= len(best) + max_extra:
+            current = trial
+        if step % 100 == 99:
+            current = list(best)
+        if len(trial) < len(best):
+            best = list(trial)
+    return [list(pair) for pair in best]
+
+
+def build_network(n):
+    return search_network(n)

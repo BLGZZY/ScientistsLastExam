@@ -91,6 +91,17 @@ class SortingNetworkSizeTests(unittest.TestCase):
         for n in self.ev.SIZES:
             self.assertEqual(namespace["build_network"](n), reference.build_network(n))
 
+    def test_search_probe_is_standalone_deterministic_and_exact(self):
+        source = (TASK / "verification/reference_search.py").read_text()
+        namespace = {"__name__": "isolated_search"}
+        # No __file__ or neighboring data directory is provided.
+        exec(compile(source, "isolated_search.py", "exec"), namespace)
+        first = namespace["search_network"](6, trials=20)
+        second = namespace["search_network"](6, trials=20)
+        self.assertEqual(first, second)
+        self.assertTrue(naive_sorts(first, 6))
+        self.assertTrue(self.ev.verify_network(first, 6)[0])
+
     # ------------------------------------------------ 0-1 principle checker
 
     def test_bitmask_checker_agrees_with_brute_force_on_random_networks(self):
@@ -152,7 +163,7 @@ class SortingNetworkSizeTests(unittest.TestCase):
     def test_baseline_is_valid_scores_exactly_zero_and_recomputes(self):
         for n, ref in self.ev.SIZES.items():
             net = self.sol.build_network(n)
-            self.assertEqual(len(net), len(batcher(n)))
+            self.assertEqual(len(net), {13: 48, 14: 53, 15: 59, 16: 63, 17: 75}[n])
             ok, size, _ = self.ev.verify_network(net, n)
             self.assertTrue(ok, n)
             self.assertEqual(size, ref["baseline"], n)
@@ -163,7 +174,7 @@ class SortingNetworkSizeTests(unittest.TestCase):
         ledger = json.loads((TASK / "references" / "anchors.json").read_text())
         anchors = {e["name"]: e for e in ledger["anchors"]}
         for n, ref in self.ev.SIZES.items():
-            self.assertEqual(ref["baseline"], len(batcher(n)), n)
+            self.assertEqual(ref["baseline"], len(self.sol.build_network(n)), n)
             self.assertEqual(anchors[f"lower_bound_n{n}"]["value"], ref["lower_bound"])
             entry = anchors[f"sota_ref_n{n}"]
             self.assertEqual(entry["value"], ref["sota_ref"], n)
@@ -257,9 +268,40 @@ class SortingNetworkSizeTests(unittest.TestCase):
             with self.subTest(maker=maker.__name__ or repr(maker)):
                 metrics = self.ev.evaluate(lambda n, m=maker: m(n))
                 self.assertEqual(metrics["combined_score"], 0.0)
-                self.assertEqual(metrics["raw_score"], 0.0)
+                self.assertEqual(metrics["raw_score"], -1e18)
                 self.assertEqual(metrics["valid"], 0.0)
                 self.assertEqual(metrics["feasibility_rate"], 0.0)
+
+    def test_partial_invalid_submission_has_no_search_credit(self):
+        reference = _load(TASK / "verification/reference_reconstruction.py", "partial_reference")
+        metrics = self.ev.evaluate(lambda n: reference.build_network(n) if n == 13 else [])
+        self.assertEqual(metrics["combined_score"], 0.0)
+        self.assertEqual(metrics["raw_score"], -1e18)
+        self.assertEqual(metrics["valid"], 0.0)
+        self.assertEqual(metrics["feasibility_rate"], 0.2)
+        self.assertIn("error_message", metrics)
+
+    def test_bound_contradiction_is_distinguished_from_malformed_output(self):
+        from unittest.mock import patch
+        sizes = {n: dict(row) for n, row in self.ev.SIZES.items()}
+        sizes[13]["lower_bound"] = sizes[13]["baseline"] + 1
+        with patch.object(self.ev, "SIZES", sizes):
+            metrics = self.ev.evaluate(self.sol.build_network)
+        self.assertEqual(metrics["valid"], 0.0)
+        self.assertEqual(metrics["combined_score"], 0.0)
+        self.assertEqual(metrics["raw_score"], -1e18)
+        self.assertEqual(metrics["bound_contradiction"], 1.0)
+        self.assertIn("audit_required", metrics["error_message"])
+        self.assertIn("n=13", metrics["error_message"])
+
+    def test_oversized_list_is_rejected_before_iteration(self):
+        class Oversized(list):
+            def __iter__(self):
+                raise AssertionError("oversized sequence must not be copied")
+        ok, size, reason = self.ev.verify_network(Oversized([[0, 1]] * 170), 13)
+        self.assertFalse(ok)
+        self.assertEqual(size, 170)
+        self.assertIn("cap", reason)
 
     def test_liberal_but_valid_formats_are_accepted(self):
         import numpy as np

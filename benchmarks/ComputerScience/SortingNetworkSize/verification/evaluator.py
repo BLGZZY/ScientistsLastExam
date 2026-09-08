@@ -8,6 +8,9 @@ The bound may be unattainable; unused score range is not measured search headroo
 from __future__ import annotations
 
 from itertools import islice
+from functools import lru_cache
+
+INVALID_RAW_SCORE = -1e18
 import numpy as np
 
 
@@ -22,7 +25,7 @@ def _cap(n: int) -> int:
     return n * n
 
 
-def _baseline_network(n: int):
+def _batcher(n: int):
     """Batcher odd-even mergesort on N = 2^ceil(log2 n) wires, sentinel gates removed.
 
     A sorting network on N >= n wires restricted to the real wires (padding with +inf
@@ -56,6 +59,61 @@ def _baseline_network(n: int):
 
     sort(0, size)
     return net
+
+
+@lru_cache(maxsize=None)
+def _inputs(n):
+    wires = []
+    total = 1 << n
+    for wire in range(n):
+        run = 1 << wire
+        mask = ((1 << run) - 1) << run
+        width = 2 * run
+        while width < total:
+            mask |= mask << width
+            width *= 2
+        wires.append(mask)
+    return tuple(wires)
+
+
+def _sorts(network, n):
+    wires = list(_inputs(n))
+    for i, j in network:
+        a, b = wires[i], wires[j]
+        wires[i], wires[j] = a & b, a | b
+    return all(not (a & ~b) for a, b in zip(wires, wires[1:]))
+
+
+def _prune(network, n):
+    network = list(network)
+    changed = True
+    while changed:
+        changed = False
+        for pos in range(len(network) - 1, -1, -1):
+            trial = network[:pos] + network[pos + 1:]
+            if _sorts(trial, n):
+                network = trial
+                changed = True
+    return network
+
+
+@lru_cache(maxsize=None)
+def _baseline(n):
+    if not isinstance(n, int) or not 2 <= n <= 17:
+        raise ValueError("supported channel counts are 2 through 17")
+    width = 1 << (n - 1).bit_length()
+    full = _batcher(width)
+    choices = []
+    for offset in range(width - n + 1):
+        window = [(i - offset, j - offset) for i, j in full
+                  if offset <= i < j < offset + n]
+        choices.append(_prune(window, n))
+    best = min(choices, key=lambda net: (len(net), net))
+    return tuple(best)
+
+
+def _baseline_network(n):
+    return list(_baseline(n))
 
 
 # Published size lower bounds reported by Dobbelaere (2025-04-21 update).
@@ -105,6 +163,8 @@ def verify_network(raw, n: int) -> tuple[bool, int, str]:
         return False, 0, "network must be a sequence of [i, j] pairs"
     cap = _cap(n)
     if isinstance(raw, (list, tuple)):
+        if len(raw) > cap:
+            return False, len(raw), f"{len(raw)} comparators exceed checker cap {cap}"
         items = list(raw)
     else:
         try:                                    # bounded even for infinite generators
@@ -152,7 +212,8 @@ def score_n(n: int, ref: dict, build_network) -> dict:
     base, target, known = ref["baseline"], ref["lower_bound"], ref["sota_ref"]
     if size < target:
         return {"n": n, "valid": False, "size": size, "score": 0.0,
-                "reason": "verified artifact contradicts cited lower bound; audit required"}
+                "bound_contradiction": True,
+                "reason": f"audit_required: verified sorting network of size {size} < cited lower bound {target} at n={n}"}
     return {
         "n": n, "valid": True, "size": size, "baseline_size": base,
         "lower_bound": target, "sota_ref": known,
@@ -165,12 +226,18 @@ def score_n(n: int, ref: dict, build_network) -> dict:
 def evaluate(build_network) -> dict:
     per = [score_n(n, ref, build_network) for n, ref in SIZES.items()]
     n_valid = sum(1 for r in per if r.get("valid"))
-    return {
-        "combined_score": float(np.mean([r["score"] for r in per])),
-        "raw_score": -float(np.mean([r["size"] for r in per])) if n_valid == len(SIZES) else 0.0,
+    valid = n_valid == len(SIZES)
+    contradictions = [r for r in per if r.get("bound_contradiction")]
+    result = {
+        "combined_score": float(np.mean([r["score"] for r in per])) if valid else 0.0,
+        "raw_score": -float(np.mean([r["size"] for r in per])) if valid else INVALID_RAW_SCORE,
         "valid": 1.0 if n_valid == len(SIZES) else 0.0,
         "feasibility_rate": n_valid / len(SIZES),
         "beat_sota": bool(any(r.get("beats_known_record", False) for r in per)),
         "target_attainment_rate": sum(r.get("target_attained", False) for r in per) / len(SIZES),
         "per_n": per,
+        "bound_contradiction": float(bool(contradictions)),
     }
+    if not valid:
+        result["error_message"] = "; ".join(r["reason"] for r in per if not r.get("valid"))
+    return result

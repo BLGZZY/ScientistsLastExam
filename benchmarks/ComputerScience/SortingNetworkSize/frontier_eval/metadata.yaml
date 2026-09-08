@@ -1,8 +1,8 @@
 domain: Algorithm
 task: SortingNetworkSize
 scientific_role: optimization
-difficulty: flagship
-tier: T3
+difficulty: hard
+tier: T2
 oracle_type: analytical
 score_mode: clipped
 gpu_required: false
@@ -14,9 +14,10 @@ sizes:
 - 15
 - 16
 - 17
-reference_baseline: batcher_odd_even_merge_with_sentinel_removal
-reference_sota: 'Published constructive size records retained for raw comparison, not the score-one anchor: 45/51/56/60/71'
+reference_baseline: pruned_all_sentinel_window_batcher
+reference_sota: Published records retained only as raw comparison and an attributed lookup probe; not
+  a qualifying reference.
 citation: Dobbelaere size-bound compilation (2025-04-21 update); Harder arXiv:2012.04400; Valsalam-Miikkulainen
   JMLR14 (2013) 303-331
 reference_target: Cited lower bounds 44/48/53/57/63; proof external, attainability unknown
-reference_method_status: public_data_reconstruction_only; truth_blind_search_reference_pending
+reference_method_status: bounded_truth_blind_search_probe_added; competitive_reference_still_pending

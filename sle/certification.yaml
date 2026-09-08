@@ -528,13 +528,10 @@ tasks:
       - arxiv:2606.18984
   Algorithm/SortingNetworkSize:
     status: candidate
-    reason: 'candidate revised under PR reviewer guidance: Batcher zero anchor, cited size lower bounds
-      as ideal full-score targets, exact 0-1 verification and independent public-network reconstruction
-      reference; raw comparator counts and record gaps retained. Lower scores do not establish search difficulty.
-      Published lower-bound proof audit, general search reference, clean Linux model calibration and external
-      review remain pending.'
+    reason: 'Exact 0-1 sorting verification with a pruned sentinel-window generic zero anchor and external size lower bounds; all-invalid and partial-invalid submissions fail closed. Published data remain a lookup probe. A bounded independent search probe is available but is not competitive; an admission-quality reference, proof review and model calibration remain pending.'
     citation_ids:
-    - doi:10.1007/978-3-319-04921-2_19
+    - arxiv:2012.04400
+    - url:https://jmlr.org/papers/v14/valsalam13a.html
     - url:https://bertdobbelaere.github.io/sorting_networks.html
   Algorithm/TensorRank555:
     status: candidate

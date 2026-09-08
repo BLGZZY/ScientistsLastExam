@@ -40,7 +40,6 @@ def main() -> int:
                 completed.returncode, (completed.stderr or "").strip()[-500:]))
         result = json.loads(completed.stdout)
         metrics.update(result)
-        metrics.setdefault("raw_score", result.get("combined_score"))
     except Exception as exc:  # noqa: BLE001 - a broken evaluation is reported, not raised
         metrics["error_message"] = "%s: %s" % (type(exc).__name__, exc)
     Path(args.metrics_out).write_text(json.dumps(metrics, indent=2, default=str), encoding="utf-8")
