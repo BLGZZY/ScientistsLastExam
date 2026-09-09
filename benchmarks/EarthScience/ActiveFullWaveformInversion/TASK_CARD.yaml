@@ -132,4 +132,4 @@ evaluation_budget:
   acquisition_units: 3
   reference_wall_seconds_macos: 29.271
   one_shot_reference_wall_seconds_macos: 18.096
-  measurement_source: September 9 solver-only local method diagnostics; current source hashes and results in references/solver_confirmation_2026-09-09.json. Updated Linux sandbox replay pending explicit authorization; the previous Linux timing is historical.
+  measurement_source: September 9 independent-noise local diagnostics with CI-pinned numerical libraries; current source hashes and results in references/review_method_diagnostics_2026-09-09.json. Updated Linux sandbox replay remains pending; previous Linux timing is historical.
