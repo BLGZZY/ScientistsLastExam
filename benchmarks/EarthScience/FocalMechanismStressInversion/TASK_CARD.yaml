@@ -51,7 +51,7 @@ contamination:
     still required.
 review:
   domain: pending_external_seismology
-  evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
+  evaluator_security: targeted_regressions_and_real_linux_sandbox_checks
 provenance:
   class: procedural
   target_source: Repository-visible deterministic focal-mechanism catalogs with
@@ -109,5 +109,5 @@ frontier_eng_overlap_review:
 evaluation_budget:
   timeout_seconds: 300
   reanalysis_units: 16
-  reference_wall_seconds_linux: 3
-  measurement_source: Maintainer PR 20 review at 1589232 on 2026-09-08; not a frontier-model calibration run.
+  reference_wall_seconds_linux: [3.22, 3.32]
+  measurement_source: Two identical real Linux sandbox runs at 05d15d2 on 2026-09-09; full contribution gate and regression evidence in references/linux_validation_2026-09-09.json. Not a frontier-model calibration run.

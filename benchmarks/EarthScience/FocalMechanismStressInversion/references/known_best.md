@@ -137,9 +137,19 @@ are pinned in `tests/test_focal_mechanism_stress_inversion.py`.
 
 Development and held-out metrics stay separate; the held-out set uses fresh tensors,
 mixtures, incoherent catalogs and noise. Determinism was checked by comparing two full
-evaluation dictionaries. Formal Linux sandbox replay, global evidence refresh and
-independent replication are pending. See the task card citations for background; the
+evaluation dictionaries. Real Linux sandbox replay is now recorded below; global
+evidence refresh and independent replication remain pending. See the task card citations for background; the
 explicitly declared synthetic catalog is not certified by those publications.
+
+At clean revision `05d15d2`, two full Linux sandbox runs produced identical metrics:
+0.622620424 development / 0.573022358 held out, in 3.22 / 3.32 seconds. The full
+contribution gate passed 15/15 checks. The combined task/framework suite passed
+204 tests and 40 subtests without skips, and the clean audit covered 85 tasks.
+Python 3.12.3, NumPy 1.26.4 and SciPy 1.13.1 were already installed. Existing
+administrator permission was used for namespace setup while the original
+bubblewrap/seccomp candidate restrictions and host settings remained unchanged.
+`linux_validation_2026-09-09.json` records both outputs, source hashes and commands.
+These results are contributor validation, separate from GitHub CI and domain acceptance.
 
 ## Reproduce
 

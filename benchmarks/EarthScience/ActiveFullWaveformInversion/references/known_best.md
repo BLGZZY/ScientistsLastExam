@@ -46,7 +46,7 @@ still three shots. The timeout change is separate from scientific scoring.
 
 Current local results use Python 3.11, NumPy 1.24.4 and SciPy 1.10.1, matching the
 CI library pins and the package's NumPy<2 constraint. These are macOS measurements;
-Linux sandbox confirmation is tracked separately.
+Linux sandbox confirmation is recorded separately below.
 
 | Method | Development | Held-out |
 |---|---:|---:|
@@ -145,6 +145,18 @@ platform, per-world score and runtime. `review_confirmation_2026-09-09.json`
 records paired physical errors and additional-world results on current noise.
 The full local reference takes about 29.27 seconds and one shot 18.10 seconds
 in that run; local timings do not predict Linux sandbox load. The cap is 600.
+
+Real Linux sandbox validation at clean revision `05d15d2` used Python 3.12.3,
+NumPy 1.26.4 and SciPy 1.13.1. Two full reference runs produced identical complete
+metrics: 0.714100702 development / 0.660180262 held out, in 89.32 / 89.53 seconds.
+The full contribution gate passed all 15 checks, including baseline execution,
+deterministic replay and malformed candidates. The combined task/framework suite
+passed 204 tests and 40 subtests with no skips; the clean audit covered 85 tasks.
+`linux_validation_2026-09-09.json` includes source hashes, both metric dictionaries,
+gate results and reproduction commands. Existing administrator permission was used
+for namespace setup; the original candidate sandbox and host security settings
+were unchanged. This contributor run does not substitute for GitHub CI approval
+or independent domain review.
 
 ```sh
 OPENBLAS_NUM_THREADS=1 python .research/pr20_fwi_diagnostics.py --output /tmp/fwi-methods.json
