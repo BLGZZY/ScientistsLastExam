@@ -10,6 +10,7 @@ These tests pin the properties that make the message usable rather than its word
 """
 from __future__ import annotations
 
+import re
 import unittest
 
 from sle.registry import find_task, list_tasks
@@ -51,8 +52,14 @@ class TaskLookupDiagnosticsTests(unittest.TestCase):
             if spec.task_id not in {s.task_id for s in list_tasks()}
         )
         message = self._message(existing_but_uncertified, include_uncertified=False)
-        self.assertIn("%d tasks are registered" % inventory, message)
-        self.assertNotIn("%d tasks are registered" % certified, message)
+        # Compare the reported number, not a substring of the sentence. "5 tasks are
+        # registered" is a substring of "85 tasks are registered", so the negative form of
+        # this assertion turns red on inventory size alone once the repository passes 85
+        # tasks with five certified - a failure about arithmetic on the test's own string,
+        # not about the message being wrong.
+        reported = re.search(r"(\d+) tasks are registered", message)
+        self.assertIsNotNone(reported, message)
+        self.assertEqual(int(reported.group(1)), inventory, message)
 
     def test_certified_only_lookup_says_so(self):
         existing_but_uncertified = next(
