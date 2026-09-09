@@ -89,7 +89,8 @@ An unsupported instrument contributes one only for correctly labelled and locali
 For S supported and U unsupported instruments, with R correct fault refusals, the split score
 is `clip((sum(q)-U)/S,0,1) * R/U`. Both splits contain each family. This removes all reward
 available from blanket abstention; the refusal multiplier also makes never-refusing fits zero.
-Any invalid submission makes that split invalid with score zero.
+Any invalid submission makes that split invalid with score zero, and an invalid split
+on either side sets the reported headline to zero as well.
 
 Separate development/held-out axes include:
 
@@ -101,7 +102,8 @@ Separate development/held-out axes include:
 
 Their numerators and denominators, supported model accuracy, fault-axis accuracy, bias/drift/
 prediction qualities and `attempted_discovery` are reported independently. Held-out and
-mechanism diagnostics are not search-visible. The headline uses development only.
+mechanism diagnostics are not search-visible. The headline value is the development
+score, but a valid submission is required on both splits.
 
 ## Relations and differences
 
