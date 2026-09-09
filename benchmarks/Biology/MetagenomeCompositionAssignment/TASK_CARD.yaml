@@ -72,7 +72,11 @@ lineage:
     A clean-tree repository-native batch_evolve calibration on b35783a produced one
     valid first proposal at 0.743401678, below the 0.827795949 reference. Its raw
     report remains uncommitted by contributor policy; hashes and protocol details
-    are recorded in known_best.
+    are recorded in known_best. After replacing the proposed shared wrapper with
+    the task-local evaluator bridge, the same protocol on clean 226b263 produced
+    one valid first proposal at 0.750256148, again below reference, with no
+    infrastructure failures. Its raw report remains uncommitted under the same
+    policy.
   shortcut_discoverer: internal_reference_and_manual_review
   frozen_before_eval: true
   freeze_timestamp: '2026-09-08T18:45:29.110657+00:00'

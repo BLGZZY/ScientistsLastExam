@@ -159,14 +159,17 @@ local normal utility estimates are approximations, not exact posterior inference
 | Terra coarse1, independent first proposal | 0.728136 | 0.744529 |
 | Terra coarse2, independent first proposal | 0.747863 | 0.744293 |
 | Terra formal `batch_evolve` first proposal | 0.743402 | withheld from search |
+| Terra formal task-local-runtime first proposal | 0.750256 | withheld from search |
 
 The earlier expansion without coarse-screen ambiguity was insufficient: one
 fresh Terra proposal matched its reference. Those results are retained as
 historical evidence. Three first proposals use isolated direct Codex CLI,
 gpt-5.6-terra, high reasoning, with the same 600-second evaluation budget.
 An additional clean-tree `batch_evolve --run-role calibration` first proposal
-used the same model and scored 0.743402; held-out metrics remained outside search
-feedback. This is not a cross-model ranking or evidence of long-horizon
+used the same model and scored 0.743402; after replacing the proposed shared
+wrapper with this task's local wrapper, a clean-tree repeat scored 0.750256.
+Held-out metrics remained outside search feedback. This is not a cross-model
+ranking or evidence of long-horizon
 resistance. Twenty extra count-noise repeats and all construction comparisons
 are recorded in `references/known_best.md`.
 

@@ -42,6 +42,20 @@ The local report SHA256 is
 The raw report remains uncommitted under the contributor's audit-file policy,
 so the card does not claim a repository-resolvable calibration artifact.
 
+After removing the proposed repository-wide shared wrapper, the same formal
+one-proposal protocol was repeated on clean source
+`226b26344e1b1497872e87c40cad719a1d4ef38f`. The task-local wrapper was outside
+the proposal's mounted agent files; Task.md, the baseline and the evaluator were
+unchanged. The valid proposal scored 0.750256148 development and 0.777317035
+held-out, below the 0.827795949 reference, with zero false claims and complete
+alias recovery and library refusal on both splits. It used 3052 input and 11989
+output tokens in 370.335 seconds. The ledger recorded two requests and two
+receipts with no incomplete or infrastructure-failure attempts. Candidate
+SHA256: `7b7ce2b18d3765c06168a3825f42175c2aa98c2b29f88d786c636622933156ad`.
+Local report SHA256:
+`bc89792d8ca5bd0191637af9a023e29cac2c7d4c22aec92960aa3f55d86820be`.
+That raw report is also intentionally uncommitted.
+
 coarse0: valid=1.0; 0.745179412/0.744529192; wall 221.384s; SHA256 `9bbac7448354329b33f8f24c07b25f65b31e01749dfb042d57cd8b1a2edc3177`.
 
 coarse1: valid=1.0; 0.728135743/0.744529192; wall 292.779s; SHA256 `05ec9101d1938067a6f7c27f777a6036da63125102af567d2146fca051231a9d`.
@@ -82,6 +96,7 @@ the Linux contribution gate also passes.
 | Terra coarse1, independent first proposal | 0.728136 | 0.744529 |
 | Terra coarse2, independent first proposal | 0.747863 | 0.744293 |
 | Terra formal `batch_evolve` first proposal | 0.743402 | not search-visible |
+| Terra formal task-local-runtime first proposal | 0.750256 | not search-visible |
 
 The evaluator, baseline and scientific-contract section of Task.md are byte-for-byte
 unchanged from the frozen calibration source.
