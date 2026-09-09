@@ -2,139 +2,160 @@
 
 ## 1. Reference method
 
-`verification/reference_solver.py` is standalone and uses only public inputs and charged
-interfaces. It fits a 3x5 velocity-correction grid against smoothed waveforms, upsamples into
-5x8, and refines against smoothed then unsmoothed traces. Cubic interpolation and signed
-corrections bounded at ±1350 m/s are unchanged in the September 9 revision. The public
-acoustic forward model is reproduced in the candidate; no hidden field or evaluator is read.
+The reference uses only public inputs and three paid shots at sources 3/15/28.
+It fits a general smooth velocity correction, without assuming an anomaly count,
+shape, location or sign. An exact tangent-linear derivative of the public discrete
+wave recurrence replaces finite differences. Batched sensitivities support
+trust-region least squares on 3x5, 5x8 and 7x11 cubic-interpolated grids. Spatial
+first differences and a minimum-change prior control unsupported extrapolation;
+the final stage balances receiver traces with a stated-noise floor after coarse
+smoothed fits establish the arrival alignment. Its optimizer cache is local to
+one stage and never crosses worlds.
 
-The witness is not independent high-fidelity verification. Acquisition design, richer velocity
-parameterizations and improved nonlinear inversion remain possible improvements. Model
-calibration and independent seismology review are still pending.
+Directional derivatives, including source/boundary perturbations, are checked
+against an independently implemented oracle. Forward arrays also agree with the
+oracle. Exploratory adjoint/L-BFGS, curvature-only regularization, finer grids
+alone and early trace balancing regressed on development and were rejected.
+The adopted implementation uses tangent sensitivities, not the rejected adjoint
+optimizer. This is conventional regularized inversion, not a new physical law.
 
-## 2. Baseline and normalization
+## 2. Scoring, noise independence and baseline
 
-The baseline acquires one central shot and confidently reports the supplied background on every
-world. It is valid and scores exactly zero on development and held-out worlds at all three levels.
-Always abstaining is a separate zero-score candidate.
+The score formula and velocity fields were not altered to improve the method.
+The solver-only comparison was first made on a byte-identical oracle, with a
+source freeze before additional-world confirmation. That oracle and previous
+solver are preserved in `.research/pr20_fwi_evaluator_before_noise.py` and
+`.research/pr20_fwi_reference_before.py`; `solver_confirmation_2026-09-09.json`
+is the historical, pre-noise-fix report.
 
-For depth-weighted relative velocity error `r` measured against the background error, structure
-now scores `max(0, (exp(-1.5*r) - exp(-1.5)) / (1-exp(-1.5)))`. Thus exact truth scores one,
-background or worse scores zero, and the score is continuous at the background. This removes
-the former `exp(-1.5)` floor without changing the sealed-waveform metric or the geometric-mean
-combination. The aggregate remains normalized above always refusing; refusal alone cannot earn
-positive credit without recovery of supported structure.
+The subsequent review correction uses SeedSequence(seed, source, paid-call count,
+world-kind tag) for independent deterministic noise streams. Paired supported and
+structured-attenuation controls still share velocity, but no longer share normal
+noise draws. A regression checks independent standardized noise and exact replay.
+Because noise realizations changed, current numbers below were remeasured for
+both references. They must not be mixed with the archived oracle's measurements.
 
-Both the structural score and the world inventory changed on September 9. Scores across this
-revision are not directly comparable; the reference algorithm itself did not improve.
+The confident-background baseline remains exactly zero, as does always refusing.
+Structural skill remains max(0, (exp(-1.5*r)-exp(-1.5))/(1-exp(-1.5))) for weighted
+background-relative velocity error r. Sealed-waveform scoring, geometric mean and
+normalization above always refusing are unchanged. Existing test bounds were not
+lowered. The FWI wrapper now allows 600 seconds as requested; the paid budget is
+still three shots. The timeout change is separate from scientific scoring.
 
-## 3. Capability comparisons and ablations
+## 3. Current reference, ablation and physical recovery
 
-Current level-1 method measurements, rounded to six decimals:
+Current local results use Python 3.11, NumPy 1.24.4 and SciPy 1.10.1, matching the
+CI library pins and the package's NumPy<2 constraint. These are macOS measurements;
+Linux sandbox confirmation is tracked separately.
 
-| method | development | held-out robustness |
+| Method | Development | Held-out |
 |---|---:|---:|
-| baseline | 0.000000 | 0.000000 |
-| same reference, one shot | 0.172959 | 0.186975 |
-| complete reference, three shots | 0.436901 | 0.290150 |
+| Previous reference on current noise | 0.431671 | 0.299460 |
+| Revised reference, one paid shot | 0.341045 | 0.448163 |
+| Revised reference, three paid shots | 0.714101 | 0.660180 |
 
-The single-shot run passes budget=1 to the same solver. It retains source 3, the first shot of
-the three-shot acquisition (sources 3/15/28); fitting stages, tolerances, parameterization and
-iteration limits are identical. Every world consumes exactly one versus three shots. The gain
-is 0.263942 development and 0.103176 held out. This measures the additional acquisitions under
-the same fitting procedure, not equal wall-clock compute: more observations also cost more
-simulation time. Both versions correctly refuse all three unsupported worlds in each split.
+Both revised variants refuse all original unsupported worlds. One shot retains
+source 3 with the same solver/stopping/regularization; three shots use 3/15/28.
+This is an acquisition ablation, not an equal-computation comparison.
 
-Reproduce with `.research/pr20_fwi_diagnostics.py`. Its report includes source hashes, host,
-NumPy version, runtime and per-world metrics. These are method diagnostics, not model draws.
-Linux source-bound results are stored in `method_diagnostics_2026-09-09.json` (NumPy 1.26.4,
-one BLAS thread). The complete evaluation took 105.18 seconds; one shot took 24.92 seconds.
-The previous levels 2/3 numbers in the historical table below do not apply to this revision.
+On the same current noise, mean velocity RMSE over all four development supported
+worlds falls from **166.036 to 79.563 m/s**, and over all three held-out supported
+worlds from **197.545 to 55.903 m/s**. Development structure skill increases from
+0.226168 to 0.523095; waveform skill from 0.960312 to 0.985968. The gain therefore
+includes improved latent structure, not just classification or waveform fitting.
+Per-world failures and regressions are retained in the comparison report.
 
-Additional development-machine diagnostics on the revised oracle gave level 2
-0.240130/0.000000 and level 3 0.231598/0.000000 (development/heldout). These are exploratory
-macOS measurements, not Linux calibration evidence. The stricter skill score exposes that the
-current reference does not improve over the background on the supported held-out fields at
-these levels. Levels 2/3 are stress settings, not validated competent-reference tiers;
-level 1 remains the shipped default. No difficulty-certification claim follows from the ladder.
+## 4. Low-dimensional spatial probes
 
-## 4. Shortcut probes
+The maintainer reported 0.359309/0.295580 for its 240-point spatial template and
+0.259353/0.324567 after local refinement. Exact probe source and grid coordinates
+were not supplied. `.research/pr20_fwi_spatial_probe.py` independently reconstructs
+this family, with every grid coordinate explicit; it is not an exact-source replay.
+Its forward solver is independently checked against the oracle.
 
-The three pre-existing candidate methods are retained unchanged:
-
-| probe | development | held-out robustness | development false discovery |
-|---|---:|---:|---:|
-| background plus old central-shot classification | 0.000000 | 0.000000 | 0.333333 |
-| fixed Gaussian lens, 19 amplitudes, three shots | 0.140991 | 0.238192 | 0.000000 |
-| straight-ray first-break mean-slowness update | 0.000000 | 0.000000 | 0.000000 |
-
-The fixed-lens and travel-time candidates acquire three shots but classify using the first
-shot. The background probe acquires one central shot. They must not all be described as
-single-shot methods. The fixed-lens held-out gap to the reference is only 0.051958, substantially
-smaller than its development gap; this limitation is disclosed rather than called certification.
-
-A structured attenuating case is added to each split, retaining the old background-only null
-and attenuation controls. The development case pairs the supported seed 41023 velocity field
-with attenuation; the held-out case uses separate seed 51053 and variant 8. Both carry smooth
-anomalies plus the existing reduced-order attenuation parameter, 1.8. No new physical law or
-field-fidelity claim is introduced.
-
-On the new development case, the three-shot energy ratio against the background is about 1.230,
-so the old `energy_ratio < 0.95` shortcut does not reject it. The complete reference rejects it
-after waveform fitting. The central-shot background shortcut incorrectly claims structure,
-which the false-discovery metric now exposes. The new held-out case is still rejected by the
-old energy gate: the revision demonstrates one concrete failure of that shortcut, not that
-all energy-based classification is impossible. Regression tests check non-background fields
-in both splits and acoustic-model discrepancy exceeding the stated noise.
-
-## 5. Frontier-model calibration
-
-Not run. No frozen model draw, two-hour headroom, server-held-world result or independent
-seismology certification is claimed. This package remains `candidate`. Local software checks
-and method comparisons do not establish frontier-model difficulty.
-
-## 6. Construction errors and revisions
-
-- September 9: remove the background structural-score floor, add structure-plus-attenuation
-  worlds to both splits, and measure the same solver with one versus three paid shots.
-- September 8: the runner delegates to trusted `sle eval`; invalid artifacts no longer count
-  as discovery attempts, confidence targets actual recovery, and the baseline makes a legal
-  confident background claim. Forward physics are disclosed to avoid simulator-guessing.
-- September 7: a constant-lens shortcut outperformed the old single-pass 3x5 reference, prompting
-  the current 3x5-to-5x8 continuation reference. Its old 0.615339/0.427110 scores are historical.
-- Earlier versions used a fixed-sign lens; the standalone reference now uses signed spatial
-  corrections and imports no hidden evaluator.
-
-Historical measurements, **obsolete for the September 9 oracle**:
-
-| reference level before this revision | development | held out |
+| Probe on current noise | Development | Held-out |
 |---|---:|---:|
-| 1 | 0.615339 | 0.427110 |
-| 2 | 0.508952 | 0.204432 |
-| 3 | 0.454213 | 0.155980 |
+| Background plus old central-shot classifier | 0.000000 | 0.000000 |
+| Fixed-position lens, 19 amplitudes | 0.140991 | 0.238192 |
+| Travel-time-only update | 0.000000 | 0.027797 |
+| Spatial x/depth/amplitude search, 240 points | 0.042933 | 0.265730 |
+| Spatial search + 243 width/position/amplitude refinements | 0.419285 | 0.362910 |
+| Greedy two Gaussian anomalies, 2x240 searches | 0.410611 | 0.140848 |
+| Greedy three anomalies, 3x240 searches | 0.184909 | 0.205779 |
+| Revised reference | 0.714101 | 0.660180 |
 
-Historical background/lens/travel-time probes scored 0.327769/0.379232/0.068824 development.
-These values describe prior method diagnostics, not current targets or calibration evidence.
+The refined probe still exceeds the **old** witness's held-out score, so this is
+not a weak comparator. It reaches 58.7%/55.0% of the revised reference. The tests
+cover coarse, strict-gate, refined and greedy multi-anomaly variants on both
+splits, requiring a margin of 0.15 and ratio below 70%. These are explicit local
+regressions, not unilateral approval of the repository's admission policy.
+The coarse and three-anomaly probes make a false discovery on development.
+A better waveform fit can also erase residual-based refusal, an observed risk.
 
-## 7. Robustness and reproducibility
+## 5. Additional worlds and calibration limits
 
-Tests verify exact-field unit scores, zero background/worse-field scores, continuity and
-monotonic improvement, structured attenuation in both splits, paid-shot ablation, deterministic
-zero baselines at all levels, malformed artifacts, poisoned budgets and external sandbox
-entrypoints. Earlier template claims about mass conservation and unrelated forecasting tests
-are removed; those were not FWI verification evidence.
+The method was selected on original development worlds, then source-frozen before
+12 predeclared additional supported worlds and five unsupported controls. The
+list is in `.research/pr20_fwi_validation_plan.md`. The solver was not retuned
+using their outcomes. The same list has now been remeasured on independent noise
+under the CI library pins: previous reference **0.137516**, revised **0.459219**.
+Both refuse all five unsupported controls. Revised supported coverage is **8/12**,
+versus **7/12** previously. On the seven worlds both reconstruct, mean RMSE falls
+from **211.679 to 77.545 m/s**. The paired denominator avoids selection bias from
+changing coverage.
+
+Four supported worlds remain refused. One is nearly indistinguishable from the
+background at the acquired traces, one triggers the retained energy gate, and two
+fail the final fit gate. These are failures under the current supported labels,
+not claimed successful model-inadequacy refusals. Depth recovery remains limited.
+The extra worlds are from the same procedural family, not independent geology or
+secure server-held evidence. No frontier-model calibration or certification is
+claimed. Levels 2/3 are diagnostic only, consistently in Task.md and the card.
+
+## 6. Construction history and review follow-up
+
+- September 9 review completion: independent noise streams; spatial/greedy probes;
+  CI-pinned remeasurement; explicit diagnostic tiers; 600-second wrapper budget;
+  taxonomy note; structured-attenuation certification description; source and task
+  documentation reconciliation. The solver itself was not retuned in this step.
+- Prior September 9 solver-only improvement: exact tangent Jacobian, regularized
+  spatial field and late trace balancing; original-oracle/fresh-world evidence
+  retained in `solver_confirmation_2026-09-09.json`.
+- Earlier September 9 oracle revision: removed the positive background floor,
+  added structured attenuation and measured one versus three paid shots.
+- September 8: trusted runner delegation, confidence/coverage contract fixes and
+  public forward-model disclosure.
+- September 7: a fixed-lens shortcut beat the single-pass 3x5 witness; continuation
+  replaced it. Its old 0.615339/0.427110 scores precede the score/world revision.
+
+The old Linux report `method_diagnostics_2026-09-09.json` validates only the prior
+solver/oracle. The 0.709144/0.675359 solver-only scores also refer to the pre-noise
+oracle and a different local dependency version; they are not current results.
+
+The citation arXiv:2003.14181 was checked on 2026-09-09 against its authoritative
+record: William W. Symes, *Wavefield Reconstruction Inversion: an example* (2020),
+https://arxiv.org/abs/2003.14181 . It is methodological background, not a published
+performance claim for this synthetic benchmark. The maintainer confirmed the
+available Frontier-Eng catalog scope on September 8; domain acceptance is pending.
+
+## 7. Reproduction and evidence
+
+`review_method_diagnostics_2026-09-09.json` records every current probe, source hash,
+platform, per-world score and runtime. `review_confirmation_2026-09-09.json`
+records paired physical errors and additional-world results on current noise.
+The full local reference takes about 29.27 seconds and one shot 18.10 seconds
+in that run; local timings do not predict Linux sandbox load. The cap is 600.
 
 ```sh
-python .research/pr20_fwi_diagnostics.py --output /tmp/fwi-methods.json
-python .research/pr20_fwi_diagnostics.py --methods three_shots --level 2 --output /tmp/fwi-level2.json
-python .research/pr20_fwi_diagnostics.py --methods three_shots --level 3 --output /tmp/fwi-level3.json
-python -m pytest tests/test_new_earth_science_tasks.py tests/test_earth_pr_review_regressions.py \
-  tests/test_pr9_earth_hardening.py tests/test_pr9_earth_contracts.py -q
-python benchmarks/EarthScience/ActiveFullWaveformInversion/frontier_eval/run_eval.py \
-  --candidate benchmarks/EarthScience/ActiveFullWaveformInversion/verification/reference_solver.py \
-  --metrics-out /tmp/fwi-reference-sandbox.json
+OPENBLAS_NUM_THREADS=1 python .research/pr20_fwi_diagnostics.py --output /tmp/fwi-methods.json
+OPENBLAS_NUM_THREADS=1 python .research/pr20_fwi_confirmation.py --oracle current \
+  --split fresh --methods old new --output /tmp/fwi-current-confirmation.json
+OPENBLAS_NUM_THREADS=1 python .research/pr20_fwi_confirmation.py --oracle frozen \
+  --split heldout --methods old new --output /tmp/fwi-archived-comparison.json
+python -m pytest tests/test_fwi_discrete_inversion.py tests/test_new_earth_science_tasks.py \
+  tests/test_pr9_earth_hardening.py tests/test_pr9_earth_contracts.py \
+  tests/test_earth_pr_review_regressions.py -q
 ```
 
-The on-disk package is `EarthScience/ActiveFullWaveformInversion`; the registered task ID is
-`WavePropagation/ActiveFullWaveformInversion`. Shared frozen evidence is not regenerated by
-these contributor diagnostics.
+The task remains a candidate. Source publication, CI, real sandbox replay and
+maintainer acceptance are separate from these local scientific comparisons.

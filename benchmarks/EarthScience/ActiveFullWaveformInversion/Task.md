@@ -93,7 +93,8 @@ acoustic benchmark, not a claim of field-scale seismic imaging.
 The evaluator uses NumPy for fixed-grid time/receiver waveform alignment and misfit
 reduction. The propagation model itself remains the stated local reduced-order finite-difference
 model. Evaluator difficulty levels 1–3 progressively increase observation noise and the number of
-simultaneous anomalies; level 1 is the shipped default.
+simultaneous anomalies; level 1 is the shipped default. Levels 2 and 3 are diagnostic-only
+settings, not validated difficulty tiers.
 
 ## Rules
 
@@ -123,4 +124,7 @@ Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
 无. Nearest catalog entries: CarAerodynamicsSensing; holographic_multiplane_focusing. Budgeted acoustic shots recover a subsurface velocity grid and test model adequacy; FE selects car pressure sensors or designs optical phase masks. Neither recovers acoustic velocity from acquired waveforms.
 
-See `.research/pr9_frontier_eng_overlap_2026-09-06.md` for the pinned 47-task paper and complete available repository catalog. The requested 95-entry source could not be reconciled with the available 78 rows (84 expanded tasks); source reconciliation and maintainer acceptance remain pending.
+See `.research/pr20_frontier_eng_overlap_2026-09-06.md` for the pinned 47-task paper and the complete
+available repository catalog (78 table rows, 84 entries after expanding EngDesign). The maintainer
+confirmed that catalog scope on 2026-09-08; no 95-entry revision exists in any inspected source.
+Domain acceptance of this package is still pending.

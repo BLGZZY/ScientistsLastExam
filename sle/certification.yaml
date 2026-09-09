@@ -29,7 +29,7 @@ tasks:
     citation_ids: [doi:10.48456/tr-696, doi:10.4153/CJM-1960-030-4, doi:10.1214/aoms/1177732360]
   WavePropagation/ActiveFullWaveformInversion:
     status: candidate
-    reason: deterministic reduced-order 2-D acoustic full-waveform discovery task with charged shot selection, supported/null/acoustic-model-misspecification worlds, sealed shot and frequency transfer, and separate mechanism, false-discovery, refusal, coverage and confidence metrics; pending independent seismology review, higher-fidelity replication, server-held worlds and model calibration
+    reason: deterministic reduced-order 2-D acoustic full-waveform discovery task with charged shot selection, supported/null/acoustic-model-misspecification worlds including structured attenuation with independent noise streams, sealed shot and frequency transfer, and separate mechanism, false-discovery, refusal, coverage and confidence metrics; pending independent seismology review, higher-fidelity replication, server-held worlds and model calibration
     citation_ids:
       - doi:10.1190/1.3238367
       - arxiv:2003.14181

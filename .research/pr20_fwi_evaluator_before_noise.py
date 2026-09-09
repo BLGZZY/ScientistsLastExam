@@ -161,12 +161,7 @@ class _Acquisition:
             clean = simulate_waveforms(self.world["velocity"], source, 12.0, attenuation)
             scale = max(float(np.std(clean)), 1e-8)
             sigma = self.world["noise"] * scale
-            # Domain-separated streams keep paired velocity controls useful without
-            # reusing their standardized noise. Avoid Python's process-random hash.
-            stream = {"supported": 0, "null": 1, "misspecified": 2,
-                      "structured_attenuation": 3}[self.world["kind"]]
-            rng = np.random.default_rng(np.random.SeedSequence(
-                [self.world["seed"], source, self.used, stream]))
+            rng = np.random.default_rng(self.world["seed"] * 101 + source * 17 + self.used)
             pressure = clean + rng.normal(0.0, sigma, clean.shape)
             return {
                 "source_index": source,

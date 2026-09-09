@@ -8,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-EVAL_TIMEOUT_S = 300
+EVAL_TIMEOUT_S = 600
 INVALID = -1e18
 TASK_ID = "WavePropagation/ActiveFullWaveformInversion"
 ROOT = Path(__file__).resolve().parents[4]

@@ -3,7 +3,7 @@
 The 2026-09-07 internal difficulty audit withdrew ChronologyAssimilation,
 IceObservationNetworkDesign and MineralMixtureXRD from this PR; their pinned
 invariants were removed with them (see the git history and
-.research/pr9_frontier_eng_overlap_2026-09-06.md). What remains are the
+.research/pr20_frontier_eng_overlap_2026-09-06.md). What remains are the
 repo-wide baseline/reference/bad-candidate contracts for the two retained
 packages. Tests load evaluators directly; sandbox-dependent behaviour is out
 of scope here.

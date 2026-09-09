@@ -71,6 +71,40 @@ decisive only at level 3 (8.5° coarse noise), where the free path loses 0.14 de
 
 ## 4. Shortcut probes
 
+### September 9 four-dimensional stress-grid review
+
+The maintainer's PR20 review reports a 12x8x12x6 = 6912-point search at
+**0.346496/0.081461 development/held-out**, and a 24x12x24x9 = 62208-point
+search plus three refinement rounds at **0.246501/0.161891**. These numbers are
+maintainer-reported, not claimed as our independent replay of unavailable source.
+The search varies the principal-axis trend/plunge, orthogonal-axis rotation and R,
+selects the lower angular residual of the two nodal planes per event, re-analyzes
+the 16 worst events, and applies mean/tail residual refusal.
+
+The independently reconstructed `.research/pr20_focal_grid_probe.py` uses the same
+family and grid sizes, with all coordinates explicitly fixed in source. Under the
+CI-pinned NumPy 1.24.4/SciPy 1.10.1 combination it scores **0.402325/0.000000**
+(coarse) and **0.347491/0.159656** (dense plus refinement), versus the unchanged
+reference's **0.622620/0.573022**. Grid endpoints and implementation choices differ
+from the unavailable maintainer source, so the scores must not be equated.
+Reproduce all three methods and the final reference residuals with
+`.research/pr20_focal_review_diagnostics.py --output /tmp/focal-review.json`.
+
+The review also reports clearly separated average angular residuals: supported
+catalogs 7.35–14.34 degrees, mixed/incoherent catalogs 17.47–22.77 degrees for its
+probe. Thus refusal is comparatively easy for that tested method/world inventory;
+it is not evidence of a difficult open-set classification problem. Once refusal
+is correct, the normalized score is driven by supported-world axis, ratio and
+plane recovery through their geometric mean. Selecting whichever nodal plane fits
+best can also lower residuals for a wrong stress tensor; low angular misfit alone
+does not establish correct scientific recovery.
+
+Our unchanged-reference instrumentation separately measures supported means
+7.982–17.446 degrees, mixed means 25.052–31.905 degrees and incoherent means
+28.482–30.427 degrees. These are reference residuals, not the reviewer's grid-probe
+residuals; both sets indicate separation on this finite world inventory. Exact
+per-world values and source hashes are in `review_diagnostics_2026-09-09.json`.
+
 Current level-3 values are in section 3. The following two numbers are historical level-1 measurements, not the shipped level-3 default.
 
 - Constant-regime family (twelve fixed azimuths, R = 0.5, plane-a everywhere):

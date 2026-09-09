@@ -38,7 +38,7 @@ invariants:
 - invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
 - a full abstention scores exactly zero after normalization
 - re-analysis is charged, once per event, and overspending invalidates the world
-known_shortcuts: At the shipped level-3 default, twelve constant-regime candidates (fixed azimuth, R=0.5, plane-a assignments) all score 0.000000 development and held out. The complete reference scores 0.622620/0.573022; removing paid re-analysis gives 0.469429/0.139507 and removing refusal gives 0.022620/0.000000 with false-discovery rate 1.0. Recomputed with .research/pr20_diagnostics.py on 2026-09-08; these are method probes, not frontier-model calibration. Independent seismology review remains pending.
+known_shortcuts: At the shipped level-3 default, twelve constant-regime candidates (fixed azimuth, R=0.5, plane-a assignments) all score 0.000000 development and held out. The complete reference scores 0.622620/0.573022; removing paid re-analysis gives 0.469429/0.139507 and removing refusal gives 0.022620/0.000000 with false-discovery rate 1.0. Recomputed with .research/pr20_diagnostics.py on 2026-09-08; these are method probes, not frontier-model calibration. Independent seismology review remains pending. The maintainer reports four-dimensional stress-grid searches at 0.346496/0.081461 (6912 points) and 0.246501/0.161891 (62208 points plus refinement). Independent same-family probes in .research/pr20_focal_grid_probe.py score 0.402325/0.000000 and 0.347491/0.159656 under CI-pinned dependencies; these do not claim exact replay of unavailable maintainer source. Refusal residuals are well separated in the reported probes and should not be presented as intrinsically hard classification.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -103,7 +103,7 @@ frontier_eng_overlap_review:
   distinction: Recover a stress tensor and per-event nodal plane choices, with mixed-regime
     refusal; FE fits force-field torsion energy scales. Both fit numbers, but neither
     the observable nor latent scientific structure is shared.
-  evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
+  evidence: .research/pr20_frontier_eng_overlap_2026-09-06.md
   status: available_catalog_scope_confirmed_by_maintainer
 
 evaluation_budget:

@@ -113,4 +113,7 @@ review or a frozen frontier-model calibration draw.
 
 无. Nearest catalog entries: torsion_profile_fitting. Recover a stress tensor and per-event nodal plane choices, with mixed-regime refusal; FE fits force-field torsion energy scales. Both fit numbers, but neither the observable nor latent scientific structure is shared.
 
-See `.research/pr9_frontier_eng_overlap_2026-09-06.md` for the pinned 47-task paper and complete available repository catalog. The requested 95-entry source could not be reconciled with the available 78 rows (84 expanded tasks); source reconciliation and maintainer acceptance remain pending.
+See `.research/pr20_frontier_eng_overlap_2026-09-06.md` for the pinned 47-task paper and the complete
+available repository catalog (78 table rows, 84 entries after expanding EngDesign). The maintainer
+confirmed that catalog scope on 2026-09-08; no 95-entry revision exists in any inspected source.
+Domain acceptance of this package is still pending.
