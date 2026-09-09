@@ -11,6 +11,7 @@ from scripts.audit_tasks import LINEAGE_STATUSES, _task_card_issues, audit
 # Tasks built inside this repository, whose builder model, scaffold and red-team history are
 # recorded on the card rather than reconstructed after the fact. Everything else is inherited.
 RECORDED_LINEAGE = {
+    'Microbiology/MetagenomeCompositionAssignment',
     "Ecology/OccupancyDetectionDesign",
     "Physics/CriticalPhenomenaLab",
     "SystemsBiology/EnzymeKineticsLaw",
@@ -119,8 +120,15 @@ class TaskCardAuditTests(unittest.TestCase):
                 self.assertEqual(card["lineage"]["status"], "incomplete_legacy", spec.task_id)
                 self.assertEqual(
                     card["construction_audit"]["status"], "incomplete_legacy", spec.task_id)
-            self.assertFalse(card["lineage"]["frozen_before_eval"])
-            self.assertIsNone(card["lineage"]["freeze_timestamp"])
+            frozen = card["lineage"]["frozen_before_eval"]
+            self.assertIsInstance(frozen, bool, spec.task_id)
+            timestamp = card["lineage"]["freeze_timestamp"]
+            if frozen:
+                from datetime import datetime
+                self.assertIsInstance(timestamp, str, spec.task_id)
+                self.assertIsNotNone(datetime.fromisoformat(timestamp.replace("Z", "+00:00")).tzinfo)
+            else:
+                self.assertIsNone(timestamp, spec.task_id)
             self.assertFalse(card["long_horizon"]["measurement_health_passed"])
             self.assertFalse(card["long_horizon"]["material_headroom_after_2h"])
 

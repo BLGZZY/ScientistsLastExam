@@ -181,12 +181,17 @@ class TaskMaturityAuditTests(unittest.TestCase):
             self.report["evidence_coverage"]["builder_lineage_declared_task_count"],
             self.report["inventory_count"],
         )
-        # Still zero with two tasks now naming their builder, because `complete` here also
-        # requires `frozen_before_eval`, and neither is frozen: EnzymeKineticsLaw had a public key
-        # changed after its first calibration draw, and both may yet be hardened. Declaring the
-        # lineage and freezing the task are different claims and the audit keeps them apart.
+        # A new frozen task may legitimately declare complete lineage. Count
+        # machine-readable source cards instead of pinning the old inventory.
+        import yaml
+        from sle.registry import list_tasks
+        complete = 0
+        for spec in list_tasks(None):
+            card = yaml.safe_load((spec.task_dir / "TASK_CARD.yaml").read_text())
+            lineage = card.get("lineage", {})
+            complete += int(lineage.get("status") == "complete" and lineage.get("frozen_before_eval") is True)
         self.assertEqual(
-            self.report["evidence_coverage"]["builder_lineage_complete_task_count"], 0
+            self.report["evidence_coverage"]["builder_lineage_complete_task_count"], complete
         )
 
     def test_every_admissible_task_has_current_or_migration_safe_model_measurement(self):

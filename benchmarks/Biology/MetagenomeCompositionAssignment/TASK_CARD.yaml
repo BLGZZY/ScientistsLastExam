@@ -1,0 +1,98 @@
+schema_version: 2
+scientific_question: Recover microbial mixture abundances at acquired marker-panel
+  resolution and reject jointly inadequate reference libraries.
+artifact: Concrete taxon or unresolved-group abundances, or empty-list library refusal.
+oracle:
+  model: Deterministic conditional multinomial marker mixtures; 24 worlds, positive
+    shared-marker residuals and design-dependent profile resolution.
+  feasibility: Strict output types, disjoint claims and bounded mass; permanent callback
+    invalidity and per-panel replicate streams.
+  deterministic: true
+normalization:
+  baseline: Legal one-panel nearest-single-taxon baseline scores exactly zero.
+  reference: 'Sparse-support conditional likelihood, selected-support adaptive utility,
+    model-discrimination ordering, joint deviance and development-selected bins500
+    reporting: 0.827795949 / 0.828551628, valid=1.'
+  score: Mass-weighted abundance and resolution credit times claim precision; both
+    splits normalize above the 0.25 library-refusal floor.
+citations:
+- id: doi:10.1038/nmeth.2066
+  title: Metagenomic microbial community profiling using unique clade-specific marker
+    genes
+- id: doi:10.1038/s41467-017-02209-5
+  title: Strain profiling and epidemiology of bacterial species from metagenomic sequencing
+- id: doi:10.1371/journal.pone.0027992
+  title: Accurate Genome Relative Abundance Estimation Based on Shotgun Metagenomic
+    Reads
+invariants:
+- Library and query-menu generation is independent of world category.
+- Every profile is positive; noiseless outside-library samples lie inside all coordinatewise
+  template envelopes.
+- Four query-dependent pairs conserve panel mass; two active pairs have a legal full-resolution
+  two-call design.
+- Labels and marker rows do not determine biology.
+- All-world FDR, intrinsic-alias recovery and library-refusal denominators are separate.
+known_shortcuts: Coarse initial markers confound pairs of active strain groups. Best
+  of 45 fixed plans 0.687528/0.673133; 156 scalar refusal probes best 0.716685/0.495218;
+  development-selected bins500 reporting incorporated. Prior reference-matching Terra
+  counterexample retained in known_best.
+review:
+  domain: pending_external_domain_review
+  evaluator_security: internal_budget_rng_alias_residual_schema_and_malformed_output_tests
+provenance:
+  class: procedural
+  target_source: Repository-visible deterministic marker-mixture panels with held-out
+    seeds.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+  license: Original synthetic instances and implementation. Papers are citations only;
+    no external code or datasets redistributed.
+novelty_risk:
+  level: medium
+  rationale: CrowdedSpectrumAssignment and TransmissionSpectrumSpecies also infer
+    distinguishable components. This task uses conditional count likelihoods, charged
+    marker panels, group abundances and joint library residuals; novelty requires
+    external review.
+lineage:
+  status: complete
+  builder_model_ids:
+  - openai-codex:current-session
+  builder_scaffolds:
+  - codex-desktop
+  calibrator_model_ids:
+  - gpt-5.6-terra
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: Earlier Terra proposal matched the no-coarse-ambiguity
+    reference on 5d91fef. Coarse-screen ambiguity added; three fresh isolated Terra
+    CLI proposals tested clean b75dc6cebae38bc66feb5f5e38fb29268af0dc6f. All candidate
+    hashes, scores and rejected alternatives recorded in known_best. No registered
+    API calibration or maintainer acceptance claimed. Subsequent reference-only review
+    selected stronger utility and reporting choices; evaluator and baseline unchanged.
+    A clean-tree repository-native batch_evolve calibration on b35783a produced one
+    valid first proposal at 0.743401678, below the 0.827795949 reference. Its raw
+    report remains uncommitted by contributor policy; hashes and protocol details
+    are recorded in known_best.
+  shortcut_discoverer: internal_reference_and_manual_review
+  frozen_before_eval: true
+  freeze_timestamp: '2026-09-08T18:45:29.110657+00:00'
+construction_audit:
+  status: prototype_internal
+  author_domain: computational_science
+  reviewer_domain: pending_external
+  expert_hours: null
+  red_team_rounds: 1
+  oracle_disagreement_status: Independent graph traversal and union/find resolution
+    checks, shared-marker envelope/span checks and mass-conservation tests pass; an
+    independent two-taxon conditional-odds likelihood check also passes.
+  independent_recomputation_status: Task-specific invariant tests; external package
+    comparison not claimed.
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
+evaluation_budget:
+  EVAL_TIMEOUT_S: 600
+  scope: Total candidate wall-clock deadline across all instances.
+  override: Task wrapper --timeout or sle eval --timeout.
