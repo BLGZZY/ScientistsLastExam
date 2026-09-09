@@ -39,7 +39,7 @@ class DiscoveryTripleLayoutTests(unittest.TestCase):
             "task_package_sha256": "task-package",
             "runtime_source_sha256": "runtime-source",
         }), encoding="utf-8")
-        (directory / "trajectory.jsonl").write_text(json.dumps({
+        (directory / "trajectory.jsonl").write_text(json.dumps({"step": 0, "valid": True, "score": 0.0}) + "\n" + json.dumps({
             "step": 1,
             "valid": True,
             "score": 0.5,
@@ -87,3 +87,62 @@ class DiscoveryTripleLayoutTests(unittest.TestCase):
             identity = self.module.run_identity(document)
         self.assertIsNotNone(identity)
         self.assertEqual(identity[1], "hy3-ioa")
+
+
+class DiscoveryMetricContractTests(unittest.TestCase):
+    def test_heldout_axes_never_fall_back_to_development(self):
+        module = load_module()
+        metrics = {"heldout_mechanism_score": 0.3,
+                   "heldout_correct_refusal_rate": 0.2,
+                   "development_correct_refusal_rate": 0.9,
+                   "development_discovery_coverage": 0.8}
+        axes = module.extract(metrics)
+        self.assertEqual(axes["refusal"]["value"], 0.2)
+        self.assertIsNone(axes["coverage"])
+
+    def test_baseline_metrics_survive_late_unaccepted_improvement(self):
+        module = load_module()
+        with TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            rows = [
+                {"step": 0, "valid": True, "score": 0.6,
+                 "metrics": {"combined_score": 0.6, "heldout_mechanism_score": 0.4}},
+                {"step": 1, "valid": True, "score": 0.9, "accepted": False,
+                 "metrics": {"combined_score": 0.9, "heldout_mechanism_score": 0.8}},
+            ]
+            (directory / "trajectory.jsonl").write_text("\n".join(map(json.dumps, rows)))
+            self.assertEqual(module.best_metrics(directory)["heldout_mechanism_score"], 0.4)
+
+    def test_seeds_are_not_selected_by_maximum_score(self):
+        module = load_module()
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            for seed in (0, 1):
+                directory = root / str(seed)
+                DiscoveryTripleLayoutTests.write_run(directory, "same-condition")
+                path = directory / "run_manifest.json"
+                manifest = json.loads(path.read_text())
+                manifest["seed"] = seed
+                path.write_text(json.dumps(manifest))
+            output = root / "report.json"
+            with contextlib.redirect_stdout(io.StringIO()):
+                module.main(["--runs", str(root), "--output", str(output)])
+            rows = [r for r in json.loads(output.read_text())["rows"] if r["status"] == "ok"]
+            self.assertEqual(len(rows), 2)
+            self.assertEqual({r["seed"] for r in rows}, {0, 1})
+
+
+class DeclaredMetricTests(unittest.TestCase):
+    def test_actual_cards_distinguish_fpr_and_fdr_and_zero_claims(self):
+        import yaml
+        module = load_module()
+        imu = yaml.safe_load((ROOT / "benchmarks/Engineering/IMUBiasCalibration/TASK_CARD.yaml").read_text())["metric_contract"]
+        amoc = yaml.safe_load((ROOT / "benchmarks/EarthScience/AMOCTippingRefusal/TASK_CARD.yaml").read_text())["metric_contract"]
+        metrics = {"heldout_false_discovery_rate": 0.0, "heldout_false_discovery_denominator": 0}
+        fdr = module.extract(metrics, contract=imu)["fdr"]
+        fpr = module.extract(metrics, contract=amoc)["fdr"]
+        self.assertEqual(fdr["estimand"], "false_discovery_rate")
+        self.assertEqual(fdr["status"], "zero_denominator")
+        self.assertIsNone(fdr["value"])
+        self.assertEqual(fpr["estimand"], "false_positive_rate")
+        self.assertNotEqual(fdr["denominator"], fpr["denominator"])

@@ -526,22 +526,58 @@ def render(rows: list[dict]) -> str:
     return "\n".join(lines).rstrip("\n") + "\n"
 
 
+README_START = "<!-- task-inventory:start -->"
+README_END = "<!-- task-inventory:end -->"
+
+
+def render_readme_counts(rows: list[dict]) -> str:
+    forms = Counter(r["form"] for r in rows)
+    statuses = Counter(r["status"] for r in rows)
+    disciplines = sorted({r["discipline"] for r in rows})
+    lines = [README_START, "",
+             "当前 %d 个任务包,横跨 %d 个学科,%s。" % (
+                 len(rows), len(disciplines), "、".join(
+                     "%d 个 %s" % (count, status) for status, count in sorted(statuses.items()))),
+             "",
+             "optimization(%d 个):在受约束的设计空间里把目标做得更好。" % forms["optimization"],
+             "discovery(%d 个):从受预算约束的观测里恢复机制,或拒绝不受支持的机制宣称。" % forms["discovery"],
+             "",
+             "| 学科 | optimization | discovery |", "|---|---:|---:|"]
+    for discipline in disciplines:
+        counts = Counter(r["form"] for r in rows if r["discipline"] == discipline)
+        lines.append("| %s | %d | %d |" % (discipline, counts["optimization"], counts["discovery"]))
+    lines.extend(["", "此处数量与 [完整任务清单](TASKS.md) 由同一注册表生成。", "", README_END])
+    return "\n".join(lines)
+
+
+def update_readme_counts(text: str, rows: list[dict]) -> str:
+    if text.count(README_START) != 1 or text.count(README_END) != 1:
+        raise ValueError("README requires exactly one task-inventory marker pair")
+    start, end = text.index(README_START), text.index(README_END) + len(README_END)
+    if end <= start:
+        raise ValueError("README task-inventory markers are out of order")
+    return text[:start] + render_readme_counts(rows) + text[end:]
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--check", action="store_true", help="exit 1 if TASKS.md differs from the registry")
+    ap.add_argument("--check", action="store_true", help="check TASKS.md and README counts")
     ap.add_argument("--output", type=Path, default=OUTPUT)
+    ap.add_argument("--readme", type=Path, default=ROOT / "README.md")
     args = ap.parse_args(argv)
-    content = render(build_rows())
-    if args.check:
-        current = args.output.read_text() if args.output.exists() else ""
-        if current != content:
-            print("%s is stale; run: python scripts/report_task_inventory.py" % args.output.relative_to(ROOT))
-            return 1
-        print("%s is current" % args.output.relative_to(ROOT))
-        return 0
-    args.output.write_text(content)
-    print("wrote %s (%d tasks)" % (args.output.relative_to(ROOT), content.count("| [`")))
-    return 0
+    rows = build_rows()
+    outputs = {args.output: render(rows),
+               args.readme: update_readme_counts(args.readme.read_text(), rows)}
+    stale = []
+    for path, content in outputs.items():
+        if args.check:
+            if not path.is_file() or path.read_text() != content:
+                stale.append(path)
+                print("%s is stale; run: python scripts/report_task_inventory.py" % path)
+        else:
+            path.write_text(content)
+            print("wrote %s" % path)
+    return 1 if stale else 0
 
 
 if __name__ == "__main__":

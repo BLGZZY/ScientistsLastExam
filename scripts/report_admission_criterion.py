@@ -5,9 +5,8 @@ A task earns its place in this benchmark by measuring iterative improvement. Tha
 things, and the order matters:
 
     1. necessary   the open-loop control must SATURATE with budget. A control that keeps climbing
-                   means best-of-N is not exhausted, and independent sampling will eventually
-                   overtake any searcher - so whatever gap you measured was an artefact of the
-                   budget you happened to pick.
+                   means best-of-N is not exhausted over the measured budget range.
+                   This is an admission policy, not a proof about asymptotic performance.
     2. sufficient  with best-of-N exhausted, the feedback arm must still beat it, and the gap
                    must widen with budget rather than close.
 
@@ -43,6 +42,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from sle.task_versions import version_class  # noqa: E402
+
+from scripts.reporting_trajectory import read_incumbents
 
 # Budgets the gap is reported at. The shape across these matters more than any single endpoint:
 # a gap that grows is evidence of iteration paying off, one that peaks and turns over means
@@ -102,26 +103,8 @@ def best_so_far(path: Path) -> list[float] | None:
     """The best-so-far curve over proposals. Invalid proposals score zero, as the harness does."""
     if not path.is_file():
         return None
-    rows = []
-    for line in path.read_text(encoding="utf-8").splitlines():
-        if not line.strip():
-            continue
-        try:
-            rows.append(json.loads(line))
-        except json.JSONDecodeError:
-            continue
-    proposals = sorted(
-        (r for r in rows if int(r.get("step", 0) or 0) > 0),
-        key=lambda r: int(r["step"]),
-    )
-    if not proposals:
-        return None
-    curve, best = [], 0.0
-    for row in proposals:
-        score = float(row.get("score") or 0.0) if row.get("valid") else 0.0
-        best = max(best, score)
-        curve.append(best)
-    return curve
+    selected = read_incumbents(path)
+    return [float(row["score"]) for row in selected[1:]] or None
 
 
 def score_modes() -> dict[str, str]:
@@ -737,7 +720,7 @@ def main(argv: list[str] | None = None) -> int:
 
     Path(args.output).write_text(json.dumps({
         "schema_version": 2,
-        "note": "condition 1 (open-loop non-saturation) is necessary; condition 2 (a feedback "
+        "note": "condition 1 (open-loop exhaustion below the task ceiling) is necessary; condition 2 (a feedback "
                 "gap that does not close with budget) is what makes a task measure iteration",
         "budgets": list(BUDGETS),
         "row_count": len(rows),

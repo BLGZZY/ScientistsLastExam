@@ -54,6 +54,38 @@ def write_run(root: Path, cohort: str, dirname: str, task: str, mode: str, seed:
     (workdir / "trajectory.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
+class IncumbentCurveTests(unittest.TestCase):
+    def test_positive_baseline_survives_a_worse_proposal(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trajectory.jsonl"
+            path.write_text("\n".join(json.dumps(row) for row in [
+                {"step": 0, "valid": True, "score": 0.6, "best_score": 0.6},
+                {"step": 1, "valid": True, "score": 0.2, "best_score": 0.6},
+            ]) + "\n")
+            self.assertEqual(MODULE.best_so_far(path), [0.6])
+
+    def test_unaccepted_late_score_does_not_replace_incumbent(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trajectory.jsonl"
+            rows = [
+                {"step": 0, "valid": True, "score": 0.6},
+                {"step": 1, "valid": True, "score": 0.9,
+                 "accepted": False, "best_score": 0.6},
+                {"step": 2, "valid": True, "score": 0.7,
+                 "accepted": True, "best_score": 0.7},
+            ]
+            path.write_text("\n".join(map(json.dumps, rows)))
+            self.assertEqual(MODULE.best_so_far(path), [0.6, 0.7])
+
+    def test_inconsistent_selected_score_is_rejected(self):
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "trajectory.jsonl"
+            path.write_text(json.dumps(
+                {"step": 0, "valid": True, "score": 0.6, "best_score": 0.8}))
+            with self.assertRaisesRegex(ValueError, "recorded best score"):
+                MODULE.best_so_far(path)
+
+
 class RunIdentityTests(unittest.TestCase):
     def test_task_comes_from_the_manifest_not_the_directory_name(self):
         with TemporaryDirectory() as tmp:
@@ -264,6 +296,7 @@ class ModelSeparationTests(unittest.TestCase):
                 json.dumps({"task_id": "T/X", "feedback_mode": "normal", "seed": 0}),
                 encoding="utf-8")
             (workdir / "trajectory.jsonl").write_text(
+                json.dumps({"step": 0, "valid": True, "score": 0.0}) + "\n" +
                 json.dumps({"step": 1, "valid": True, "score": 0.4}) + "\n", encoding="utf-8")
             self.assertEqual(list(MODULE.collect(root)),
                              [("T/X", "old", "unrecorded", "unrecorded", "unknown",
