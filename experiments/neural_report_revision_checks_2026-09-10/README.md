@@ -5,6 +5,8 @@ The later documentation/evidence changes retain the tested task Python files; th
 SHA-256 hashes are recorded in `../neural_report_revision_2026-09-10.json`.
 This is builder/engineering evidence, not an independent model calibration.
 
+- Linux full suite: **1209 passed, 50 skipped, 0 failed, 508 subtests passed**
+  in 2075.60 s (34m 35s), with 117 deprecation warnings (`full-suite.txt`).
 - Linux focused tests: **93 passed, 0 skipped, 22 subtests passed** in 20.64 s,
   including actual Bubblewrap world isolation (`focused.txt`).
 - Linux contribution gate: all 15 checks passed (`contribution.json`).

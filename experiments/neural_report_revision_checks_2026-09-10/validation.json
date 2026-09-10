@@ -47,5 +47,16 @@
     "elapsed_seconds": 20.64,
     "command": "python3 -m pytest -q -p no:cacheprovider tests/test_neural_report.py tests/test_secure_eval.py tests/test_task_cards.py tests/test_benchmark_layout.py tests/test_task_inventory_document.py tests/test_exam_taxonomy.py tests/test_readme_inventory_counts.py"
   },
-  "passed": true
+  "passed": true,
+  "full_suite": {
+    "passed": 1209,
+    "skipped": 50,
+    "failed": 0,
+    "warnings": 117,
+    "subtests_passed": 508,
+    "elapsed_seconds": 2075.6,
+    "command": "SLE_REQUIRE_FROZEN_INVENTORY=0 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -m pytest tests/ -q -p no:cacheprovider",
+    "log": "full-suite.txt",
+    "tested_revision": "981802039e555698c463591553f54d8e03c2b261"
+  }
 }
