@@ -50,6 +50,8 @@ RECORDED_LINEAGE = {
     "Mathematics/NarrowAdmissibleTuple",
     "Superconductivity/SuperconductorTcRecord",
     "Geophysics/UPbConcordiaInference",
+    "Sensors/IMUBiasCalibration",
+    "Microbiology/MetagenomeCompositionAssignment",
 }
 
 
