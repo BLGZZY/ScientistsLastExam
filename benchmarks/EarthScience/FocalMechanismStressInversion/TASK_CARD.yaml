@@ -41,10 +41,10 @@ invariants:
 - invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
 - a full abstention scores exactly zero after normalization
 - re-analysis is charged, once per event, and overspending invalidates the world
-known_shortcuts: 'UNRESOLVED: independent paired 62208-point grids with local refinement approach the
-  revised reference. Each probe has its own refusal threshold; the sweep includes 12,16,20,22,25,28,32
-  degrees. See references/known_best.md and the explicit failing scientific admission audit. Earlier inherited-gate
-  grid scores are historical, not a family upper bound.'
+known_shortcuts: 'UNRESOLVED: revised Linux reference 0.783503/0.796709 versus dense paired grid plus
+  local refinement 0.775136/0.814230 (development/heldout). Independent gates and all thresholds are reported.
+  Explicit scientific admission audit exits 1; functional tests passing does not resolve this blocker.
+  See references/known_best.md.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -122,3 +122,6 @@ evaluation_budget:
   measurement_source: Current source replay is recorded in references/linux_validation_2026-09-10.json;
     September 9 evidence describes the historical implementation only. Contributor validation is separate
     from model calibration.
+  reference_wall_seconds_linux:
+  - 16.96
+  - 17.407

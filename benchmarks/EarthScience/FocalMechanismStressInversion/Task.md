@@ -4,9 +4,10 @@
 
 Every earthquake focal mechanism reports two nodal planes and does not say which one
 slipped. Inverting a catalog for the regional stress tensor (Michael 1984, under the
-Wallace-Bott assumption that slip parallels the resolved shear traction) means solving a
-combinatorial plane-choice problem shared across events: each event contributes a
-two-fold ambiguity, and the tensor is only identifiable through their joint agreement.
+Wallace-Bott assumption that slip parallels the resolved shear traction) means jointly
+fitting the shared stress tensor and per-event plane choices. Each event contributes a two-fold ambiguity, but for a fixed tensor its plane can be
+selected independently; a search over the four continuous stress parameters is
+therefore a relevant standard-method competitor.
 Two failure worlds make a confident tensor a false discovery: a catalog mixing two
 stress regimes, and an incoherent catalog with no deviatoric signal at all.
 
@@ -112,7 +113,7 @@ GravityInversion recovers continuous parameters from
 active surveys; GeneNetworkIntervention recovers a signed network from interventions;
 BlackBoxGroupIdentification identifies an algebraic structure from black-box queries.
 This task's hidden structure is a second-rank tensor behind a per-event two-fold
-combinatorial ambiguity, and its refusal worlds are regime mixtures and incoherent
+plane ambiguity, and its refusal worlds are regime mixtures and incoherent
 catalogs, which no single-tensor fit can honestly explain.
 
 ## Admission and reference scope

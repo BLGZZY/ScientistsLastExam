@@ -27,15 +27,32 @@ a truth submission scoring one. Tests passing does not establish admission diffi
 
 ## 3. Capability comparisons and ablations
 
-Use `.research/pr74_diagnostics.py` for reference, no-paid-observation, no-pair-averaging,
-no-precision-weighting, fixed-first acquisition, no-continuous-refinement and historical
-Michael-reference comparisons on the same revised oracle. Reports contain per-world
-components, public residuals, acquisition IDs, ungated scores and gate sweeps.
+Clean committed-source Linux results at `6d36055`,
+NumPy 1.26.4 / SciPy 1.13.1. Scores use the fixed
+reference gate (20 degrees), grids' own gate (25 degrees), and unchanged normalization.
 
-The revised reference also improves the free path. The paid-information test therefore
-requires a development gain above 0.10 and held-out gain above 0.05, replacing the old
-Michael solver's held-out gain above 0.30. This narrower claim concerns information
-value, not difficulty or certification. Paid observations need not always be essential.
+| method | development | held out | confirmation |
+|---|---:|---:|---:|
+| reference | 0.783503 | 0.796709 | 0.766461 |
+| no_paid_reanalysis | 0.650629 | 0.721542 | 0.711099 |
+| no_pair_averaging | 0.710719 | 0.646892 | 0.689676 |
+| no_precision_weighting | 0.721272 | 0.793488 | 0.760454 |
+| fixed_first_reanalysis | 0.745195 | 0.783597 | 0.755679 |
+| no_continuous_refinement | 0.416545 | 0.535678 | 0.361081 |
+| historical_reference_on_revised_oracle | 0.626122 | 0.579942 | 0.693671 |
+| baseline | 0.000000 | 0.000000 | 0.000000 |
+
+`no_pair_averaging` removes the complete moment-projection/fusion path, so it is not
+an isolated ablation of projection alone. Precision weighting and acquisition policy
+can have small or non-monotonic effects on different finite inventories. The additional
+training inventory includes one mixed-world false acceptance by the reference; all
+world rows and threshold sweeps are retained in `method_diagnostics_2026-09-10.json`.
+
+Paid re-analysis gains are 0.132874 development,
+0.075167 held out and 0.055362 confirmation. The revised method also
+improves the free path. The regression therefore pins gains above 0.10 development
+and 0.05 held out instead of the historical Michael solver's 0.30 held-out gap.
+This asserts information value, not admission difficulty or universal necessity.
 
 ## 4. Shortcut probes and unresolved admission
 
@@ -45,6 +62,21 @@ It covers 1728-, 6912- and 62208-point grids, fixed-first or residual-based acqu
 and dense grids with three local refinement rounds. The stronger paired variants
 use both nodal-plane observations and uncertainty weighting, and target ambiguity.
 All probes use their own default gate (25 degrees); diagnostics sweep 12,16,20,22,25,28,32.
+
+| method | development | held out | confirmation |
+|---|---:|---:|---:|
+| raw1728 | 0.481383 | 0.602416 | 0.516338 |
+| raw6912 | 0.553186 | 0.553314 | 0.540273 |
+| raw6912_worst | 0.552374 | 0.592510 | 0.524922 |
+| raw62208 | 0.617915 | 0.596107 | 0.562127 |
+| raw62208_refined | 0.649482 | 0.592259 | 0.584944 |
+| paired6912 | 0.701195 | 0.712214 | 0.648652 |
+| paired62208 | 0.773284 | 0.753407 | 0.769789 |
+| paired62208_refined | 0.775136 | 0.814230 | 0.758167 |
+
+The dense refined paired grid exceeds the reference on held out. A dense paired
+grid also matches it on confirmation. The full sweep, including thresholds that
+outperform the default, is part of the admission audit; no family bound is claimed.
 A weak inherited gate must not be treated as a shortcut-family upper bound.
 
 The old grid-separation unit test was removed because it encoded that misleading
@@ -110,7 +142,27 @@ python scripts/measure_reference.py \
 ```
 
 The last command uses the on-disk EarthScience path; the logical registry ID remains
-`Geophysics/FocalMechanismStressInversion`. Current committed-source Linux replay is
-recorded separately in `linux_validation_2026-09-10.json` when completed. The sandbox
+`Geophysics/FocalMechanismStressInversion`. Committed-source Linux replay is
+recorded in `linux_validation_2026-09-10.json`. The sandbox
 entrypoint, charged interface, orthogonality/abstention contracts and separate
 confidence calibration remain intact.
+
+Continuous optimization is sensitive to numerical-library versions; repeatability is
+verified within the recorded Linux environment, not bitwise across platforms.
+
+### Linux validation of the revised implementation
+
+162 passed, 87 warnings, 8 subtests passed in 188.38s (0:03:08). Contribution gate: 15/15. Two real sandbox reference
+runs returned identical complete metric dictionaries in 16.96 / 17.41 seconds, within the 300-second
+limit. The scientific admission audit explicitly exits 1 (BLOCKED). The full repository
+suite and GitHub CI are not claimed passed. Existing administrator permission was used
+for namespace creation; candidate uid/gid 65534 and bubblewrap/seccomp remain intact.
+Global evidence refresh and certification remain maintainer responsibilities.
+
+For a real sandbox replay on Linux, use:
+
+```bash
+python -m sle eval --task Geophysics/FocalMechanismStressInversion \
+  --candidate benchmarks/EarthScience/FocalMechanismStressInversion/verification/reference_solver.py \
+  --timeout 300 --allow-uncertified
+```

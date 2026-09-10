@@ -1,0 +1,879 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-10",
+  "task": "Geophysics/FocalMechanismStressInversion",
+  "scope": "Contributor software/method validation only; no frontier-model calibration or external domain certification",
+  "source_provenance": {
+    "git_revision": "6d3605559b4c8e4ec5781f0a53c68a3238a09bfd",
+    "working_tree_clean_before_and_after": true,
+    "runtime_source_sha256": {
+      "benchmarks/EarthScience/FocalMechanismStressInversion/verification/evaluator.py": "91e21fa11db09b7203fc4a6753a920570612564fc5b3eed76d5359fb72640404",
+      "benchmarks/EarthScience/FocalMechanismStressInversion/verification/reference_solver.py": "3d2f071b414fe5a8e41e11d3140d10f72a76d9456236c2e2742934732b7f80e5",
+      ".research/pr74_grid_probe.py": "44d5e5395802141d762c8150e26b5e0a5ea6159f8f794807a03d652305621ddc",
+      "benchmarks/EarthScience/FocalMechanismStressInversion/solution.py": "1aee41922acfaa8bfdc23f7e2c88ad5187318df2965c4915b6b435044e262a83"
+    }
+  },
+  "source_freeze": {
+    "timestamp_utc": "2026-09-10T08:57:17.824086+00:00",
+    "phase": "after development and training, before first revised heldout or confirmation evaluation",
+    "selection": "96 events, 10/3 degree noise, normalized shear floor .04; score formula unchanged; reference mean gate20, independent probe default25 and full threshold sweep",
+    "source_sha256": {
+      "benchmarks/EarthScience/FocalMechanismStressInversion/verification/evaluator.py": "91e21fa11db09b7203fc4a6753a920570612564fc5b3eed76d5359fb72640404",
+      "benchmarks/EarthScience/FocalMechanismStressInversion/verification/reference_solver.py": "3d2f071b414fe5a8e41e11d3140d10f72a76d9456236c2e2742934732b7f80e5",
+      ".research/pr74_grid_probe.py": "44d5e5395802141d762c8150e26b5e0a5ea6159f8f794807a03d652305621ddc",
+      "benchmarks/EarthScience/FocalMechanismStressInversion/solution.py": "1aee41922acfaa8bfdc23f7e2c88ad5187318df2965c4915b6b435044e262a83"
+    },
+    "limitations": "Local method confirmation only, not frontier-model calibration or secret server-held data; predeclared seeds in pr74_revision_plan.md."
+  },
+  "environment": {
+    "platform": "Linux-6.8.0-101-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3 (main, Jul 15 2026, 23:46:41) [GCC 13.3.0]",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "threads": 1,
+    "execution": "Existing administrator permission for Linux namespace creation; original bubblewrap/seccomp candidate isolation and uid/gid65534 retained; no host security changes or dependency installation."
+  },
+  "regression_output": "................................................................... [ 41%]\n........................................................................ [ 85%]\n.......................                                               [100%]\n=============================== warnings summary ===============================\ntests/test_task_cards.py: 87 warnings\n  /tmp/pr74-improvement-20260910/repo/scripts/audit_tasks.py:222: DeprecationWarning: ast.Str is deprecated and will be removed in Python 3.14; use ast.Constant instead\n    if tree.body and isinstance(tree.body[0], ast.Expr) and isinstance(tree.body[0].value, ast.Str):\n\n-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html\n162 passed, 87 warnings, 8 subtests passed in 188.38s (0:03:08)\n",
+  "validation_commands": [
+    {
+      "name": "clean-before",
+      "command": [
+        "git",
+        "status",
+        "--short"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 0.02
+    },
+    {
+      "name": "contribution",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/check_task_contribution.py",
+        "--task",
+        "Geophysics/FocalMechanismStressInversion",
+        "--timeout",
+        "300",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/contribution.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 5.28
+    },
+    {
+      "name": "regression",
+      "command": [
+        "/usr/bin/python3",
+        "-m",
+        "pytest",
+        "tests/test_focal_grid_probe.py",
+        "tests/test_focal_mechanism_stress_inversion.py",
+        "tests/test_focal_package.py",
+        "tests/test_focal_pr_review_regressions.py",
+        "tests/test_focal_stress_contracts.py",
+        "tests/test_focal_stress_hardening.py",
+        "tests/test_task_cards.py",
+        "tests/test_exam_taxonomy.py",
+        "tests/test_task_inventory_document.py",
+        "tests/test_readme_inventory_counts.py",
+        "tests/test_certification.py",
+        "tests/test_benchmark_layout.py",
+        "tests/test_task_maturity.py",
+        "tests/test_measurement_health_preflight.py",
+        "tests/test_scientific_materiality.py",
+        "tests/test_batch_runner.py",
+        "-q",
+        "-p",
+        "no:cacheprovider"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 188.95
+    },
+    {
+      "name": "sandbox-reference",
+      "command": [
+        "/usr/bin/python3",
+        "/tmp/pr74-improvement-20260910/sandbox_reference.py"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 34.75
+    },
+    {
+      "name": "development",
+      "command": [
+        "/usr/bin/python3",
+        ".research/pr74_diagnostics.py",
+        "--split",
+        "development",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/development.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 126.66
+    },
+    {
+      "name": "training",
+      "command": [
+        "/usr/bin/python3",
+        ".research/pr74_diagnostics.py",
+        "--split",
+        "training",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/training.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 242.93
+    },
+    {
+      "name": "heldout",
+      "command": [
+        "/usr/bin/python3",
+        ".research/pr74_diagnostics.py",
+        "--split",
+        "heldout",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/heldout.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 83.66
+    },
+    {
+      "name": "confirmation",
+      "command": [
+        "/usr/bin/python3",
+        ".research/pr74_diagnostics.py",
+        "--split",
+        "confirmation",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/confirmation.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 234.47
+    },
+    {
+      "name": "admission",
+      "command": [
+        "/usr/bin/python3",
+        ".research/pr74_check_admission.py",
+        "/tmp/pr74-improvement-20260910/results/development.json",
+        "/tmp/pr74-improvement-20260910/results/heldout.json",
+        "/tmp/pr74-improvement-20260910/results/confirmation.json"
+      ],
+      "returncode": 1,
+      "expected_returncode": 1,
+      "wall_seconds": 0.11
+    },
+    {
+      "name": "inventory",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/report_task_inventory.py",
+        "--check"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 0.36
+    },
+    {
+      "name": "audit",
+      "command": [
+        "/usr/bin/python3",
+        "scripts/audit_tasks.py",
+        "--output",
+        "/tmp/pr74-improvement-20260910/results/audit.json"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 2.07
+    },
+    {
+      "name": "clean-after",
+      "command": [
+        "git",
+        "status",
+        "--short"
+      ],
+      "returncode": 0,
+      "expected_returncode": 0,
+      "wall_seconds": 0.02
+    }
+  ],
+  "contribution_gate": {
+    "task": "Geophysics/FocalMechanismStressInversion",
+    "passed": true,
+    "checks": [
+      {
+        "check": "listed_in_all",
+        "ok": true,
+        "detail": "Geophysics/FocalMechanismStressInversion"
+      },
+      {
+        "check": "registered_in_certification",
+        "ok": true,
+        "detail": "Geophysics/FocalMechanismStressInversion"
+      },
+      {
+        "check": "certification_status",
+        "ok": true,
+        "detail": "candidate"
+      },
+      {
+        "check": "not_self_certified",
+        "ok": true,
+        "detail": "candidate"
+      },
+      {
+        "check": "required_files",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "task_card",
+        "ok": true,
+        "detail": "benchmarks/EarthScience/FocalMechanismStressInversion/TASK_CARD.yaml"
+      },
+      {
+        "check": "metadata",
+        "ok": true,
+        "detail": "discovery"
+      },
+      {
+        "check": "discovery_contract_lint_documented",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "numeric_keys",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "documented_keys",
+        "ok": true,
+        "detail": "8 baseline keys"
+      },
+      {
+        "check": "baseline_eval",
+        "ok": true,
+        "detail": "combined_score=0.0"
+      },
+      {
+        "check": "deterministic_baseline",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "check": "discovery_axes",
+        "ok": true,
+        "detail": "mechanism/fdr/refusal/coverage rates present"
+      },
+      {
+        "check": "degenerate_candidates_score_zero",
+        "ok": true,
+        "detail": "blanket abstention earns nothing"
+      },
+      {
+        "check": "bad_candidates_score_zero",
+        "ok": true,
+        "detail": "raises/empty/wrong_type scored"
+      }
+    ],
+    "baseline_combined_score": 0.0
+  },
+  "sandbox_reference": {
+    "source_revision": "6d3605559b4c8e4ec5781f0a53c68a3238a09bfd",
+    "git_status": "",
+    "platform": "Linux-6.8.0-101-generic-x86_64-with-glibc2.39",
+    "python": "3.12.3 (main, Jul 15 2026, 23:46:41) [GCC 13.3.0]",
+    "numpy": "1.26.4",
+    "scipy": "1.13.1",
+    "runs": [
+      {
+        "wall_seconds": 16.959664118941873,
+        "metrics": {
+          "combined_score": 0.7835030115077573,
+          "valid": 1.0,
+          "feasibility_rate": 1.0,
+          "mechanism_score": 0.8646893821923483,
+          "development_axis_score": 0.9946175683402115,
+          "development_r_score": 0.762059195486172,
+          "development_plane_score": 0.6458333333333334,
+          "development_confidence_calibration_score": 0.9951091675330503,
+          "development_false_discovery_rate": 0.0,
+          "development_correct_refusal_rate": 1.0,
+          "development_discovery_coverage": 1.0,
+          "supported_world_count": 5,
+          "unsupported_world_count": 3,
+          "discovery_attempt_count": 5,
+          "false_discovery_count": 0,
+          "correct_refusal_count": 3,
+          "robustness_score": 0.7967086858203819,
+          "heldout_feasibility_rate": 1.0,
+          "heldout_confidence_calibration_score": 0.9946559418713974,
+          "heldout_discovery_coverage": 1.0,
+          "heldout_false_discovery_rate": 0.0,
+          "heldout_correct_refusal_rate": 1.0,
+          "heldout_supported_world_count": 3,
+          "heldout_unsupported_world_count": 2,
+          "heldout_discovery_attempt_count": 3,
+          "heldout_false_discovery_count": 0,
+          "heldout_correct_refusal_count": 2,
+          "per_world": [
+            {
+              "split": "development",
+              "world_index": 0,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.778477994406724,
+              "axis_score": 0.9937901697828511,
+              "r_score": 0.7595638867402563,
+              "plane_score": 0.625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9991890038345705,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 1,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7466228035348985,
+              "axis_score": 0.9935194629046085,
+              "r_score": 0.558555210726396,
+              "plane_score": 0.75,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9999885945440361,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 2,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7888861835935982,
+              "axis_score": 0.9948538755087781,
+              "r_score": 0.8773264584665648,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.998487864725525,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 3,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.8285324109372845,
+              "axis_score": 0.9953752024992868,
+              "r_score": 0.7836369074222947,
+              "plane_score": 0.7291666666666667,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9938326604323775,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 4,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7749956650662804,
+              "axis_score": 0.9955491310055331,
+              "r_score": 0.8312135140753478,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9993752167278943,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 5,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 6,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 7,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 0,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.8074974364119216,
+              "axis_score": 0.9943037997936326,
+              "r_score": 0.7943202176075084,
+              "plane_score": 0.6666666666666667,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9966940448060571,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 1,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7907707386241216,
+              "axis_score": 0.9942678231075486,
+              "r_score": 0.9548817989102513,
+              "plane_score": 0.5208333333333333,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9983377468720436,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 2,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.791857882425102,
+              "axis_score": 0.9984043320750398,
+              "r_score": 0.884123122945732,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9982479176788863,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 3,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 4,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            }
+          ],
+          "raw_score": 0.7835030115077573
+        }
+      },
+      {
+        "wall_seconds": 17.40673194313422,
+        "metrics": {
+          "combined_score": 0.7835030115077573,
+          "valid": 1.0,
+          "feasibility_rate": 1.0,
+          "mechanism_score": 0.8646893821923483,
+          "development_axis_score": 0.9946175683402115,
+          "development_r_score": 0.762059195486172,
+          "development_plane_score": 0.6458333333333334,
+          "development_confidence_calibration_score": 0.9951091675330503,
+          "development_false_discovery_rate": 0.0,
+          "development_correct_refusal_rate": 1.0,
+          "development_discovery_coverage": 1.0,
+          "supported_world_count": 5,
+          "unsupported_world_count": 3,
+          "discovery_attempt_count": 5,
+          "false_discovery_count": 0,
+          "correct_refusal_count": 3,
+          "robustness_score": 0.7967086858203819,
+          "heldout_feasibility_rate": 1.0,
+          "heldout_confidence_calibration_score": 0.9946559418713974,
+          "heldout_discovery_coverage": 1.0,
+          "heldout_false_discovery_rate": 0.0,
+          "heldout_correct_refusal_rate": 1.0,
+          "heldout_supported_world_count": 3,
+          "heldout_unsupported_world_count": 2,
+          "heldout_discovery_attempt_count": 3,
+          "heldout_false_discovery_count": 0,
+          "heldout_correct_refusal_count": 2,
+          "per_world": [
+            {
+              "split": "development",
+              "world_index": 0,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.778477994406724,
+              "axis_score": 0.9937901697828511,
+              "r_score": 0.7595638867402563,
+              "plane_score": 0.625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9991890038345705,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 1,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7466228035348985,
+              "axis_score": 0.9935194629046085,
+              "r_score": 0.558555210726396,
+              "plane_score": 0.75,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9999885945440361,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 2,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7888861835935982,
+              "axis_score": 0.9948538755087781,
+              "r_score": 0.8773264584665648,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.998487864725525,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 3,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.8285324109372845,
+              "axis_score": 0.9953752024992868,
+              "r_score": 0.7836369074222947,
+              "plane_score": 0.7291666666666667,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9938326604323775,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 4,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7749956650662804,
+              "axis_score": 0.9955491310055331,
+              "r_score": 0.8312135140753478,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9993752167278943,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 5,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 6,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "development",
+              "world_index": 7,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 0,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.8074974364119216,
+              "axis_score": 0.9943037997936326,
+              "r_score": 0.7943202176075084,
+              "plane_score": 0.6666666666666667,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9966940448060571,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 1,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.7907707386241216,
+              "axis_score": 0.9942678231075486,
+              "r_score": 0.9548817989102513,
+              "plane_score": 0.5208333333333333,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9983377468720436,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 2,
+              "valid": true,
+              "abstained": false,
+              "mechanism_score": 0.791857882425102,
+              "axis_score": 0.9984043320750398,
+              "r_score": 0.884123122945732,
+              "plane_score": 0.5625,
+              "false_discovery": false,
+              "correct_refusal": false,
+              "confidence_score": 0.9982479176788863,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 3,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            },
+            {
+              "split": "heldout",
+              "world_index": 4,
+              "valid": true,
+              "abstained": true,
+              "mechanism_score": 1.0,
+              "axis_score": 1.0,
+              "r_score": 1.0,
+              "plane_score": 1.0,
+              "false_discovery": false,
+              "correct_refusal": true,
+              "confidence_score": 0.99,
+              "budget_used": 16
+            }
+          ],
+          "raw_score": 0.7835030115077573
+        }
+      }
+    ]
+  },
+  "geometry_zero_noise_audit": {
+    "random_frames": 1000,
+    "seed": 734,
+    "noise_sigma": 0.0,
+    "old_mean_normal_error_deg": 17.110369028460504,
+    "old_max_normal_error_deg": 89.53907309981699,
+    "new_mean_normal_error_deg": 1.9759617755905416e-07,
+    "new_max_normal_error_deg": 1.2074182697257333e-06
+  },
+  "admission_audit": {
+    "status": "BLOCKED",
+    "requirements": {
+      "absolute_gap_greater_than": 0.15,
+      "probe_fraction_less_than": 0.75
+    },
+    "failures": [
+      {
+        "split": "development",
+        "probe": "raw62208",
+        "reference": 0.7835030115077573,
+        "best_probe": 0.61791484706687,
+        "absolute_gap": 0.1655881644408872
+      },
+      {
+        "split": "development",
+        "probe": "raw62208_refined",
+        "reference": 0.7835030115077573,
+        "best_probe": 0.6494821477780734,
+        "absolute_gap": 0.1340208637296838
+      },
+      {
+        "split": "development",
+        "probe": "paired6912",
+        "reference": 0.7835030115077573,
+        "best_probe": 0.7011952596039579,
+        "absolute_gap": 0.08230775190379935
+      },
+      {
+        "split": "development",
+        "probe": "paired62208",
+        "reference": 0.7835030115077573,
+        "best_probe": 0.7732843601282842,
+        "absolute_gap": 0.010218651379473087
+      },
+      {
+        "split": "development",
+        "probe": "paired62208_refined",
+        "reference": 0.7835030115077573,
+        "best_probe": 0.7751364580347877,
+        "absolute_gap": 0.008366553472969551
+      },
+      {
+        "split": "heldout",
+        "probe": "raw1728",
+        "reference": 0.7967086858203819,
+        "best_probe": 0.6024156062580692,
+        "absolute_gap": 0.19429307956231268
+      },
+      {
+        "split": "heldout",
+        "probe": "paired6912",
+        "reference": 0.7967086858203819,
+        "best_probe": 0.7122143471956968,
+        "absolute_gap": 0.08449433862468514
+      },
+      {
+        "split": "heldout",
+        "probe": "paired62208",
+        "reference": 0.7967086858203819,
+        "best_probe": 0.7534074097024653,
+        "absolute_gap": 0.043301276117916565
+      },
+      {
+        "split": "heldout",
+        "probe": "paired62208_refined",
+        "reference": 0.7967086858203819,
+        "best_probe": 0.8142296791715209,
+        "absolute_gap": -0.01752099335113899
+      },
+      {
+        "split": "confirmation",
+        "probe": "raw6912",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.6236064352662685,
+        "absolute_gap": 0.1428549951241198
+      },
+      {
+        "split": "confirmation",
+        "probe": "raw6912_worst",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.6082554054268791,
+        "absolute_gap": 0.15820602496350922
+      },
+      {
+        "split": "confirmation",
+        "probe": "raw62208",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.6454603696791297,
+        "absolute_gap": 0.1210010607112586
+      },
+      {
+        "split": "confirmation",
+        "probe": "raw62208_refined",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.668276996070661,
+        "absolute_gap": 0.09818443431972723
+      },
+      {
+        "split": "confirmation",
+        "probe": "paired6912",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.731985635349521,
+        "absolute_gap": 0.034475795040867285
+      },
+      {
+        "split": "confirmation",
+        "probe": "paired62208",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.7697886897284517,
+        "absolute_gap": -0.0033272593380634374
+      },
+      {
+        "split": "confirmation",
+        "probe": "paired62208_refined",
+        "reference": 0.7664614303903883,
+        "best_probe": 0.7581674306395771,
+        "absolute_gap": 0.008293999750811132
+      }
+    ]
+  },
+  "limitations": [
+    "Full repository suite was not run; targeted and required regression suites were run.",
+    "GitHub CI requires maintainer approval and is separate from contributor replay.",
+    "The paired grid family remains an admission blocker.",
+    "Original heldout is repository-visible; predeclared confirmation is local method evidence.",
+    "The no_pair_averaging ablation removes the moment projection/fusion path together, not projection alone."
+  ],
+  "unchanged_scoring_and_validation_ast": [
+    "_validate",
+    "_mechanism_score",
+    "_evaluate_world",
+    "_summary",
+    "evaluate"
+  ]
+}
