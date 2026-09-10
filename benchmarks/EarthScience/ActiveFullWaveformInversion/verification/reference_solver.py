@@ -14,9 +14,9 @@ import numpy as np
 _STAGES = (((3, 5), 5.0), ((5, 8), 2.0), ((7, 11), 0.0))
 _REGULARIZATION = 0.003
 _MAX_NFEV = 30
-# Both derivatives are numerically validated. Finite differences were cheaper
-# in the independent review; exact tangents remain available for audit.
-_USE_EXACT_JACOBIAN = False
+# Both derivatives are numerically validated. Their scores should agree;
+# the tangent implementation is faster on the expanded-world diagnostic.
+_USE_EXACT_JACOBIAN = True
 
 
 def _laplacian(field):
@@ -46,20 +46,15 @@ class _Acoustic:
         self.damping[:, [1, -2]] = 0.94
 
     def forward(self, velocity):
-        return self.forward_many(np.asarray(velocity)[None])[0]
-
-    def forward_many(self, velocities):
-        """Batch independent velocity trials as well as sources."""
-        velocities = np.asarray(velocities)
-        shape = (len(velocities), len(self.sources), *self.shape)
+        shape = (len(self.sources), *self.shape)
         previous = np.zeros(shape)
         current = np.zeros(shape)
-        traces = np.zeros((len(velocities), len(self.sources), len(self.wavelet), len(self.receivers)))
-        coefficient = velocities[:, None] ** 2 * self.k
+        traces = np.zeros((len(self.sources), len(self.wavelet), len(self.receivers)))
+        coefficient = velocity ** 2 * self.k
         for step, source in enumerate(self.wavelet):
             following = (2.0 * current - previous + coefficient * _laplacian(current)) * self.damping
-            following[:, np.arange(len(self.sources)), 2, self.sources] += source
-            traces[:, :, step] = following[:, :, 2, self.receivers]
+            following[np.arange(len(self.sources)), 2, self.sources] += source
+            traces[:, step] = following[:, 2, self.receivers]
             previous, current = current, following
         return traces
 
@@ -190,26 +185,9 @@ def invert_velocity_model(
                 )
             return cache["residual"], cache["jacobian"]
 
-        def numerical_jacobian(values):
-            # Central differences of the same residual; batches only amortize
-            # Python's time-stepping overhead. No change to the inverse model.
-            step = 1e-5
-            columns = []
-            for start in range(0, len(values), 4):
-                directions = np.eye(len(values))[start:start+4]
-                trials = np.vstack([values + step * directions, values - step * directions])
-                velocities = background + 900.0 * (trials @ basis.T).reshape((-1, *grid_shape))
-                predictions = model.forward_many(np.clip(velocities, *velocity_bounds_m_s))
-                differences = (predictions[:len(directions)] - predictions[len(directions):]) / (2 * step)
-                derivatives = weights[None] * differences / normalization
-                if smoothing:
-                    derivatives = gaussian_filter1d(derivatives, smoothing, axis=2)
-                columns.append(derivatives.reshape((len(directions), -1)).T)
-            return np.vstack([np.column_stack(columns), regularizer])
-
         result = least_squares(
             lambda values: residual_jacobian(values)[0], parameters,
-            jac=(lambda values: residual_jacobian(values)[1]) if _USE_EXACT_JACOBIAN else numerical_jacobian,
+            jac=(lambda values: residual_jacobian(values)[1]) if _USE_EXACT_JACOBIAN else "2-point",
             bounds=(-1.5, 1.5),
             max_nfev=_MAX_NFEV, ftol=1e-7, xtol=1e-7, gtol=1e-8,
         )

@@ -88,18 +88,18 @@ def main():
         probe = load(ROOT / ".research/pr20_fwi_continuous_probe.py", name)
         probe.LENSES, probe.STOP_NOISE, probe.DEPTH_CAP = count, stop, depth
         methods[name] = probe.invert_velocity_model
-    if args.budget_sweep:
-        for count in (1, 2):
-            for indices in itertools.combinations(range(len(oracle.SOURCE_INDICES)), count):
-                name = "shots_" + "_".join(str(oracle.SOURCE_INDICES[i]) for i in indices)
+    for count in (1, 2):
+        for indices in itertools.combinations(range(len(oracle.SOURCE_INDICES)), count):
+            name = "shots_" + "_".join(str(oracle.SOURCE_INDICES[i]) for i in indices)
 
-                def candidate(*inputs, indices=indices):
-                    values = list(inputs)
-                    values[4] = values[4][list(indices)]
-                    values[-1] = len(indices)
-                    return reference.invert_velocity_model(*values)
+            def candidate(*inputs, indices=indices):
+                values = list(inputs)
+                values[4] = values[4][list(indices)]
+                values[-1] = len(indices)
+                return reference.invert_velocity_model(*values)
 
-                methods[name] = candidate
+            methods[name] = candidate
+            if args.budget_sweep:
                 args.methods.append(name)
     sources = [TASK / "verification/evaluator.py", TASK / "verification/reference_solver.py",
                ROOT / ".research/pr20_fwi_continuous_probe.py", Path(__file__)]

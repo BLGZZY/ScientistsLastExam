@@ -4,8 +4,8 @@
 
 The reference fits a smooth velocity correction using only public physics and paid
 shots. Coarse-to-fine fitting, minimum-change/spatial regularization and late trace
-balancing remain in place. The default uses numerical finite differences, which were cheaper in the independent
-review; exact discrete derivatives remain available for comparison. They are an implementation choice:
+balancing remain in place. Exact discrete derivatives are the default; a numerical finite-difference comparison
+is available in the audit. They are an implementation choice:
 finite differences should converge to the same solution. They are not an additional
 scientific capability and their use alone does not establish difficulty.
 The old global-energy refusal gate was removed: supported velocity changes can also
@@ -69,7 +69,9 @@ pending. These diagnostics do not certify the task.
 The first September 11 exploratory redesign used curved layers. It failed: the
 reference development score was about 0.209, while a continuous depth-capped probe
 scored about 0.358. It was rejected rather than reported as successful hardening.
-Interpolation-grid texture experiments also produced unstable recovery. The random
+Interpolation-grid texture experiments also produced unstable recovery. A batched
+central-difference implementation was rejected because its full evaluation was
+slower than the existing tangent implementation; it did not change the physics. The random
 Fourier family was selected using development diagnostics, before confirmation;
 this is builder development, not independent validation.
 
@@ -84,7 +86,7 @@ because it was present before the PR split; no Focal task remains in this packag
 
 ```sh
 OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --output /tmp/fwi-review.json
-OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --methods reference exact_jacobian --budget-sweep --output /tmp/fwi-budget.json
+OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --methods reference finite_difference --budget-sweep --output /tmp/fwi-budget.json
 OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --fresh --output /tmp/fwi-fresh.json
 python -m pytest tests/test_fwi_discrete_inversion.py tests/test_new_earth_science_tasks.py tests/test_pr9_earth_hardening.py tests/test_pr9_earth_contracts.py tests/test_earth_pr_review_regressions.py -q
 ```
