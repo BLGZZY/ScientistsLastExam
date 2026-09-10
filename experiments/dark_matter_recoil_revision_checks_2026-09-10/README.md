@@ -10,6 +10,9 @@ candidates / 44 discovery / 10 evidence tasks. Supplemental post-merge tests are
 recorded separately. The production
 reference implementation is unchanged from the reviewed PR.
 
+- `full-suite.txt` / `full-suite.json`: 1203 passed, 50 skipped, 117 deprecation
+  warnings, 498 subtests passed; exit 0 in 2109.48 seconds on the clean source above.
+  PR-mode frozen-inventory policy matches GitHub Actions (`SLE_REQUIRE_FROZEN_INVENTORY=0`).
 - `../dark_matter_recoil_revision_2026-09-10.json`: clean-revision trusted sandbox
   evidence; repeated complete baseline/reference metrics identical; all ablations
   valid; exact continuous constant-mass and completed four-way shortcut gates pass.
@@ -24,6 +27,9 @@ reference implementation is unchanged from the reviewed PR.
   Constant mass with reference decisions reaches 0.657192, and a legal single-target
   full-budget strategy reaches 0.644077, both above the old 0.523728 reference.
   This explicitly distinguishes oracle-assisted bounds from legal candidates.
+- `isolation-cleanup-test.txt`: after removing the last single-case test
+  parametrization at `a536d1c`, the actual Bubblewrap global/tmpfs isolation test
+  passes again (same generated candidate and assertions).
 - `main-sync-tests.txt`: upstream merge `7557aff`, README counts, clock/protocol,
   recovery/preflight and sentinel checks: 83 passed, 1 skipped, 7 subtests passed.
 - `maturity-summary.json`: 86 tasks, no issues or stale tasks; four candidate tasks
