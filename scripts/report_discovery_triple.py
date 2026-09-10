@@ -70,19 +70,54 @@ def run_identity(document: dict) -> tuple[str, str, str, str, str] | None:
     return task, model, condition, task_version, runtime
 
 
+def _metric_key(name: str, split: str) -> str:
+    return name if split == "unsplit" else split + "_" + name
+
+
+def _first_present(metrics: dict, names: tuple[str, ...], split: str) -> str | None:
+    return next((key for name in names if (key := _metric_key(name, split)) in metrics), None)
+
+
+def _published_elsewhere(metrics: dict, names: tuple[str, ...], requested: str) -> tuple[str, str] | None:
+    for split in ("heldout", "development", "unsplit"):
+        if split == requested:
+            continue
+        key = _first_present(metrics, names, split)
+        if key is not None:
+            return key, split
+    return None
+
+
 def extract(metrics: dict, split: str = "heldout", contract: dict | None = None) -> dict:
-    """No fallback between heldout, development and unsplit measurements."""
-    prefix = "" if split == "unsplit" else split + "_"
+    """No value fallback between heldout, development and unsplit measurements.
+
+    A key published only on another split is reported as published_on_other_split,
+    not as a missing axis and not as a copied value.
+    """
     out = {}
     for axis, aliases in AXES.items():
         definition = (contract or {}).get(axis)
         candidates = (definition["metric"],) if definition else aliases
-        key = next((prefix + key for key in candidates if prefix + key in metrics), None)
+        key = _first_present(metrics, candidates, split)
         if key is None:
-            counted = next((prefix + k for k in COUNT_ONLY.get(axis, ())
-                            if prefix + k in metrics), None)
-            out[axis] = ({"value": None, "key": counted, "split": split,
-                          "status": "count_without_denominator"} if counted else None)
+            counted = _first_present(metrics, COUNT_ONLY.get(axis, ()), split)
+            if counted is not None:
+                out[axis] = {"value": None, "key": counted, "split": split,
+                             "status": "count_without_denominator"}
+                continue
+            elsewhere = _published_elsewhere(
+                metrics, candidates + COUNT_ONLY.get(axis, ()), split)
+            if elsewhere is not None:
+                other_key, other_split = elsewhere
+                out[axis] = {
+                    "value": None,
+                    "key": other_key,
+                    "split": other_split,
+                    "requested_split": split,
+                    "status": "published_on_other_split",
+                }
+            else:
+                out[axis] = None
             continue
         value = metrics[key]
         if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
@@ -95,7 +130,7 @@ def extract(metrics: dict, split: str = "heldout", contract: dict | None = None)
             entry["status"] = "declared"
             denominator_key = definition.get("denominator_metric")
             if denominator_key:
-                denominator = metrics.get(prefix + denominator_key)
+                denominator = metrics.get(_metric_key(denominator_key, split))
                 entry["denominator_value"] = denominator
                 if (isinstance(denominator, bool) or not isinstance(denominator, (int, float))
                         or not math.isfinite(denominator) or denominator < 0):
@@ -151,9 +186,17 @@ def main(argv: list[str] | None = None) -> int:
             if axes is None:
                 row.update(status="missing_trajectory")
             else:
-                row.update(status="ok", combined_score=metrics.get("combined_score"),
-                           combined_score_scope="search objective; axes use the requested split",
-                           axes=axes, missing_axes=[a for a, v in axes.items() if v is None])
+                row.update(
+                    status="ok",
+                    combined_score=metrics.get("combined_score"),
+                    combined_score_scope="search objective; axes use the requested split",
+                    axes=axes,
+                    missing_axes=[a for a, v in axes.items() if v is None],
+                    published_on_other_split=[
+                        a for a, v in axes.items()
+                        if v is not None and v.get("status") == "published_on_other_split"
+                    ],
+                )
         rows.append(row)
     rows.extend({"task": name, "status": "missing_run"} for name in sorted(wanted - represented))
     report = {"schema_version": 2, "split": args.split,

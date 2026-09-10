@@ -98,7 +98,36 @@ class DiscoveryMetricContractTests(unittest.TestCase):
                    "development_discovery_coverage": 0.8}
         axes = module.extract(metrics)
         self.assertEqual(axes["refusal"]["value"], 0.2)
-        self.assertIsNone(axes["coverage"])
+        self.assertIsNone(axes["coverage"]["value"])
+        self.assertEqual(axes["coverage"]["status"], "published_on_other_split")
+        self.assertEqual(axes["coverage"]["split"], "development")
+        self.assertEqual(axes["coverage"]["key"], "development_discovery_coverage")
+
+    def test_unprefixed_mechanism_is_published_on_other_split_not_missing(self):
+        module = load_module()
+        metrics = {
+            "mechanism_score": 0.55,
+            "development_false_discovery_rate": 0.1,
+            "development_unsupported_refusal_rate": 0.8,
+            "development_discovery_coverage": 0.7,
+        }
+        heldout = module.extract(metrics, "heldout")
+        self.assertEqual(heldout["mechanism"]["status"], "published_on_other_split")
+        self.assertEqual(heldout["mechanism"]["key"], "mechanism_score")
+        self.assertEqual(heldout["mechanism"]["split"], "unsplit")
+        self.assertIsNone(heldout["mechanism"]["value"])
+        self.assertEqual(heldout["fdr"]["status"], "published_on_other_split")
+        self.assertEqual(heldout["fdr"]["split"], "development")
+        development = module.extract(metrics, "development")
+        self.assertEqual(development["mechanism"]["status"], "published_on_other_split")
+        self.assertEqual(development["fdr"]["value"], 0.1)
+        unsplit = module.extract(metrics, "unsplit")
+        self.assertEqual(unsplit["mechanism"]["value"], 0.55)
+        self.assertEqual(unsplit["fdr"]["status"], "published_on_other_split")
+        self.assertEqual(unsplit["refusal"]["status"], "published_on_other_split")
+        truly_absent = module.extract({"combined_score": 0.1}, "heldout")
+        self.assertIsNone(truly_absent["mechanism"])
+        self.assertIsNone(truly_absent["fdr"])
 
     def test_baseline_metrics_survive_late_unaccepted_improvement(self):
         module = load_module()

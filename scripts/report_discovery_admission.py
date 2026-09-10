@@ -11,7 +11,8 @@ scientific role, and for discovery it:
 
     * keeps the public-score verdict as a statement about the visible scalar only
     * refuses to promote that verdict to `measures_iteration`
-    * lists which of mechanism / FDR / refusal are rates, counts-without-denominator, or missing
+    * lists which of mechanism / FDR / refusal are rates, counts-without-denominator,
+      published on another split, or missing
 
 Usage:
     python scripts/report_discovery_admission.py \\
@@ -68,6 +69,10 @@ def classify_discovery_row(row: dict, role: str, axes: dict | None = None) -> di
         name for name, entry in axes.items()
         if entry is not None and entry.get("status") == "count_without_denominator"
     ]
+    out["published_on_other_split"] = [
+        name for name, entry in axes.items()
+        if entry is not None and entry.get("status") == "published_on_other_split"
+    ]
     out["missing_axes"] = [
         name for name in ("mechanism", "fdr", "refusal")
         if axes.get(name) is None
@@ -75,28 +80,59 @@ def classify_discovery_row(row: dict, role: str, axes: dict | None = None) -> di
     return out
 
 
-IDENTITY_FIELDS = (
+# Admission tables from report_admission_criterion.py are pooled across seeds.
+# Triple reports are one row per run. Join on the run fields when both sides
+# have them; otherwise require a unique coarse match instead of dropping axes.
+COARSE_IDENTITY_FIELDS = (
     "task",
     "model",
     "llm_condition_sha256",
     "task_version",
     "runtime_source_sha256",
 )
+RUN_IDENTITY_FIELDS = COARSE_IDENTITY_FIELDS + ("seed", "feedback_mode")
+IDENTITY_FIELDS = RUN_IDENTITY_FIELDS
+
+
+def _identity_value(entry: dict, field: str) -> str:
+    value = entry.get(field)
+    return "" if value is None else str(value)
 
 
 def triple_index(document: dict) -> dict[tuple[str, ...], dict]:
-    """Index only fully attributable, unambiguous triple rows."""
+    """Index fully attributable triple rows by run identity, including seed and mode."""
     grouped: dict[tuple[str, ...], list[dict]] = {}
     for entry in document.get("rows") or []:
-        if entry.get("status") != "ok" or any(entry.get(field) is None for field in IDENTITY_FIELDS):
+        if entry.get("status") != "ok":
             continue
-        key = tuple(str(entry[field]) for field in IDENTITY_FIELDS)
+        if any(entry.get(field) is None for field in COARSE_IDENTITY_FIELDS):
+            continue
+        key = tuple(_identity_value(entry, field) for field in RUN_IDENTITY_FIELDS)
         grouped.setdefault(key, []).append(entry)
     return {
         key: entries[0].get("axes")
         for key, entries in grouped.items()
         if len(entries) == 1
     }
+
+
+def lookup_triple_axes(
+    triples: dict[tuple[str, ...], dict], row: dict,
+) -> tuple[dict | None, str]:
+    """Join one admission row to triple axes without silently dropping multi-seed queues."""
+    exact = tuple(_identity_value(row, field) for field in RUN_IDENTITY_FIELDS)
+    if exact in triples:
+        return triples[exact], "exact"
+    named_run = row.get("seed") is not None or row.get("feedback_mode") is not None
+    if named_run:
+        return None, "no_match"
+    coarse = tuple(_identity_value(row, field) for field in COARSE_IDENTITY_FIELDS)
+    matches = [axes for key, axes in triples.items() if key[:5] == coarse]
+    if len(matches) == 1:
+        return matches[0], "unique_coarse"
+    if len(matches) > 1:
+        return None, "ambiguous_multi_run"
+    return None, "no_match"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -121,9 +157,16 @@ def main(argv: list[str] | None = None) -> int:
     for row in rows_in:
         task = str(row.get("task") or "")
         role = roles.get(task) or roles.get(task.split("/")[-1]) or ""
-        identity = tuple(str(row.get(field) or "") for field in IDENTITY_FIELDS)
-        axes = triples.get(identity)
-        rows.append(classify_discovery_row(row, role, axes))
+        axes, join_status = lookup_triple_axes(triples, row) if triples else (None, "no_triple")
+        classified = classify_discovery_row(row, role, axes)
+        classified["axes_join"] = join_status
+        if join_status == "ambiguous_multi_run":
+            classified["axes_join_reason"] = (
+                "multiple triple runs share this identity; seed and feedback_mode "
+                "are required to join axes"
+            )
+            classified["missing_axes"] = []
+        rows.append(classified)
 
     discovery = [r for r in rows if r.get("scientific_role") == "discovery"]
     rewritten = sum(
@@ -131,11 +174,13 @@ def main(argv: list[str] | None = None) -> int:
         if r.get("verdict") != r.get("public_score_verdict")
     )
     report = {
-        "schema_version": 1,
+        "schema_version": 2,
         "source_admission": str(Path(args.admission)),
         "note": (
             "Discovery rows never inherit measures_iteration from combined_score. "
-            "Axes are not averaged."
+            "Axes are not averaged. Multi-seed triple rows join on seed and "
+            "feedback_mode; an admission row that omits them is not treated as "
+            "missing every axis."
         ),
         "row_count": len(rows),
         "discovery_row_count": len(discovery),
