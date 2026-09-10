@@ -6,107 +6,144 @@
 frequency response and jointly fits neural and instrument nuisance parameters to
 response and calibration likelihoods. It compares null, report-only and intrinsic
 feedback models, and rejects excessive residuals. It imports no evaluator or truth.
-Score 1 is the explicit correct-parameter ceiling, not an empirical reference literal.
+Score 1 is the correct-parameter ceiling, not an empirical reference literal.
+In the original review both splits had zero FDR, full refusal, full supported-world
+coverage and full null correctness. The gap to 1 was entirely the precision of the
+two continuous couplings in six supported worlds per split, not unsolved model decisions.
 
 [Friston et al., 2003, DOI 10.1016/S1053-8119(03)00202-7](https://doi.org/10.1016/S1053-8119(03)00202-7)
-motivates input-state-output identification and effective connectivity. This task is
-a linearized local system, **not** an implementation of full DCM, its hemodynamic
-forward model, or a validated theory of consciousness. [Cogitate 2025](https://www.nature.com/articles/s41586-025-08888-1)
+motivates input-state-output identification and effective connectivity. This is a
+linearized local system, not full DCM, its hemodynamic model, or a validated theory
+of consciousness. [Cogitate 2025](https://www.nature.com/articles/s41586-025-08888-1)
 motivates separating theoretical subclaims and report confounds; no Cogitate data
-or theory-specific prediction is used as a simulated ground-truth label.
-
-An independent time-domain check numerically integrates exp(A t)exp(−iωt) and checks
-the implemented transfer response including observation mixing and feedthrough.
-This tests the numerical equation, not its adequacy as a model of a human brain.
+or theory-specific prediction supplies simulated ground-truth labels.
+An independent time-domain check integrates exp(A t)exp(-i omega t) and checks the
+transfer response including mixing and feedthrough. This tests the numerical equation,
+not its adequacy as a model of a human brain.
 
 ## 2. Baseline
 
-The shipped candidate reads one report-on response and announces the maximum allowed
-feedback coefficients. It is legal and scores zero. It exemplifies overinterpreting
-measured propagation as strong intrinsic coupling. A blanket null or refusal also
-scores exactly zero under the stated 0.2-offset normalization. Null means no
-interpopulation coupling in this local model; it never means no subjective experience.
+The shipped candidate reads one report-on response and announces maximum allowed
+feedback coefficients. It is legal and scores zero. A blanket null or refusal also
+scores exactly zero. Null means no interpopulation coupling in this local model;
+it never means no subjective experience. The 0.2 normalization offset subtracts
+blanket refusal utility (2/10), not null-plus-refusal utility (4/10). Correctly
+separating only these two kinds can score 0.25 with discovery coverage zero.
 
 ## 3. Ablation ladder
 
-`scripts/audit_neural_report.py` runs secure witness/baseline repeats and:
+`scripts/audit_neural_report.py` repeats the secure baseline/reference and runs:
 
-- `one_unit`: reduce each repeated calibration/response bundle to one unit, lowering
-  total acquisition from 14 to 10 units.
-- `ignore_instruments`: assume identity actuator/sensor mixing and zero observer lag
-  and direct feedthrough despite the supplied calibration measurements.
+- `one_unit`: one repeat per bundle, 14 to 10 units.
+- `six_units`: one calibration and responses at frequency indices 0 and 3 per report
+  condition, 6 units total; the same joint likelihood and fixed refusal threshold.
+- `ignore_instruments`: assume identity mixing, zero lag and zero feedthrough.
+- `never_abstain`: disable both residual and minimum-feedback refusal rules.
+- `no_model_selection`: fit only the recurrent family, retaining the refusal rules.
 
-The report retains every signed delta, including any ablation improvement. Joint
-likelihood fitting includes finite calibration uncertainty; it is not a plug-in
-calibration witness that gains false apparent headroom by omitting standard practice.
+The original variable-noise version was independently measured by the maintainer in
+[PR 73's first review](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/73#issuecomment-5615520113),
+using Python 3.12.3, NumPy 1.26.4, SciPy 1.11.4:
 
-Linux secure measurements (full precision and provenance in
-`experiments/neural_report_2026-09-10.json` at repository root):
-
-| Strategy | Development | Heldout | Development loss vs reference |
+| Original-version strategy | Development | Heldout | Units |
 |---|---:|---:|---:|
-| baseline | 0.000000 | 0.000000 | +0.877046 |
-| reference | 0.877046 | 0.740333 | +0.000000 |
-| one_unit | 0.840246 | 0.703612 | +0.036800 |
-| ignore_instruments | 0.000000 | 0.000000 | +0.877046 |
+| reference | 0.8771937507 | 0.7403460929 | 14 |
+| one_unit | 0.840330 | 0.703600 | 10 |
+| reviewer 6-unit variant | 0.663560 | 0.739568 | 6 |
+| ignore_instruments | 0 | 0 | 14 |
+| reviewer never-abstain variant | 0.627194 | 0.490346 | 14 |
+| reviewer no-model-selection variant | 0.279930 | 0.222694 | 14 |
 
-The reference has zero observed false positive model claims, full supported-world
-coverage and correct refusal on both outside-family worlds in each split. Each split
-has only ten worlds: these rates are finite-sample diagnostics, not population guarantees.
+The reviewer did not publish the full variant sources or exact two frequencies, so
+our new runnable variants make their choices explicit and do not claim source identity.
+The 14-to-6 heldout loss was only 0.000778 despite a development loss of about 0.214.
+The experiment cap remains a resource constraint; budget allocation is not claimed as
+a demonstrated difficulty source. The 10/14 variant also had only a small loss.
 
-The one-unit loss is only 0.036800 on development and 0.036721 on heldout.
-The reference is already strong; neither its remaining gap nor a zero-score raw
-inverse shortcut establishes that a frontier model will struggle.
+Historical builder evidence in `experiments/neural_report_2026-09-10.json` used
+Python 3.12.3, NumPy 1.26.4, SciPy 1.13.1: reference 0.8770462287 / 0.7403329403
+(see the JSON for authoritative full precision). Small solver-version differences
+are expected; these decimals are measurements, not golden test assertions.
+Both historical records predate the shared noise SD 0.012 revision.
 
-## 4. Shortcut probe
+Revised measurements are in `experiments/neural_report_revision_2026-09-10.json`
+at repository root, with the clean tested revision, environment, candidate hashes,
+and aggregate metrics. All signed losses are retained, including improvements.
 
-A grid of 972 strategies sees only one low-frequency report-on response, inverts
-the raw measured response as if it were neural state transfer, thresholds apparent
-intrinsic feedback and scales two inferred couplings. Development selects the grid
-point, then heldout evaluates it once. This tests a concrete instrument-confounded
-shortcut, not every inverse-system method and not an independent searcher cohort.
+## 4. Shortcut probes
 
+The original 972-strategy grid inverted a single uncalibrated response and could
+return only `recurrent` or `report_only`. Its zero score did not bound calibrated
+inversion, null decisions or refusal. The maintainer measured a calibrated algebraic
+3024-point grid at development 0.449754 / heldout 0.311061 using 8 units, and a
+3-unit null-or-refusal strategy at 0.25 / 0.25 with zero discovery coverage.
+These are attributed historical results, not reruns of unpublished reviewer code.
 
-Recorded best development score: 0.000000; its single heldout
-confirmation: 0.000000. Selection parameters and all probe
-scope qualifications are retained in the machine-readable evidence.
+The revised audit keeps the raw grid and adds a fully specified 3024-strategy grid:
+`verification/algebraic_probe.py` calibrates twice in each report condition, measures
+two frequencies once each (8 units), removes low-pass filtering and C/B/D, and
+computes `A = i omega I - inverse(R)`. It thresholds off-diagonal magnitude,
+complex/frequency-varying apparent feedback, and intrinsic feedback, then scales
+the two coupling estimates. It performs no likelihood optimization or information
+criterion selection. All four answer types are available. The grid is fixed in
+source; development alone selects thresholds and scales, then the selected source
+is evaluated once through the sandbox on development and heldout. Cached development
+scoring must match the sandbox result. Reported heldout outcomes never choose a grid point.
+
+`null_or_refuse` uses one calibration and two responses in report condition 1
+(3 units); an off-diagonal magnitude threshold separates null from refusal and
+never makes a positive claim. Its fixed threshold is not selected on heldout.
+These finite probes do not exhaust shortcuts or measure independent model difficulty.
 
 ## 5. Frontier draw
 
 No independent language-model draw, saturation study or evolution-gap run has been
-performed: no configured general model endpoint/credentials were available to this
-task. Status is `candidate`; the intended `hard` tier remains uncalibrated. Passing
-unit/security tests or recovering synthetic parameters is not proof of frontier difficulty.
+performed for this task. Status remains `candidate`, the intended `hard` tier is
+uncalibrated, and both lineage and construction status are `incomplete_legacy`.
+The task is removed from the recorded-lineage whitelist. Builder tests and the
+maintainer's technical review do not substitute for an independent frontier draw.
 
 ## 6. Construction errors and corrections
 
-- The first reference treated noisy instruments as exact; joint response/calibration
-  likelihood fitting replaced it. Its stronger result is retained rather than hiding
-  the initial under-built witness.
-- Parameter error originally contributed to false discovery. It now contributes only
-  to continuous coupling recovery; false-discovery rate counts wrong positive models.
-- Calibration can change between report conditions; a raw no-report/report difference
-  cannot be interpreted as intrinsic feedback without accounting for both instruments.
-- Outside-family slow-state mediation is distinct from a legal zero-feedback circuit.
-  The latter must be considered a positive report-only model or a valid all-zero null,
-  not automatically labelled “unknown”.
+- Joint response/calibration likelihood replaced the initial exact-instrument fit.
+- Parameter errors affect continuous recovery, not false discovery of a wrong model.
+- Report conditions have distinct instrument calibration; raw response differences
+  are not intrinsic-feedback evidence.
+- An omitted slow state is distinct from a legal report-only or all-zero null circuit.
+- The original unique public noise SD acted as a world identifier and enabled a
+  zero-experiment lookup candidate to score 1. Noise is now the same 0.012 everywhere;
+  the full public dictionary is identical across worlds and splits.
+- Public `valid` previously included heldout failures. It now uses development only,
+  as does feasibility. Trusted heldout validity remains available to reviewers.
+  A sandbox probe injects heldout-only invalid answers using paid observation
+  fingerprints; its temporary answer-membership table is never published.
+- The wrapper now filters through `search_visible_metrics` before writing its output.
+  Audit reports publish aggregate metrics only. Historical JSON was redacted to remove
+  per-instance answer records; this does not erase their existence in Git history.
+- Stronger shortcut evidence and the weak budget ablation replace the original
+  overstatement. Missing calibration is recorded explicitly, not waived by a whitelist.
+- The scoring axes and refusal-offset pattern reuse
+  `StructuralEngineering/ModalDamageAttribution`. `QuantumControl/ActiveNoiseSpectroscopy`
+  is another close neighbour, but has second-order-matched supported alternatives;
+  this task exposes a simpler inverse-response route once instruments are calibrated.
 
 ## 7. Robustness, contamination and headroom
 
-Construction tests check stability for both frozen seed sets and twenty extra seeds
-under every model class and report condition; no latent labels are passed to the
-candidate. Repetition adds independent noise and costs units. API validation is
-strict and permanently latches violations, including caught overspend. Search
-visibility excludes heldout, per-world labels, false-discovery and refusal axes.
+Tests check stable realizations, the time-domain equation, counter-seeded batch/query
+order equivalence, global RNG independence, malformed answers, sticky overspend,
+identical public problems, development-only validation feedback and wrapper output
+filtering (including unknown future diagnostics). Candidate process and private tmpfs
+reset between every world, including splits; a Linux regression tests globals and a
+`/tmp` marker. Invalid answers never gain refusal credit.
 
-The idealized calibration operation presumes a controllable simulator. It is not
-available as an exact human neural-state clamp and does not calibrate experience.
-The omitted-state generator is one model-misspecification case; other unmodelled
-effects may remain undetected. Source-visible seeds need a server-held replacement.
-Adaptive experimental allocation, treatment of nonlinear likelihood uncertainty and
-broader misspecification checks remain possible improvements. Independent neuroscience
-review and actual model calibration are still required for scientific admission.
+Search receives only allowlisted development selection/feasibility metrics through
+the shipped wrapper; rich aggregate axes remain trusted audit outputs. The deterministic
+source-visible generator and paid response fingerprints still permit precomputed
+memorization outside the sandbox. Removing the free public fingerprint does not
+establish contamination resistance; server-held new instances are required.
 
-The evaluator resets the candidate process and private temporary filesystem before
-every subsequent world, including the development/heldout boundary. An actual
-Bubblewrap regression candidate tests both module globals and a `/tmp` marker.
+Calibration presumes a controllable simulator, not an exact human neural-state clamp.
+The omitted slow state is only one misspecification case. Improved continuous fitting,
+uncertainty handling and broader misspecification checks remain possible, but neither
+a reference gap nor weak raw-response probes establish frontier difficulty. Independent
+neuroscience review and actual model calibration remain admission requirements.

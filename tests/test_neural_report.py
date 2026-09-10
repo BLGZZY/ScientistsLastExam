@@ -2,7 +2,10 @@
 import copy
 import importlib.util
 import math
+import json
 import platform
+import sys
+from types import SimpleNamespace
 from pathlib import Path
 import numpy as np
 import pytest
@@ -17,6 +20,62 @@ def load(path):
     spec.loader.exec_module(module)
     return module
 MODULE = load(ROOT / 'benchmarks/Biology/NeuralReportAttribution/verification/evaluator.py')
+
+
+def test_public_problem_is_identical_across_worlds_and_splits():
+    kinds = ['recurrent', 'report_only'] * 3 + ['none'] * 2 + ['unsupported'] * 2
+    problems = [MODULE.make_world(base + i * 113, kind)['problem']
+                for base in (381900, 527300) for i, kind in enumerate(kinds)]
+    problems.extend(MODULE.make_world(seed, kind)['problem']
+                    for seed in range(20) for kind in set(kinds))
+    assert all(problem == problems[0] for problem in problems)
+
+
+@pytest.mark.parametrize('failing_split', ['development', 'heldout'])
+def test_validation_feedback_does_not_reveal_heldout_failures(monkeypatch, failing_split):
+    # Trusted test injection, not a candidate using an unavailable split identifier.
+    original = MODULE.score_world
+
+    def reject_selected(world, answer):
+        split = 'development' if world['seed'] < 527300 else 'heldout'
+        return original(world, {'model': 'invalid'} if split == failing_split else answer)
+
+    baseline = search_visible_metrics(MODULE.evaluate(lambda *_: {'abstain': True}))
+    monkeypatch.setattr(MODULE, 'score_world', reject_selected)
+    result = MODULE.evaluate(lambda *_: {'abstain': True})
+    assert result[failing_split + '_valid_rate'] == 0
+    assert result[failing_split + '_correct_refusal_rate'] == 0
+    if failing_split == 'heldout':
+        assert search_visible_metrics(result) == baseline
+    else:
+        assert result['valid'] == result['feasibility_rate'] == 0
+
+
+def test_wrapper_filters_metrics_at_the_file_boundary(monkeypatch, tmp_path, capsys):
+    wrapper = load(ROOT / 'benchmarks/Biology/NeuralReportAttribution/frontier_eval/run_eval.py')
+    full = MODULE.evaluate(lambda *_: {'abstain': True})
+    full['future_private_diagnostic'] = {'truth': 'must stay sealed'}
+    monkeypatch.setattr(wrapper.subprocess, 'run', lambda *a, **kw:
+                        SimpleNamespace(returncode=0, stdout=json.dumps(full)))
+    output = tmp_path / 'metrics.json'
+    monkeypatch.setattr(sys, 'argv', ['run_eval.py', '--candidate', str(tmp_path / 'candidate.py'),
+                                     '--metrics-out', str(output)])
+    assert wrapper.main() == 0
+    assert json.loads(output.read_text()) == dict(search_visible_metrics(full), raw_score=0.)
+    assert json.loads(capsys.readouterr().out) == {'combined_score': 0., 'valid': 1.}
+
+
+def test_algebraic_probes_respect_acquisition_costs():
+    probe = load(ROOT / 'benchmarks/Biology/NeuralReportAttribution/verification/algebraic_probe.py')
+    for kind in ('recurrent', 'report_only', 'none', 'unsupported'):
+        world = MODULE.make_world(72, kind)
+        for candidate, units in ((probe.infer_circuit, 8), (probe.null_or_refuse, 3)):
+            lab = MODULE.Campaign(world)
+            answer = candidate(copy.deepcopy(world['problem']), lab)
+            MODULE.validate(answer)
+            assert lab.used == units and not lab.violated
+            if units == 3:
+                assert answer.get('abstain') or answer['model'] == 'none'
 
 def test_neural_transfer_matches_time_domain_integral():
     w = MODULE.make_world(42, 'recurrent')
@@ -60,7 +119,7 @@ def test_counter_seeded_batch_and_query_order_equivalence():
     for key in ('real', 'imag'):
         assert np.allclose(batch[key], (np.array(first[key]) + second[key]) / 2, atol=1e-15)
     assert first != second
-BAD = [None, {}, [], 'model', {'abstain': 1}, {'confidence': float('nan')}, {'model': []}, {'model': 'invalid'}, {'abstain': False, 'confidence': True}, {'abstain': True, 'confidence': float('inf')}, {'abstain': True, 'confidence': -1}, {'model': 'contact', 'mass_gev': float('nan')}, {'model': 'recurrent', 'feedback': True, 'report_feedback': 0.5}, {'model': 'report_only', 'feedback': 0.1, 'report_feedback': 0.5}]
+BAD = [None, {}, [], 'model', {'abstain': 1}, {'confidence': float('nan')}, {'model': []}, {'model': 'invalid'}, {'abstain': False, 'confidence': True}, {'abstain': True, 'confidence': float('inf')}, {'abstain': True, 'confidence': -1}, {'model': 'recurrent', 'feedback': float('nan'), 'report_feedback': 0.5}, {'model': 'recurrent', 'feedback': True, 'report_feedback': 0.5}, {'model': 'report_only', 'feedback': 0.1, 'report_feedback': 0.5}]
 
 @pytest.mark.parametrize('module', [MODULE])
 @pytest.mark.parametrize('answer', BAD)
@@ -119,9 +178,7 @@ def test_oracle_ceiling_recomputable_without_reference_score_literal():
             answer = {'model': kind}
             if kind == 'unsupported':
                 answer = {'abstain': True}
-            elif False and kind != 'none':
-                answer['mass_gev'] = w['mass']
-            elif True and kind != 'none':
+            elif kind != 'none':
                 answer.update(feedback=w['parameters']['edges'][-2], report_feedback=w['parameters']['edges'][-1])
             assert module.score_world(w, answer)['mechanism'] == 1
 

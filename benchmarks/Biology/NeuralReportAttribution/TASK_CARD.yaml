@@ -14,7 +14,7 @@ normalization:
   baseline: overconfident legal baseline scores zero; blanket none and blanket abstention
     also score exactly zero
   reference: runnable public-input-only likelihood fit, calibration uncertainty included,
-    finite experiment allocation
+    bounded experiment cost; allocation difficulty is not established
   score: mean mechanism utility minus the 0.2 blanket refusal utility, divided by
     0.8; false discovery rate, refusal, coverage, confidence and heldout diagnostics
     remain separate
@@ -24,33 +24,44 @@ citations:
 invariants:
 - Repeated observation units are independent and charged; splitting a batch preserves
   the same counter-indexed observations.
-- The public problem contains no class, split, seed or latent parameter.
+- The public problem is identical across all worlds and splits; noise SDs are shared
+  experimental settings, not latent parameters or identifiers.
+- Search-visible validity and feasibility depend only on development; the wrapper
+  writes only the closed search-visible metric allowlist.
 - Global random state does not affect the frozen generator.
 - Malformed or overspent candidates fail closed without exposing exception text.
 - An omitted mechanism is not the same scientific decision as a valid null mechanism.
 known_shortcuts: >-
-  972 fixed raw-response strategies: best development 0, selected heldout 0; reference
-  development 0.877046. This finite builder grid is not an exhaustive upper bound.
-  Repository-visible seeds permit memorization outside the sandbox and are not a
-  server-held challenge. Constant and low-dimensional probes plus ablations are
-  recorded in references/known_best.md; difficulty is not certified.
+  Original variable-noise version, independently reviewed at PR 73 comment
+  5615520113: calibrated algebraic probe dev 0.449754 / heldout 0.311061
+  (3024 strategies, 8 units); null-or-refusal dev/heldout 0.25 (3 units,
+  zero supported-world coverage). The earlier 972 raw-response strategies scored
+  zero but did not bound calibrated methods. The 0.2 offset removes blanket refusal,
+  not the 0.25 null-plus-refusal strategy. Revised shared-noise measurements and
+  reproducible probes are in references/known_best.md and
+  experiments/neural_report_revision_2026-09-10.json at repository root.
+  All are finite builder probes, not exhaustive bounds or independent model calibration.
+  Public seeds and deterministic paid observations remain vulnerable to memorization
+  outside the sandbox; admission requires server-held instances.
 review:
-  domain: pending_external
+  domain: pending_external_neuroscience
   evaluator_security: automated_checks_passed_pending_external_review
 provenance:
   class: procedural
   target_source: Original bounded simulator with counter-seeded development and heldout
-    instances; no human data or reported particle discoveries.
+    instances; no human neural recordings or claims about subjective experience.
   task_contract_public_before_evaluation: true
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Known scientific inference methods in a new budgeted coupling of controls,
-    mechanism alternatives, and misspecification; see Task.md nearest-neighbour comparison.
-    The simulator is an abstraction, not a validated model of the unresolved fundamental
-    question.
+  rationale: StructuralEngineering/ModalDamageAttribution supplies the discovery-axis
+    and blanket-refusal-offset scoring pattern; this task instead fits report-gated
+    neural response and separately calibrated instruments. QuantumControl/ActiveNoiseSpectroscopy
+    compares second-order-matched noise mechanisms, while this task's supported families
+    are distinguishable in calibrated inverse response entries. This is a controlled
+    local abstraction, not a validated theory of consciousness or proven budget-allocation challenge.
 lineage:
-  status: complete
+  status: incomplete_legacy
   builder_model_ids:
   - gpt-6-astra
   builder_scaffolds:
@@ -60,16 +71,20 @@ lineage:
   calibration_evidence_status: missing
   edits_triggered_by_model: Builder checks separated incorrect mechanism claims from
     continuous parameter error and incorporated calibration uncertainty into the reference
-    fit. No independent frontier draw yet.
+    fit. PR 73 review triggered removal of the noise fingerprint, development-only
+    public validity, wrapper filtering and stronger shortcut/budget evidence. No independent
+    frontier draw yet; incomplete_legacy explicitly records incomplete calibration history.
+  reused_designs:
+  - StructuralEngineering/ModalDamageAttribution discovery axes and refusal-offset normalization
   shortcut_discoverer: builder_invariant_and_low_dimensional_probes
   frozen_before_eval: false
   freeze_timestamp: null
 construction_audit:
-  status: builder_checked_pending_external
+  status: incomplete_legacy
   author_domain: gpt-6-astra
-  reviewer_domain: pending_external
+  reviewer_domain: pending_external_neuroscience
   expert_hours: null
-  red_team_rounds: 1
+  red_team_rounds: 2
   oracle_disagreement_status: pending_independent_domain_review
   independent_recomputation_status: runnable equation and likelihood checks in tests
     and verification witness
@@ -78,3 +93,9 @@ long_horizon:
   measurement_health_passed: false
   material_headroom_after_2h: false
   evidence: []
+evaluation_budget:
+  cpu_only: true
+  timeout_seconds: 300
+  expected_reference_seconds: 120
+  experiment_units_per_world: 14
+  allocation_difficulty: not_established

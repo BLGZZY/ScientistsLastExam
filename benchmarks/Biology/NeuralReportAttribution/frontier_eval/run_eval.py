@@ -15,6 +15,9 @@ from pathlib import Path
 INVALID = -1e18
 TASK_ID = "Neuroscience/NeuralReportAttribution"
 ROOT = Path(__file__).resolve().parents[4]
+sys.path.insert(0, str(ROOT))
+from sle.metric_visibility import search_visible_metrics
+
 EVAL_TIMEOUT_S = 300
 
 
@@ -35,7 +38,7 @@ def main() -> int:
             raise RuntimeError("sle eval exited %d: %s" % (
                 completed.returncode, (completed.stderr or "").strip()[-500:]))
         result = json.loads(completed.stdout)
-        metrics.update(result)
+        metrics.update(search_visible_metrics(result))
         metrics.setdefault("raw_score", result.get("combined_score"))
     except Exception as exc:  # noqa: BLE001 - a broken evaluation is reported, not raised
         metrics["error_message"] = "%s: %s" % (type(exc).__name__, exc)

@@ -1,7 +1,6 @@
 # NeuralReportAttribution — separate intrinsic feedback, report feedback and measured readout
 
-Implement `infer_circuit(problem, experiment)` in `solution.py`. Allocate a finite
-calibration/perturbation budget, infer the effective circuit, and refuse when a
+Implement `infer_circuit(problem, experiment)` in `solution.py`. Use calibrated perturbation responses to infer the effective circuit, and refuse when a
 four-state model cannot explain the responses. This is a **linearized neural-population
 identification task**, not an operational definition of subjective experience and not
 a contest between whole GNWT and IIT theories.
@@ -52,13 +51,16 @@ four-state family. Residual structure across frequencies should then prompt
 | `population_names` | V1,V2,P,R in matrix order |
 | `angular_frequencies` | 5 available positive omega values in inverse model-time units |
 | `budget_units` | 14 total experiment units |
-| `measurement_noise_sd` | SD of each real/imaginary response entry for one unit |
+| `measurement_noise_sd` | Shared SD 0.012 of each real/imaginary response entry for one unit |
 | `calibration_noise_sd` | SD of each instrument-parameter calibration entry for one unit |
 | `time_constant_bounds` | allowed neural tau range [0.25,0.8] |
 | `edge_bounds` | allowed off-diagonal coefficients [0,1.2] |
 | `supported_models` | `recurrent`, `report_only`, `none` |
 | `minimum_feedback` | 0.15 for a supported intrinsic-feedback claim |
 | `report_conditions` | [0,1] |
+
+All public problem values are identical across worlds and splits. The 14-unit cap
+is a resource limit; allocation difficulty is not established by the current ablations.
 
 ## Charged experiment
 
@@ -113,7 +115,10 @@ A correct null decision or justified outside-family refusal earns 1; other answe
 and invalid worlds earn zero. Development selection is
 `max(0,(mean_utility-0.2)/0.8)`. Blanket null, blanket abstention and the shipped
 overconfident baseline each score exactly zero. The ceiling 1 is a perfect model;
-the truth-blind reference witness is not the normalization denominator.
+the truth-blind reference witness is not the normalization denominator. The 0.2
+offset removes blanket abstention (2/10 utility), but correctly separating null
+and outside-family worlds alone can earn 0.25 (4/10 utility), with no positive
+discoveries. Read discovery coverage alongside the score.
 
 False discovery is an incorrect positive model, distinct from continuous coupling
 error. False discovery rate is false claims / positive claims (zero if no claims),
@@ -121,7 +126,8 @@ with numerator and denominator published to reviewers. Correct refusal, supporte
 claim coverage, null correctness, confidence Brier error and heldout recovery are
 separate evaluator-only diagnostics, not averaged into an omnibus scientific score.
 Search receives only development selection and feasibility, not heldout labels,
-per-instance records or these axes. Invalid attempts do not earn refusal credit.
+per-instance records or these axes. The shipped wrapper enforces this allowlist; public `valid` and `feasibility_rate`
+depend only on development. Invalid attempts do not earn refusal credit.
 
 The model defines identifiable **effective** circuit parameters, not sufficient
 mechanisms for experience. Source-visible seeds allow prior memorization: formal
@@ -130,17 +136,28 @@ long-horizon improvement and independent neural-model validity are not yet certi
 
 ## Measured construction checks
 
-Builder measurements: reference development/heldout = 0.877046/0.740333;
-one-unit acquisition = 0.840246/0.703612; ignored instrument model = 0/0.
-Development losses are 0.036800 and 0.877046. The small first loss limits
-claims about acquisition difficulty. The best of 972 raw inverse-response
-strategies scores 0 on development and on its single heldout confirmation.
+The reference jointly fits calibration uncertainty and response likelihood. Its
+remaining gap is continuous coupling precision when the discrete decisions are
+correct; remaining headroom is not evidence of frontier-model difficulty.
 
-These are finite synthetic measurements, not independent frontier-model calibration.
-Reference/source details and full precision are in the reviewer evidence.
+The original variable-noise review found reference scores approximately 0.88/0.74,
+and a calibrated algebraic shortcut approximately 0.45/0.31. Reducing acquisition
+from 14 to 6 units barely changed that review's heldout score. We therefore make
+no claim that adaptive budget allocation is a demonstrated source of difficulty.
+Revised shared-noise measurements, full precision, environment versions, and the
+expanded ablation/shortcut protocols are recorded in `references/known_best.md`.
+These are finite synthetic builder checks, not independent frontier-model calibration.
 
 ## 关系与区别 / nearest neighbours
 
+- `QuantumControl/ActiveNoiseSpectroscopy` (under Physics) uses supported, confounded
+  and outside-family worlds with budgeted probing and refusal. Its supported alternatives
+  deliberately match second-order statistics; here the calibrated inverse response
+  exposes whether A[1,2] is zero, enabling a substantial algebraic shortcut.
+- `StructuralEngineering/ModalDamageAttribution` (under Engineering) supplies the
+  discovery-axis and blanket-refusal-offset scoring pattern. Here the observations
+  are report-gated neural transfer matrices with sensor/actuator calibration, rather
+  than structural vibration and environmental stiffness confounds.
 - `CausalDiscovery/InterventionalSCM` uses static acyclic causal models. This task has
   cyclic dynamics, frequency-dependent sensors, report-gated paths and noisy calibration.
 - `CausalDiscovery/SurvivorshipConfoundedDesign` concerns selection among survivors,

@@ -6,11 +6,12 @@ from scipy.optimize import least_squares
 def infer_circuit(problem, experiment, *, ablation=None):
     calibrations, responses = [], []
     for report in (0, 1):
-        calibration_units = 1 if ablation == "one_unit" else 2
+        calibration_units = 1 if ablation in ("one_unit", "six_units") else 2
         cal = experiment({"kind": "calibration", "report": report, "frequency": 0, "units": calibration_units})
         calibrations.append([np.array(cal[k]) for k in
                              ("sensor_mixing", "actuator_mixing", "feedthrough", "sensor_time_constants")])
-        for f, units in ((0, 1), (1, 2), (2, 1), (3, 1)):
+        schedule = ((0, 1), (3, 1)) if ablation == "six_units" else ((0, 1), (1, 2), (2, 1), (3, 1))
+        for f, units in schedule:
             if ablation == "one_unit":
                 units = 1
             data = experiment({"kind": "response", "report": report, "frequency": f, "units": units})
@@ -51,7 +52,8 @@ def infer_circuit(problem, experiment, *, ablation=None):
     for report in (0, 1):
         lower[58+52*report:62+52*report] = .001
         upper[58+52*report:62+52*report] = 1.
-    for model in ("none", "report_only", "recurrent"):
+    models = ("recurrent",) if ablation == "no_model_selection" else ("none", "report_only", "recurrent")
+    for model in models:
         x0 = np.concatenate([[.5]*4+[.5,.5,.2,.6,.3,.4], calibration_vector])
         x0 = np.clip(x0, lower+1e-8, upper-1e-8)
         fit = least_squares(residual, x0, bounds=(lower, upper),
@@ -62,11 +64,11 @@ def infer_circuit(problem, experiment, *, ablation=None):
         fits.append((deviance+parameters*np.log(len(fit.fun)), deviance, model, fit.x))
     fits.sort(key=lambda item:item[0])
     _, error, model, x = fits[0]
-    if error > 420:
+    if error > 420 and ablation != "never_abstain":
         return {"abstain": True, "confidence": .75}
     if model == "none":
         return {"model":"none","confidence":.8}
-    if model == "recurrent" and x[8] < problem["minimum_feedback"]:
+    if model == "recurrent" and x[8] < problem["minimum_feedback"] and ablation != "never_abstain":
         return {"abstain": True,"confidence":.7}
     return {"model":model,"feedback":float(x[8]) if model=="recurrent" else 0.,
             "report_feedback":float(x[9]),"confidence":.8}

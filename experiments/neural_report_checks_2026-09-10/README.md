@@ -1,4 +1,9 @@
-# Neuroscience/NeuralReportAttribution: independent branch validation
+# Neuroscience/NeuralReportAttribution: historical initial validation
+
+This record predates the PR 73 review fixes and uses variable per-world noise.
+It does not validate the revised evaluator. Published JSON has had `per_instance`
+answer records removed; aggregate metrics and original provenance are retained.
+`wrapper.json` records the old unfiltered output and is not the revised search interface.
 
 Clean tested source: `21b518f546354d2e8a8c65b4f13165d91b965b51`. Later commits add only experiment evidence.
 The branch contains one new task and has no runtime/test dependency on another

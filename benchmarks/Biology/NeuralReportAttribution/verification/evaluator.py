@@ -11,6 +11,7 @@ import math
 import numpy as np
 
 BUDGET = 14
+MEASUREMENT_NOISE_SD = .012
 FREQUENCIES = [0.08, 0.2, 0.5, 1.1, 2.0]
 MODELS = ("recurrent", "report_only", "none")
 
@@ -59,7 +60,8 @@ def make_world(seed, kind):
         d = rng.normal(0, .04, (4, 4))
         tau = rng.uniform(.05, .3, 4)
         instruments.append((c, b, d, tau))
-    noise = float(rng.uniform(.008, .016))
+    # A public experimental setting shared by every world, never a world identifier.
+    noise = MEASUREMENT_NOISE_SD
     problem = {"population_names": ["V1", "V2", "P", "R"],
                "angular_frequencies": list(FREQUENCIES), "budget_units": BUDGET,
                "measurement_noise_sd": noise, "calibration_noise_sd": .015,
@@ -196,6 +198,6 @@ def evaluate(candidate):
         results.update({split+"_"+k: round(float(v), 10) for k, v in values.items()})
         records.extend(rows)
     results.update(combined_score=results["development_mechanism_score"],
-                   valid=float(all(r["valid"] for r in records)),
+                   valid=float(all(r["valid"] for r in records if r["split"] == "development")),
                    feasibility_rate=results["development_valid_rate"], per_instance=records)
     return results
