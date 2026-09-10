@@ -20,3 +20,14 @@ Status remains `candidate`. Independent model calibration, domain review and
 server-held reissue are outstanding. Repository-visible instances can be memorized;
 low-dimensional probes are not an exhaustive upper bound. The numerical model's
 scientific assumptions and limits are documented in Task.md and known_best.md.
+
+## PR 73 review follow-up
+
+The original comparison omitted two close neighbours: StructuralEngineering/ModalDamageAttribution
+uses the discovery-axis and blanket-refusal-offset scoring pattern reused here, and
+QuantumControl/ActiveNoiseSpectroscopy uses budgeted probing with supported/confounded/
+outside-family worlds. Its supported alternatives match second-order statistics; this
+task instead admits direct calibrated inverse-response tests. The revised Task.md and
+card explicitly describe that shortcut and avoid claiming established allocation difficulty.
+Revised scripts add the calibrated grid and null/refusal probe; lineage remains incomplete
+until an independent model draw exists. See the revised experiment record for measurements.

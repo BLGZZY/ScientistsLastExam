@@ -7,8 +7,8 @@ frequency response and jointly fits neural and instrument nuisance parameters to
 response and calibration likelihoods. It compares null, report-only and intrinsic
 feedback models, and rejects excessive residuals. It imports no evaluator or truth.
 Score 1 is the correct-parameter ceiling, not an empirical reference literal.
-In the original review both splits had zero FDR, full refusal, full supported-world
-coverage and full null correctness. The gap to 1 was entirely the precision of the
+In the revised run both splits have zero FDR, full refusal, full supported-world
+coverage and full null correctness. The gap to 1 is entirely the precision of the
 two continuous couplings in six supported worlds per split, not unsolved model decisions.
 
 [Friston et al., 2003, DOI 10.1016/S1053-8119(03)00202-7](https://doi.org/10.1016/S1053-8119(03)00202-7)
@@ -66,9 +66,30 @@ Python 3.12.3, NumPy 1.26.4, SciPy 1.13.1: reference 0.8770462287 / 0.7403329403
 are expected; these decimals are measurements, not golden test assertions.
 Both historical records predate the shared noise SD 0.012 revision.
 
-Revised measurements are in `experiments/neural_report_revision_2026-09-10.json`
-at repository root, with the clean tested revision, environment, candidate hashes,
-and aggregate metrics. All signed losses are retained, including improvements.
+Revised shared-noise measurements from clean source
+`981802039e555698c463591553f54d8e03c2b261` on Linux, Python 3.12.3,
+NumPy 1.26.4, SciPy 1.13.1, one OpenBLAS thread:
+
+| Revised strategy | Development | Heldout | Units | Dev loss | Heldout loss |
+|---|---:|---:|---:|---:|---:|
+| baseline | 0.0000000000 | 0.0000000000 | 1 | +0.859489 | +0.743302 |
+| reference | 0.8594885223 | 0.7433017461 | 14 | +0.000000 | +0.000000 |
+| one_unit | 0.8291824705 | 0.7038548818 | 10 | +0.030306 | +0.039447 |
+| six_units | 0.8276691478 | 0.6266631041 | 6 | +0.031819 | +0.116639 |
+| ignore_instruments | 0.0000000000 | 0.0000000000 | 14 | +0.859489 | +0.743302 |
+| never_abstain | 0.6094885223 | 0.4933017461 | 14 | +0.250000 | +0.250000 |
+| no_model_selection | 0.2752635941 | 0.2204884271 | 14 | +0.584225 | +0.522813 |
+
+Reference repeats took 87.0 and 88.2 seconds and matched every metric, including
+the trusted per-instance records before redaction. All candidates above were valid.
+The revised 6-unit schedule loses 0.031819 on development and 0.116639 on heldout;
+it is explicitly different from the unpublished reviewer variant and does not
+reproduce its near-zero heldout loss. No task or grid tuning followed heldout inspection.
+These fixed schedules do not establish adaptive allocation difficulty.
+
+Full precision, clean provenance, runtime/candidate hashes and aggregate metrics are
+in `experiments/neural_report_revision_2026-09-10.json` at repository root.
+The later documentation/evidence commits retain the tested Python sources unchanged.
 
 ## 4. Shortcut probes
 
@@ -93,6 +114,20 @@ scoring must match the sandbox result. Reported heldout outcomes never choose a 
 `null_or_refuse` uses one calibration and two responses in report condition 1
 (3 units); an off-diagonal magnitude threshold separates null from refusal and
 never makes a positive claim. Its fixed threshold is not selected on heldout.
+Revised Linux results (same source and NumPy/SciPy versions as section 3):
+
+| Probe | Development | Heldout | Units | Supported coverage (dev/heldout) |
+|---|---:|---:|---:|---:|
+| raw inverse-response grid, 972 strategies | 0 | 0 | 1 | 1 / 1 |
+| calibrated algebraic grid, 3024 strategies | 0.7540713032 | 0.5456852969 | 8 | 1 / 1 |
+| fixed null-or-refuse | 0.2500000000 | 0.2500000000 | 3 | 0 / 0 |
+
+The selected calibrated configuration is (null threshold 0.13, mismatch threshold
+0.35, feedback threshold 0.08, feedback scale 0.9, report scale 1.0). Both splits
+have zero FDR and full refusal/null correctness. Calibration plus direct algebra
+therefore already solves the discrete decisions; likelihood fitting improves
+continuous precision. The revised shortcut is stronger than the historical reviewer
+probe and is reported as such, not hidden behind the zero-score raw grid.
 These finite probes do not exhaust shortcuts or measure independent model difficulty.
 
 ## 5. Frontier draw

@@ -136,17 +136,31 @@ long-horizon improvement and independent neural-model validity are not yet certi
 
 ## Measured construction checks
 
-The reference jointly fits calibration uncertainty and response likelihood. Its
-remaining gap is continuous coupling precision when the discrete decisions are
-correct; remaining headroom is not evidence of frontier-model difficulty.
+Current Linux measurements with shared noise SD 0.012:
 
-The original variable-noise review found reference scores approximately 0.88/0.74,
-and a calibrated algebraic shortcut approximately 0.45/0.31. Reducing acquisition
-from 14 to 6 units barely changed that review's heldout score. We therefore make
-no claim that adaptive budget allocation is a demonstrated source of difficulty.
-Revised shared-noise measurements, full precision, environment versions, and the
-expanded ablation/shortcut protocols are recorded in `references/known_best.md`.
-These are finite synthetic builder checks, not independent frontier-model calibration.
+| Strategy | Development | Heldout | Units |
+|---|---:|---:|---:|
+| joint likelihood reference | 0.859 | 0.743 | 14 |
+| one repeat per bundle | 0.829 | 0.704 | 10 |
+| two frequencies per condition | 0.828 | 0.627 | 6 |
+| ignore instruments | 0 | 0 | 14 |
+| never abstain | 0.609 | 0.493 | 14 |
+| no model selection | 0.275 | 0.220 | 14 |
+| calibrated algebraic grid winner | 0.754 | 0.546 | 8 |
+| null-or-refusal only | 0.250 | 0.250 | 3 |
+
+The reference and calibrated algebraic probe have correct discrete decisions on
+both splits; their gaps are continuous coupling precision. The reference's development
+losses are approximately 0.030, 0.032, 0.859, 0.250 and 0.584 for the five ablations
+in table order. Fixed-schedule ablations do not establish adaptive allocation difficulty.
+Neither the remaining reference gap nor the weaker raw-response grid proves frontier
+model difficulty. The 3024-strategy calibrated grid is selected on development, then
+confirmed once on heldout; the null-or-refusal probe makes no supported discoveries.
+
+These finite builder checks used Python 3.12.3, NumPy 1.26.4 and SciPy 1.13.1.
+Reference repeats took about 87–88 seconds. Full precision, source/environment binding,
+protocols and historical reviewer results are in `references/known_best.md`.
+Independent frontier-model calibration has not been performed.
 
 ## 关系与区别 / nearest neighbours
 

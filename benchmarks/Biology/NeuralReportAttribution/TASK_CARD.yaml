@@ -37,8 +37,10 @@ known_shortcuts: >-
   (3024 strategies, 8 units); null-or-refusal dev/heldout 0.25 (3 units,
   zero supported-world coverage). The earlier 972 raw-response strategies scored
   zero but did not bound calibrated methods. The 0.2 offset removes blanket refusal,
-  not the 0.25 null-plus-refusal strategy. Revised shared-noise measurements and
-  reproducible probes are in references/known_best.md and
+  not the 0.25 null-plus-refusal strategy. Revised shared-noise Linux measurements
+  (Python 3.12.3, NumPy 1.26.4, SciPy 1.13.1): calibrated grid dev 0.7540713032 /
+  heldout 0.5456852969 (8 units), null-or-refusal 0.25 / 0.25 (3 units), reference
+  0.8594885223 / 0.7433017461. Full provenance and reproducible probes are in references/known_best.md and
   experiments/neural_report_revision_2026-09-10.json at repository root.
   All are finite builder probes, not exhaustive bounds or independent model calibration.
   Public seeds and deterministic paid observations remain vulnerable to memorization
