@@ -12,7 +12,9 @@ normalization:
   baseline: Legal one-panel nearest-single-taxon baseline scores exactly zero.
   reference: 'Sparse-support conditional likelihood, selected-support adaptive utility,
     model-discrimination ordering, joint deviance and development-selected bins500
-    reporting: 0.827795949 / 0.828551628, valid=1.'
+    reporting: 0.827795949 / 0.828551628, valid=1. The 0.172204051 development
+    headroom is entirely abundance-accuracy and avoidable-resolution credit after
+    perfect claim precision, alias recovery, refusal and coverage.'
   score: Mass-weighted abundance and resolution credit times claim precision; both
     splits normalize above the 0.25 library-refusal floor.
 citations:
@@ -51,8 +53,11 @@ novelty_risk:
   level: medium
   rationale: CrowdedSpectrumAssignment and TransmissionSpectrumSpecies also infer
     distinguishable components. This task uses conditional count likelihoods, charged
-    marker panels, group abundances and joint library residuals; novelty requires
-    external review.
+    marker panels, group abundances and joint library residuals. MethaneSourceAttribution
+    attributes fixed atmospheric source signatures without charged panel choice or
+    resolution groups. QuinaryConvexHull and PhaseDiagramDiscovery infer thermodynamic
+    stability or phase structure rather than conditional count mixtures; novelty
+    requires external review.
 lineage:
   status: complete
   builder_model_ids:
@@ -78,8 +83,8 @@ lineage:
     infrastructure failures. Its raw report remains uncommitted under the same
     policy.
   shortcut_discoverer: internal_reference_and_manual_review
-  frozen_before_eval: true
-  freeze_timestamp: '2026-09-08T18:45:29.110657+00:00'
+  frozen_before_eval: false
+  freeze_timestamp: null
 construction_audit:
   status: prototype_internal
   author_domain: computational_science
@@ -98,5 +103,8 @@ long_horizon:
   evidence: []
 evaluation_budget:
   EVAL_TIMEOUT_S: 600
-  scope: Total candidate wall-clock deadline across all instances.
+  scope: Total candidate wall-clock deadline across all 24 instances. The reference
+    takes about 59 seconds in the maintained sandbox; 600 seconds accommodates legal
+    non-vectorized sparse-search solvers and slower CI hosts, for which 300 seconds
+    was considered too narrow.
   override: Task wrapper --timeout or sle eval --timeout.

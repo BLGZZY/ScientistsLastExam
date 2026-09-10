@@ -132,18 +132,18 @@ GRAMMy (Xia et al. 2011, doi:10.1371/journal.pone.0027992) directly supports
 finite read-distribution mixtures and likelihood-based abundance estimation.
 Panel conditioning, the query budget and the operational resolution convention
 are this task's synthetic extensions; none of these papers validates them.
+MethaneSourceAttribution attributes fixed atmospheric source signatures without
+charged panel choice or resolution groups. QuinaryConvexHull and
+PhaseDiagramDiscovery infer thermodynamic stability or phase structure rather
+than conditional count mixtures.
 
 
 ## Reference, ablations and reserved capability
 
-The input-only reference enumerates sparse supports of the current reporting
-units, fits conditional multinomial likelihoods, and selects the lowest-BIC
-support for two-call abundance/resolution utility. BIC weights order the first
-query by predictive model discrimination; the utility plan is updated after
-that observation. A full-library deviance check controls refusal. Final sparse
-abundances are rounded on a development-selected 500-bin grid and renormalized.
-This is a numerical reporting choice, not biological precision. BIC weights and
-local normal utility estimates are approximations, not exact posterior inference.
+The input-only reference uses sparse conditional-likelihood composition fitting,
+adaptive panel selection and a joint library-adequacy check. These are approximate
+rather than exact Bayesian inference. Implementation-specific search and numerical
+reporting choices are documented in `references/known_best.md`.
 
 | Method | Development | Held-out |
 | --- | ---: | ---: |

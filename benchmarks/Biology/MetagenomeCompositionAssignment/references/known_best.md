@@ -73,6 +73,12 @@ deviance check and a sparse fit. Development-selected 500-bin rounding is a
 numerical reporting choice, not biological precision. Neither averaged unresolved
 profiles, BIC weighting nor local normal utility is exact posterior inference.
 Reference 0.827795949/0.828551628.
+Exactly three of the twelve development worlds are inadequate-library worlds,
+and the reference correctly refuses all three. Subtracting the 0.25 floor therefore
+makes `combined_score` equal `development_mechanism_score`. Claim precision,
+alias recovery, refusal and discovery coverage are all 1 (false-discovery rate
+is 0), so the remaining normalized development headroom, 0.172204051, comes only
+from abundance error and half-credit avoidable unresolved groups.
 The actual Python 3.10/SciPy 1.10.1 sandbox reproduces both aggregate scores from
 Python 3.11/SciPy 1.11.4. Independent conditional-odds, graph resolution, legal
 full-credit, initial-profile ambiguity, panel conservation, category-blindness,

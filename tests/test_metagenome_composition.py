@@ -347,11 +347,13 @@ def test_task_local_wrapper_strips_credentials(monkeypatch):
     monkeypatch.setenv("DEMO_API_KEY", "secret")
     monkeypatch.setenv("AUTHORIZATION", "secret")
     monkeypatch.setenv("DATABASE_PASSWORD", "secret")
+    monkeypatch.setenv(wrapper.TRUSTED_DIAGNOSTICS_ENV, "/trusted/operator.log")
     monkeypatch.setenv("SAFE_SETTING", "kept")
     environment = wrapper._child_environment()
     assert "DEMO_API_KEY" not in environment
     assert "AUTHORIZATION" not in environment
     assert "DATABASE_PASSWORD" not in environment
+    assert wrapper.TRUSTED_DIAGNOSTICS_ENV not in environment
     assert environment["SAFE_SETTING"] == "kept"
     assert environment["PYTHONPATH"] == str(wrapper.ROOT)
 
@@ -359,7 +361,9 @@ def test_task_local_wrapper_strips_credentials(monkeypatch):
 def test_task_local_wrapper_treats_child_failure_as_infrastructure(
         tmp_path, monkeypatch, capsys):
     output = tmp_path/"metrics.json"
+    trusted_log = tmp_path/"trusted.jsonl"
     output.write_text('{"combined_score": 1}')
+    monkeypatch.setenv(wrapper.TRUSTED_DIAGNOSTICS_ENV, str(trusted_log))
 
     class Failed:
         returncode = 17
@@ -374,3 +378,7 @@ def test_task_local_wrapper_treats_child_failure_as_infrastructure(
     captured = capsys.readouterr()
     assert result == 2 and not output.exists()
     assert "secret-source-line" not in captured.err
+    diagnostic = json.loads(trusted_log.read_text())
+    assert diagnostic["stage"] == "child_process"
+    assert diagnostic["returncode"] == 17
+    assert diagnostic["stderr_tail"].endswith("secret-source-line")
