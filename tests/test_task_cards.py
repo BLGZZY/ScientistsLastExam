@@ -14,7 +14,6 @@ RECORDED_LINEAGE = {
     "Ecology/OccupancyDetectionDesign",
     "Physics/CriticalPhenomenaLab",
     "WavePropagation/ActiveFullWaveformInversion",
-    "Geophysics/FocalMechanismStressInversion",
 
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",
@@ -54,6 +53,7 @@ RECORDED_LINEAGE = {
     "Superconductivity/SuperconductorTcRecord",
     "Geophysics/UPbConcordiaInference",
     "Sensors/IMUBiasCalibration",
+    "Microbiology/MetagenomeCompositionAssignment",
 }
 
 

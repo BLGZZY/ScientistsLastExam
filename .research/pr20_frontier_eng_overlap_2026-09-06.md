@@ -6,7 +6,7 @@
 - Repository: https://github.com/Einsia/Frontier-Engineering/blob/e3fa29c193356af2ce1ec8b3d23ab1a2e2410071/TASK_DETAILS.md — retrieved 2026-09-06. The catalog contains **78 table rows / 84 tasks after expanding EngDesign**, not 95. The recursive tree likewise has 78 Task.md paths. The maintainer confirmed this count in PR #20 on 2026-09-08 and withdrew the 95-entry requirement for this review.
 - Additional source reconciliation: `TASK_DETAILS_zh-CN.md` at the same main commit also has 78 rows / 84 expanded tasks. The `v1-arxiv` branch and first catalog revision `57cb4e52ea1c553f0bf36e956502f4135f7a9dee` each have 77 rows / 83 expanded tasks. None supplies the requested 95-entry list.
 - EngDesign subtask prompts at the same commit were checked: CY_03 (block driver), WJ_01 (image filtering), XY_05 (CPU control), AM_02/AM_03 (robot navigation), YJ_02 (beam compliance), YJ_03 (crack stress intensity).
-- Scope: ActiveFullWaveformInversion and FocalMechanismStressInversion only.
+- Scope: ActiveFullWaveformInversion only.
 
 This is an author comparison of artifacts, governing models and objectives, not independent domain review or certification. No renamed task or changed random seed is counted as novelty. “无” means no matching scientific task in the checked sources; shared numerical methods alone are not a match. “同类不同题” exposes a problem-family relation, which still needs maintainer acceptance under CONTRIBUTING. No checked entry was classified as the identical task.
 
@@ -15,7 +15,6 @@ This is an author comparison of artifacts, governing models and objectives, not 
 | SLE task | Conclusion | Nearest Frontier-Eng entries | Difference / remaining decision |
 |---|---|---|---|
 | ActiveFullWaveformInversion | 无 | CarAerodynamicsSensing; holographic_multiplane_focusing | Budgeted acoustic shots recover a subsurface velocity grid and test model adequacy; FE selects car pressure sensors or designs optical phase masks. Neither recovers acoustic velocity from acquired waveforms. |
-| FocalMechanismStressInversion | 无 | torsion_profile_fitting | Recover a stress tensor and per-event nodal plane choices, with mixed-regime refusal; FE fits force-field torsion energy scales. Both fit numbers, but neither the observable nor latent scientific structure is shared. |
 
 ## Exhaustive checked-source index
 

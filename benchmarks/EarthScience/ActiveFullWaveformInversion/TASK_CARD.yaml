@@ -69,7 +69,7 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Geophysics/GravityInversion also uses paid observations and model-inadequacy refusal, but recovers potential-field parameters. This task returns a two-dimensional acoustic velocity grid and tests transfer to sealed shots and frequencies. Geophysics/FocalMechanismStressInversion instead returns a stress tensor and discrete event-plane assignments. The public acoustic scaffold remains a contamination risk; builder-model independence is not established.
+  rationale: Geophysics/GravityInversion also uses paid observations and model-inadequacy refusal, but recovers potential-field parameters. This task returns a two-dimensional acoustic velocity grid and tests transfer to sealed shots and frequencies. The public acoustic scaffold remains a contamination risk; builder-model independence is not established.
 lineage:
   status: complete
   builder_model_ids:
