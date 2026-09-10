@@ -27,6 +27,11 @@ def test_batched_forward_and_tangent_match_independent_oracle():
                                oracle.RECEIVER_X_M)
     expected = np.asarray([oracle.simulate_waveforms(velocity, s) for s in sources])
     np.testing.assert_allclose(model.forward(velocity), expected, atol=1e-12, rtol=1e-12)
+    trial_models = np.asarray([velocity, velocity + 10.0, velocity - 25.0])
+    independent_trials = np.asarray([
+        [oracle.simulate_waveforms(v, source) for source in sources] for v in trial_models])
+    np.testing.assert_allclose(model.forward_many(trial_models), independent_trials,
+                               atol=1e-12, rtol=1e-12)
     # Include dense random and boundary-localized directions; the latter catches
     # mistakes in the damped stencil's boundary and source-injection derivatives.
     directions = rng.normal(size=(*oracle.GRID_SHAPE, 3))
