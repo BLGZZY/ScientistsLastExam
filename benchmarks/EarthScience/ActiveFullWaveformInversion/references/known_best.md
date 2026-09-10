@@ -24,7 +24,12 @@ seeds, followed by three independent unsupported controls.
 
 The unsupported reasons are unresolved near-null structure, incorrect source timing,
 and attenuation over heterogeneous structure. Every regime varies with seed. Near-null
-means sub-noise spatial variation, not an identical background grid. Source delay is
+means spatial variation below the **joint** noise scale, not merely below each
+sample’s noise. A regression bounds the noise-normalized squared waveform
+separation for any three-shot sequence, including repeats, below 0.001 on the
+shipped and predeclared confirmation nulls. The null remains a common negative
+control; its independent noise draws are not new geological-transfer evidence.
+Only the source-timing and attenuation controls test new non-null misspecification. Source delay is
 an interpolated delayed source response, whereas attenuation acts inside the wave
 recurrence. These are distinct physical departures; whether a candidate separates
 their causes is not established merely by counting its correct refusals.
@@ -72,6 +77,12 @@ choosing them based on scores. Model calibration and external domain review rema
 pending. These diagnostics do not certify the task.
 
 ## 6. Construction errors and history
+
+A self-check found that the first near-null amplitude was below pointwise noise
+but detectable by aggregating traces (best-three squared separation about 3435
+and 3270). It was reduced before sandbox confirmation. The near-null is explicitly
+a shared negative control, rather than using tiny seed differences to claim
+independent geological worlds.
 
 The first September 11 exploratory redesign used curved layers. It failed: the
 reference development score was about 0.209, while a continuous depth-capped probe

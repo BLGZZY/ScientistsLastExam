@@ -39,7 +39,7 @@ invariants:
 - every acquisition consumes budget and overspending fails closed
 - held-out shots, frequencies, worlds and mechanism metrics remain evaluator-only
 - ten supported worlds per split with disjoint development and heldout seeds
-- all three unsupported regimes have seed-dependent velocity fields and independent noise
+- all three unsupported regimes have seed-dependent velocity fields and independent noise; the near-null is a shared negative control, not independent geological-transfer evidence
 - the deep region contains genuine structure; a fixed shallow-only reconstruction discards signal
 known_shortcuts: 'The September 10 maintainer review invalidated the previous claimed bound: continuous
   Gaussian fitting with discrepancy stopping and a depth cap achieved 0.820084/0.561552 versus the old

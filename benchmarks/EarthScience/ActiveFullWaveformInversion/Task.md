@@ -32,8 +32,8 @@ structure is below the acquisition noise scale, and data with attenuation or sou
 effects outside the public acoustic family. Structure can occur throughout the full depth
 range; setting the deepest portion to background is not a valid general assumption. Out-of-family attenuation may
 coexist with velocity anomalies; neither visible structure nor total signal energy alone
-establishes that an acoustic interpretation is adequate. Hidden worlds, noise and sealed
-source frequencies are not visible to the candidate.
+establishes that an acoustic interpretation is adequate. Hidden velocity fields, separate noise realizations and sealed
+source frequencies are not exposed to the candidate.
 
 ## Your task
 

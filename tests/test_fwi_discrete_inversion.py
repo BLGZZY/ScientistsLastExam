@@ -105,6 +105,24 @@ def test_unsupported_structure_and_responses_vary_with_seed(kind):
         assert all(np.std(w["velocity"] - oracle._background()) > 100 for w in worlds)
 
 
+def test_near_null_is_below_joint_not_just_per_sample_noise():
+    oracle = load(TASK / "verification/evaluator.py", "joint_null_oracle")
+    cases = [s for s in oracle.DEVELOPMENT_SPECS + oracle.HELDOUT_SPECS if s[1] == "null"]
+    cases += [(61201, "null", 0), (71201, "null", 0)]
+    for spec in cases:
+        world = oracle._world(spec)
+        distances = []
+        for source in oracle.SOURCE_INDICES:
+            clean = oracle.simulate_waveforms(world["velocity"], int(source))
+            background = oracle.simulate_waveforms(oracle._background(), int(source))
+            sigma = world["noise"] * max(float(np.std(clean)), 1e-8)
+            distances.append(float(np.sum(((clean-background)/sigma)**2)))
+        # Independent repeats of the most informative source upper-bound any
+        # allowed three-shot sequence. This is a conditional waveform separation
+        # using the stated noise, not a claim about all possible side information.
+        assert oracle.BUDGET_UNITS * max(distances) < .001
+
+
 def test_continuous_probe_forward_is_independent_and_correct():
     oracle = load(TASK / "verification/evaluator.py", "continuous_forward_oracle")
     probe = load(ROOT / ".research/pr20_fwi_continuous_probe.py", "continuous_forward")

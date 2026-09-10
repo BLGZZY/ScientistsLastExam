@@ -89,7 +89,7 @@ def _velocity(seed, variant, kind):
     # Seed-varying near-null structures are below the acquisition noise scale;
     # refusal means no resolvable anomaly, rather than recognizing one constant.
     if kind == "null":
-        correction *= 0.001
+        correction *= 0.0000001
     return np.clip(base + correction, *VELOCITY_BOUNDS)
 
 
