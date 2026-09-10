@@ -3,7 +3,9 @@
 ## 1. Reference method and scope
 
 The reference fits a smooth velocity correction using only public physics and paid
-shots. Coarse-to-fine fitting, minimum-change/spatial regularization and late trace
+shots at 9/15/21. This central aperture was selected on development diagnostics;
+heldout and confirmation scores did not select it. Explicit source subsets in the
+budget audit are used unchanged. Coarse-to-fine fitting, minimum-change/spatial regularization and late trace
 balancing remain in place. Exact discrete derivatives are the default; a numerical finite-difference comparison
 is available in the audit. They are an implementation choice:
 finite differences should converge to the same solution. They are not an additional
@@ -38,8 +40,13 @@ score comparability; no old score is relabelled as a result on the new oracle.
 Current clean Linux measurements will be recorded after the source freeze. The
 source sweep in `scripts/audit_fwi_revision.py --budget-sweep` includes all five
 single shots and all ten pairs, using the same inversion implementation. Source 3
-alone is not a justified estimate of the best one-shot method. Budget is a charged
-constraint; a large marginal value for the third shot must not be assumed.
+alone is not a justified estimate of the best one-shot method. The first exhaustive
+scan found pair 9/21 at 0.620585 development, above the old fixed triple
+3/15/28 at 0.546014. The revised central triple measures 0.664800 in local
+development diagnostics; clean Linux and confirmation numbers follow below. Budget is a charged
+constraint; a large marginal value for the third shot must not be assumed. A 50-threshold sweep with a fresh, uncached replay of the
+development-selected threshold also checks that low probe scores are not merely
+caused by excessive refusal.
 
 ## 4. Continuous shortcut families
 
@@ -90,6 +97,12 @@ OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --methods reference 
 OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --fresh --output /tmp/fwi-fresh.json
 python -m pytest tests/test_fwi_discrete_inversion.py tests/test_new_earth_science_tasks.py tests/test_pr9_earth_hardening.py tests/test_pr9_earth_contracts.py tests/test_earth_pr_review_regressions.py -q
 ```
+
+The expanded 26-world evaluation exceeded the former 600-second cap in the Linux
+method audit (700 seconds for the preceding fixed triple under concurrent load).
+The wrapper and card now permit 1200 seconds; metadata gives a 900-second wall-time
+estimate, not a second timeout. The higher compute cost is a limitation of this
+revision, not evidence of greater scientific difficulty.
 
 Publishable measurements require a clean Linux checkout and real sandbox replay.
 Diagnostic reports retain source hashes, revision, dirty state, dependencies and

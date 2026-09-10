@@ -125,7 +125,17 @@ def invert_velocity_model(
     refusal = {"velocity_m_s": [], "confidence": 0.1, "abstain": True}
     if count < 1:
         return refusal
-    indices = np.linspace(0, len(source_indices) - 1, count, dtype=int)
+    # Development-selected central aperture. Explicit one/two-shot subsets in
+    # the exhaustive audit are preserved, rather than remapped to other sources.
+    n_sources = len(source_indices)
+    if n_sources <= count:
+        indices = np.arange(n_sources)
+    elif count == 1:
+        indices = [n_sources // 2]
+    elif count == 2:
+        indices = [n_sources // 4, 3 * n_sources // 4]
+    else:
+        indices = [n_sources // 4, n_sources // 2, 3 * n_sources // 4]
     gathers = [acquire(int(source_indices[i])) for i in indices]
     observed = np.asarray([row["pressure"] for row in gathers])
     sources = [int(row["source_index"]) for row in gathers]

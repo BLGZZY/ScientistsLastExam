@@ -131,7 +131,7 @@ public_model_disclosure: The finite-difference stencil, damping, wavelet and acq
   deliberately public so the task measures inversion rather than guessing the simulator. Hidden structures,
   noise and sealed shots/frequencies remain evaluator-only.
 evaluation_budget:
-  timeout_seconds: 600
+  timeout_seconds: 1200
   acquisition_units: 3
   measurement_source: Current clean Linux timings are recorded in references/known_best.md; previous nine-world
     timing claims are historical and do not apply to this revision.

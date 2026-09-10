@@ -6,7 +6,7 @@ tier: T2
 oracle_type: physical_sim
 score_mode: clipped
 gpu_required: false
-eval_time_seconds: 300
+eval_time_seconds: 900
 science_metric: charged-shot acoustic velocity mechanism recovery with sealed waveform transfer and calibrated
   model-inadequacy refusal
 reference_baseline: one central shot followed by a confident background-velocity claim on every world

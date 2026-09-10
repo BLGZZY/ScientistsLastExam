@@ -115,6 +115,30 @@ def test_continuous_probe_forward_is_independent_and_correct():
     np.testing.assert_allclose(actual, expected, atol=1e-12, rtol=1e-12)
 
 
+@pytest.mark.parametrize("sources,budget,expected", [
+    ([3, 9, 15, 21, 28], 3, [9, 15, 21]),
+    ([3, 9, 15, 21, 28], 1, [15]),
+    ([3, 28], 2, [3, 28]), ([9, 21], 2, [9, 21]), ([28], 1, [28]),
+])
+def test_reference_preserves_explicit_source_subsets(sources, budget, expected):
+    oracle = load(TASK / "verification/evaluator.py", "source_policy_oracle")
+    reference = load(TASK / "verification/reference_solver.py", "source_policy_reference")
+    calls = []
+
+    def acquire(source):
+        calls.append(source)
+        if len(calls) == len(expected):
+            raise RuntimeError("stop before the expensive inversion")
+        return {}
+
+    with pytest.raises(RuntimeError, match="stop before"):
+        reference.invert_velocity_model(
+            oracle.GRID_SHAPE, oracle.SPACING_M, oracle._background(), oracle.VELOCITY_BOUNDS,
+            np.asarray(sources), oracle.RECEIVER_X_M, np.arange(oracle.N_TIME)*oracle.DT_S,
+            acquire, budget)
+    assert calls == expected
+
+
 @pytest.fixture(scope="module")
 def reference_metrics():
     oracle = load(TASK / "verification/evaluator.py", "spatial_regression_oracle")
