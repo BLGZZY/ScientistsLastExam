@@ -25,8 +25,8 @@
     },
     "exactly_once_recovery": {
       "evidence": {
-        "path": "experiments/evaluation_recovery_fault_audit_2026-09-06_v6.json",
-        "sha256": "acc1249b5f8cece26237c70dfe23f240bf74f3ef01e07d6e299673fda0334134"
+        "path": "experiments/evaluation_recovery_fault_audit_2026-09-06_v7.json",
+        "sha256": "feaecd02bf19e5abeb2e0d44f216f10bbf0dea6e50e9a6fd4a45c40ec6646b87"
       },
       "predicates": [
         {
@@ -76,7 +76,7 @@
     },
     "portable_artifact": {
       "evidence": {
-        "path": ".research/measurement_health_preflight_artifacts_2026-09-06_v8.json",
+        "path": ".research/measurement_health_preflight_artifacts_2026-09-06_v9.json",
         "sha256": "1ab07c1190ea6986e68086c1fb9e0b9592ae590c6ce074c4890f36836271d874"
       }
     }
