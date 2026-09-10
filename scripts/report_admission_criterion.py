@@ -224,6 +224,33 @@ def _protocol_incomplete(workdir: Path) -> str | None:
     return str(value) if value else None
 
 
+def pooled_run_records(
+    found: dict[tuple[str, str, str, str, str, str], dict[str, dict[int, list[float]]]],
+    task: str, model: str, condition: str, contract: str, runtime: str,
+) -> list[dict]:
+    """The runs that went into one admission row, including both arms and cohorts.
+
+    Downstream joiners need seed and feedback_mode. This row is pooled, so the list is
+    the join key — not a unique (seed, mode) on the row itself.
+    """
+    records = []
+    for (other, cohort, other_model, other_condition, other_contract, other_runtime), arms in sorted(
+        found.items()
+    ):
+        if (other, other_model, other_condition, other_contract, other_runtime) != (
+            task, model, condition, contract, runtime,
+        ):
+            continue
+        for mode in sorted(arms):
+            for seed in sorted(arms[mode]):
+                records.append({
+                    "seed": int(seed),
+                    "feedback_mode": mode,
+                    "cohort": cohort,
+                })
+    return records
+
+
 def collect(runs_root: Path) -> dict[tuple[str, str, str, str, str, str],
                                      dict[str, dict[int, list[float]]]]:
     """Group curves by task, cohort, model condition, task version, and runtime.
@@ -522,6 +549,9 @@ def main(argv: list[str] | None = None) -> int:
             "judged_on_cohort": best["cohort"] if best else None,
             "pooled_open_loop_seeds": len(
                 pooled_open.get((task, model, condition, contract, runtime), {})
+            ),
+            "runs": pooled_run_records(
+                found, task, model, condition, contract, runtime,
             ),
             "paired_cohorts": cohort_gaps,
             "saturation": sat,

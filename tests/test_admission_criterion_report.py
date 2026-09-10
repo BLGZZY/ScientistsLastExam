@@ -128,6 +128,27 @@ class PoolingTests(unittest.TestCase):
             self.assertEqual(len(report["rows"]), 1)
             self.assertEqual(report["distinct_task_count"], 1)
 
+    def test_each_row_lists_the_runs_it_pooled(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            open_loop = [0.5] * 8
+            feedback = [0.5, 0.52, 0.54, 0.57, 0.60, 0.65, 0.70, 0.75]
+            write_run(root, "paired", "open0", "T/X", "selection_blind", 0, open_loop)
+            write_run(root, "paired", "fb0", "T/X", "normal", 0, feedback)
+            write_run(root, "paired", "open1", "T/X", "selection_blind", 1, open_loop)
+            write_run(root, "paired", "fb1", "T/X", "normal", 1, feedback)
+            report = self.run_report(root)
+            runs = report["rows"][0]["runs"]
+            self.assertEqual(
+                {(item["seed"], item["feedback_mode"], item["cohort"]) for item in runs},
+                {
+                    (0, "selection_blind", "paired"),
+                    (0, "normal", "paired"),
+                    (1, "selection_blind", "paired"),
+                    (1, "normal", "paired"),
+                },
+            )
+
     @staticmethod
     def run_report(root: Path) -> dict:
         with TemporaryDirectory() as out:

@@ -24,6 +24,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -80,9 +81,10 @@ def classify_discovery_row(row: dict, role: str, axes: dict | None = None) -> di
     return out
 
 
-# Admission tables from report_admission_criterion.py are pooled across seeds.
-# Triple reports are one row per run. Join on the run fields when both sides
-# have them; otherwise require a unique coarse match instead of dropping axes.
+# Admission tables from report_admission_criterion.py are pooled across seeds and
+# feedback arms. Triple reports are one row per run. Join the pooled run list when
+# the admission producer wrote it; otherwise attach every coarse match instead of
+# treating a paired queue as unpublished axes.
 COARSE_IDENTITY_FIELDS = (
     "task",
     "model",
@@ -92,6 +94,7 @@ COARSE_IDENTITY_FIELDS = (
 )
 RUN_IDENTITY_FIELDS = COARSE_IDENTITY_FIELDS + ("seed", "feedback_mode")
 IDENTITY_FIELDS = RUN_IDENTITY_FIELDS
+AXIS_NAMES = ("mechanism", "fdr", "refusal")
 
 
 def _identity_value(entry: dict, field: str) -> str:
@@ -99,40 +102,116 @@ def _identity_value(entry: dict, field: str) -> str:
     return "" if value is None else str(value)
 
 
-def triple_index(document: dict) -> dict[tuple[str, ...], dict]:
-    """Index fully attributable triple rows by run identity, including seed and mode."""
-    grouped: dict[tuple[str, ...], list[dict]] = {}
+def _run_key(entry: dict) -> tuple[str, ...]:
+    return tuple(_identity_value(entry, field) for field in RUN_IDENTITY_FIELDS)
+
+
+def _coarse_key(entry: dict) -> tuple[str, ...]:
+    return tuple(_identity_value(entry, field) for field in COARSE_IDENTITY_FIELDS)
+
+
+def _run_attachment(entry: dict, axes: dict | None, cohort=None) -> dict:
+    attached = {
+        "seed": entry.get("seed"),
+        "feedback_mode": entry.get("feedback_mode"),
+        "axes": axes,
+    }
+    if cohort is not None:
+        attached["cohort"] = cohort
+    return attached
+
+
+def _axes_view(attached: list[dict]) -> dict | None:
+    """Presence union across pooled runs. Values are never averaged."""
+    if not attached:
+        return None
+    if len(attached) == 1:
+        return attached[0].get("axes")
+    out = {}
+    for name in AXIS_NAMES:
+        present = [
+            (item.get("axes") or {}).get(name)
+            for item in attached
+        ]
+        present = [entry for entry in present if entry is not None]
+        if not present:
+            out[name] = None
+        elif all(entry == present[0] for entry in present):
+            out[name] = present[0]
+        else:
+            out[name] = {
+                "value": None,
+                "status": "pooled_across_runs",
+                "run_count": len(present),
+            }
+    return out
+
+
+def index_triples(document: dict) -> tuple[dict[tuple[str, ...], dict], dict[tuple[str, ...], list[dict]]]:
+    """Index ok triple rows by full run identity and by coarse admission identity."""
+    by_run: dict[tuple[str, ...], dict] = {}
+    by_coarse: dict[tuple[str, ...], list[dict]] = {}
     for entry in document.get("rows") or []:
         if entry.get("status") != "ok":
             continue
         if any(entry.get(field) is None for field in COARSE_IDENTITY_FIELDS):
             continue
-        key = tuple(_identity_value(entry, field) for field in RUN_IDENTITY_FIELDS)
-        grouped.setdefault(key, []).append(entry)
-    return {
-        key: entries[0].get("axes")
-        for key, entries in grouped.items()
-        if len(entries) == 1
-    }
+        axes = entry.get("axes")
+        run_key = _run_key(entry)
+        if run_key not in by_run:
+            by_run[run_key] = axes
+        by_coarse.setdefault(_coarse_key(entry), []).append(
+            _run_attachment(entry, axes)
+        )
+    return by_run, by_coarse
+
+
+def triple_index(document: dict) -> dict[tuple[str, ...], dict]:
+    """Index fully attributable triple rows by run identity, including seed and mode."""
+    by_run, _by_coarse = index_triples(document)
+    return by_run
 
 
 def lookup_triple_axes(
-    triples: dict[tuple[str, ...], dict], row: dict,
-) -> tuple[dict | None, str]:
-    """Join one admission row to triple axes without silently dropping multi-seed queues."""
-    exact = tuple(_identity_value(row, field) for field in RUN_IDENTITY_FIELDS)
-    if exact in triples:
-        return triples[exact], "exact"
+    by_run: dict[tuple[str, ...], dict],
+    by_coarse: dict[tuple[str, ...], list[dict]],
+    row: dict,
+) -> tuple[dict | None, list[dict], str]:
+    """Join one pooled admission row onto every matching triple run."""
+    coarse = _coarse_key(row)
+    listed = row.get("runs")
+    if isinstance(listed, list) and listed:
+        attached = []
+        for spec in listed:
+            if not isinstance(spec, dict):
+                continue
+            exact = coarse + (
+                _identity_value(spec, "seed"),
+                _identity_value(spec, "feedback_mode"),
+            )
+            if exact not in by_run:
+                continue
+            attached.append(_run_attachment(spec, by_run[exact], spec.get("cohort")))
+        if len(attached) == len([
+            spec for spec in listed if isinstance(spec, dict)
+        ]) and attached:
+            return _axes_view(attached), attached, "pooled_runs"
+        if attached:
+            return _axes_view(attached), attached, "pooled_runs_partial"
+        return None, [], "no_match"
+    exact = _run_key(row)
+    if exact in by_run:
+        attached = [_run_attachment(row, by_run[exact])]
+        return by_run[exact], attached, "exact"
     named_run = row.get("seed") is not None or row.get("feedback_mode") is not None
     if named_run:
-        return None, "no_match"
-    coarse = tuple(_identity_value(row, field) for field in COARSE_IDENTITY_FIELDS)
-    matches = [axes for key, axes in triples.items() if key[:5] == coarse]
+        return None, [], "no_match"
+    matches = list(by_coarse.get(coarse) or [])
     if len(matches) == 1:
-        return matches[0], "unique_coarse"
+        return matches[0].get("axes"), matches, "unique_coarse"
     if len(matches) > 1:
-        return None, "ambiguous_multi_run"
-    return None, "no_match"
+        return _axes_view(matches), matches, "all_coarse"
+    return None, [], "no_match"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -148,24 +227,23 @@ def main(argv: list[str] | None = None) -> int:
 
     document = json.loads(Path(args.admission).read_text(encoding="utf-8"))
     roles = role_index()
-    triples = {}
+    by_run, by_coarse = {}, {}
     if args.triple:
         triple_doc = json.loads(Path(args.triple).read_text(encoding="utf-8"))
-        triples = triple_index(triple_doc)
+        by_run, by_coarse = index_triples(triple_doc)
     rows_in = document.get("rows") or []
     rows = []
     for row in rows_in:
         task = str(row.get("task") or "")
         role = roles.get(task) or roles.get(task.split("/")[-1]) or ""
-        axes, join_status = lookup_triple_axes(triples, row) if triples else (None, "no_triple")
+        if args.triple:
+            axes, attached, join_status = lookup_triple_axes(by_run, by_coarse, row)
+        else:
+            axes, attached, join_status = None, [], "no_triple"
         classified = classify_discovery_row(row, role, axes)
         classified["axes_join"] = join_status
-        if join_status == "ambiguous_multi_run":
-            classified["axes_join_reason"] = (
-                "multiple triple runs share this identity; seed and feedback_mode "
-                "are required to join axes"
-            )
-            classified["missing_axes"] = []
+        if attached:
+            classified["axes_by_run"] = attached
         rows.append(classified)
 
     discovery = [r for r in rows if r.get("scientific_role") == "discovery"]
@@ -173,14 +251,16 @@ def main(argv: list[str] | None = None) -> int:
         1 for r in discovery
         if r.get("verdict") != r.get("public_score_verdict")
     )
+    join_hist = dict(Counter(row.get("axes_join") for row in rows))
+    discovery_join_hist = dict(Counter(row.get("axes_join") for row in discovery))
     report = {
-        "schema_version": 2,
+        "schema_version": 3,
         "source_admission": str(Path(args.admission)),
         "note": (
             "Discovery rows never inherit measures_iteration from combined_score. "
-            "Axes are not averaged. Multi-seed triple rows join on seed and "
-            "feedback_mode; an admission row that omits them is not treated as "
-            "missing every axis."
+            "Axes are not averaged. Admission rows list the runs they pooled; "
+            "those runs are attached as axes_by_run. A coarse identity with "
+            "several triple rows is all_coarse, not unpublished axes."
         ),
         "row_count": len(rows),
         "discovery_row_count": len(discovery),
@@ -188,11 +268,14 @@ def main(argv: list[str] | None = None) -> int:
         "discovery_rows_missing_axes": sum(
             bool(row.get("missing_axes")) for row in discovery
         ),
+        "axes_join": join_hist,
+        "discovery_axes_join": discovery_join_hist,
         "rows": rows,
     }
     Path(args.output).write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print("discovery admission: %d rows, %d discovery, %d verdicts rewritten"
           % (len(rows), len(discovery), rewritten))
+    print("axes_join:", join_hist)
     print("report:", args.output)
     return 0
 
