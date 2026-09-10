@@ -1,0 +1,80 @@
+schema_version: 2
+scientific_question: Disentangle intrinsic feedback from report-mediated feedback
+  and sensor readout paths
+artifact: An explicit model or abstention, finite parameter estimates for a supported
+  mechanism, and calibrated decision confidence.
+oracle:
+  model: Linearized four-population input-state-output system with report-gated coupling,
+    calibrated sensor and actuator mixing, lowpass observation, and additive feedthrough;
+    omitted slow state as unsupported model
+  feasibility: strict typed query and submission validation; per-unit counter-keyed
+    sampling; budget overspend permanently invalidates the instance
+  deterministic: true
+normalization:
+  baseline: overconfident legal baseline scores zero; blanket none and blanket abstention
+    also score exactly zero
+  reference: runnable public-input-only likelihood fit, calibration uncertainty included,
+    finite experiment allocation
+  score: mean mechanism utility minus the 0.2 blanket refusal utility, divided by
+    0.8; false discovery rate, refusal, coverage, confidence and heldout diagnostics
+    remain separate
+citations:
+- id: doi:10.1016/S1053-8119(03)00202-7
+  title: Dynamic causal modelling
+invariants:
+- Repeated observation units are independent and charged; splitting a batch preserves
+  the same counter-indexed observations.
+- The public problem contains no class, split, seed or latent parameter.
+- Global random state does not affect the frozen generator.
+- Malformed or overspent candidates fail closed without exposing exception text.
+- An omitted mechanism is not the same scientific decision as a valid null mechanism.
+known_shortcuts: >-
+  972 fixed raw-response strategies: best development 0, selected heldout 0; reference
+  development 0.877046. This finite builder grid is not an exhaustive upper bound.
+  Repository-visible seeds permit memorization outside the sandbox and are not a
+  server-held challenge. Constant and low-dimensional probes plus ablations are
+  recorded in references/known_best.md; difficulty is not certified.
+review:
+  domain: pending_external
+  evaluator_security: automated_checks_passed_pending_external_review
+provenance:
+  class: procedural
+  target_source: Original bounded simulator with counter-seeded development and heldout
+    instances; no human data or reported particle discoveries.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+novelty_risk:
+  level: medium
+  rationale: Known scientific inference methods in a new budgeted coupling of controls,
+    mechanism alternatives, and misspecification; see Task.md nearest-neighbour comparison.
+    The simulator is an abstraction, not a validated model of the unresolved fundamental
+    question.
+lineage:
+  status: complete
+  builder_model_ids:
+  - gpt-6-astra
+  builder_scaffolds:
+  - codex-desktop
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: Builder checks separated incorrect mechanism claims from
+    continuous parameter error and incorporated calibration uncertainty into the reference
+    fit. No independent frontier draw yet.
+  shortcut_discoverer: builder_invariant_and_low_dimensional_probes
+  frozen_before_eval: false
+  freeze_timestamp: null
+construction_audit:
+  status: builder_checked_pending_external
+  author_domain: gpt-6-astra
+  reviewer_domain: pending_external
+  expert_hours: null
+  red_team_rounds: 1
+  oracle_disagreement_status: pending_independent_domain_review
+  independent_recomputation_status: runnable equation and likelihood checks in tests
+    and verification witness
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
