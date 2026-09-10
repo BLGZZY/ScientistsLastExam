@@ -97,8 +97,8 @@ For a supported signal, choosing the correct law earns
 `max(0, 1-abs(log(m_hat/m_true))/0.25)`; wrong law, null or refusal earns zero.
 Correct `none` on null worlds and refusal on outside-family worlds each earn 1;
 wrong answers and malformed worlds earn zero. The hidden development mixture has
-blanket-refusal and blanket-null utility 0.2. The selection metric is
-`max(0, (mean_utility-0.2)/0.8)`. A perfect oracle scores 1; an all-abstain, all-none
+20 signal, 4 null and 4 outside-family worlds, with blanket-refusal and blanket-null
+utility 1/7. The selection metric is `max(0, (mean_utility-1/7)/(6/7))`. A perfect oracle scores 1; an all-abstain, all-none
 or shipped baseline scores exactly 0. No noisy reference witness defines the ceiling.
 
 The false-discovery rate uses **false positive model claims / all positive model
@@ -116,18 +116,16 @@ calibration; do not call this a solution to an open cosmology problem.
 
 ## Measured construction checks
 
-Builder measurements: reference development/heldout = 0.523728/0.572739;
-one-unit acquisition = 0.235410/0.336504; ignored gain = 0.317555/0.250000;
-fixed halo = 0.512025/0.490536. Development losses relative to the reference
-are 0.288319, 0.206173 and 0.011703 respectively. The last is weak evidence
-for halo-fitting necessity. The best of 480 low-dimensional strategies reaches
-0.380949 on development and 0 on its single heldout confirmation.
-
-These are finite synthetic measurements, not independent frontier-model calibration.
-Reference/source details and full precision are in the reviewer evidence.
+Builder checks compare full inference with reduced observations, restricted nuisance
+models, constant-parameter decisions and single-target strategies; reviewer evidence
+records the measurements and remaining limitations. These checks do not constitute
+independent frontier-model calibration.
 
 ## 关系与区别 / nearest neighbours
 
+- `Gravitation/PTAHellingsDowns`: paid observations, mechanism decisions and refusal;
+  here continuous particle-mass recovery and nuclear-target energy spectra replace
+  angular correlations between pulsar pairs.
 - `ParticlePhysics/LookElsewhereAnomaly`: one scanned peak and global significance;
   here an entire shared physical spectrum across three targets and nuisance controls.
 - `ParticlePhysics/DiscrepantMeasurements`: published estimates and discrepancy;

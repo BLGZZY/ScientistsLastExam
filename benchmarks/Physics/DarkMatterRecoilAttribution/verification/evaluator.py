@@ -11,6 +11,17 @@ ENERGIES = np.geomspace(2.0, 65.0, 18)
 SPEEDS = np.array([160.0, 260.0, 380.0])
 BUDGET = 12
 LAWS = ("contact", "q2")
+SIGNALS_PER_LAW = 10
+NULL_WORLDS = 4
+REFUSAL_WORLDS = 4
+MASS_RANGE = (22.0, 125.0)
+SPLIT_SEEDS = {"development": 731500, "heldout": 941700}
+WORLD_COUNT = 2 * SIGNALS_PER_LAW + NULL_WORLDS + REFUSAL_WORLDS
+ZERO_UTILITY = max(NULL_WORLDS, REFUSAL_WORLDS) / WORLD_COUNT
+
+
+def normalized_score(utilities):
+    return max(0.0, (float(np.mean(utilities)) - ZERO_UTILITY) / (1 - ZERO_UTILITY))
 
 
 def bin_widths(energy):
@@ -39,7 +50,7 @@ def recoil_kernel(mass, ratio, power, target, energy):
     return bin_widths(e)[:, None] * coherence * form[:, None] * (q[:, None] / 0.05) ** power * eta
 
 
-def make_world(seed, kind):
+def make_world(seed, kind, *, signal_mass=None):
     rng = np.random.default_rng(seed)
     mass = float(np.exp(rng.uniform(np.log(22), np.log(125))))
     ratio = float(rng.uniform(0.65, 1.35))
@@ -47,17 +58,23 @@ def make_world(seed, kind):
     background = rng.uniform(4, 12, 3)
     gain = rng.uniform(0.75, 1.25, 3)
     energy = ENERGIES * rng.uniform(0.92, 1.08)
+    if signal_mass is not None:
+        mass = float(signal_mass)
+    target_masses = np.full(3, mass)
+    power = 2 if kind == "q2" else 0
+    if kind == "unsupported":
+        # Each marginal is an exact allowed recoil spectrum. Only the joint
+        # common-mass hypothesis fails: no target gets a telltale narrow peak.
+        lo, hi = np.log(MASS_RANGE)
+        phase = rng.uniform()
+        target_masses = np.exp(lo + ((phase + rng.permutation(3) / 3) % 1) * (hi - lo))
+        power = int(rng.choice([0, 2]))
     rates = []
     for t in range(3):
         if kind == "none":
             signal = np.zeros_like(energy)
         else:
-            power = {"contact": 0, "q2": 2, "unsupported": 0}[kind]
-            signal = recoil_kernel(mass, ratio, power, t, energy) @ weights
-            if kind == "unsupported":
-                # An instrumental recoil-like excess violates the shared-halo spectrum.
-                signal += rng.uniform(25, 55) * np.exp(
-                    -0.5 * ((energy - rng.uniform(18, 35)) / 2.5) ** 2)
+            signal = recoil_kernel(target_masses[t], ratio, power, t, energy) @ weights
         rates.append(gain[t] * (signal + bin_widths(energy) * (background[t] * np.exp(-energy / 32.0) + 1.5)))
     problem = {
         "targets": [{"name": name, "mass_number": a, "protons": z}
@@ -72,7 +89,30 @@ def make_world(seed, kind):
     }
     return dict(seed=seed, kind=kind, mass=mass, ratio=ratio, weights=weights,
                 background=background, gain=gain, energy=energy, rates=np.array(rates),
+                target_masses=target_masses, power=power,
                 problem=problem)
+
+
+def split_worlds(split):
+    """Stratify each law independently over log mass, without selecting seeds by score."""
+    base = SPLIT_SEEDS[split]
+    rng = np.random.default_rng([base, 20260910])
+    lo, hi = np.log(MASS_RANGE)
+    # Paired strata also prevent the two independently stratified laws from
+    # accidentally clustering together. Randomly assign the two laws within
+    # each pair; neither law owns the low/high side of every mass interval.
+    count = 2 * SIGNALS_PER_LAW
+    quantiles = (np.arange(count) + rng.uniform(.25, .75, count)) / count
+    pairs = np.exp(lo + quantiles.reshape(-1, 2) * (hi - lo))
+    for pair in pairs:
+        rng.shuffle(pair)
+    masses = {law: rng.permutation(pairs[:, j]) for j, law in enumerate(LAWS)}
+    kinds = list(LAWS) * SIGNALS_PER_LAW + ["none"] * NULL_WORLDS + ["unsupported"] * REFUSAL_WORLDS
+    for i in np.random.default_rng(base + 79).permutation(len(kinds)):
+        i = int(i)
+        kind = kinds[i]
+        mass = masses[kind][i // len(LAWS)] if kind in LAWS else None
+        yield make_world(base + i * 101, kind, signal_mass=mass)
 
 
 class Campaign:
@@ -149,14 +189,11 @@ def score_world(world, answer):
 def evaluate(candidate):
     all_rows = []
     results = {}
-    for split, seed_base in (("development", 731500), ("heldout", 941700)):
+    for split in SPLIT_SEEDS:
         rows = []
-        kinds = ["contact", "q2"] * 3 + ["none"] * 2 + ["unsupported"] * 2
         # Public instruments and call count carry no seed, split or class indicator.
-        for i in np.random.default_rng(seed_base + 79).permutation(len(kinds)):
-            i = int(i)
-            kind = kinds[i]
-            w = make_world(seed_base + i * 101, kind)
+        for w in split_worlds(split):
+            kind = w["kind"]
             lab = Campaign(w)
             try:
                 # A fresh process and tmpfs per world, including the split boundary.
@@ -173,19 +210,18 @@ def evaluate(candidate):
             row.update(split=split, kind=kind, units=lab.used)
             rows.append(row)
         n = len(rows)
-        raw = sum(r["mechanism"] for r in rows) / n
         claims = sum(r["claim"] for r in rows)
         false = sum(r["false_claim"] for r in rows)
         supported = [r for r in rows if r["kind"] in LAWS]
         rejected = [r for r in rows if r["kind"] == "unsupported"]
-        values = {"mechanism_score": max(0.0, (raw - 0.2) / 0.8),
+        values = {"mechanism_score": normalized_score([r["mechanism"] for r in rows]),
                   "false_discovery_rate": false / claims if claims else 0.0,
                   "false_discovery_count": false, "claim_count": claims,
                   "correct_refusal_rate": sum(r["correct_refusal"] for r in rejected) / len(rejected),
                   "refusal_world_count": len(rejected),
                   "discovery_coverage": sum(r["claim"] for r in supported) / len(supported),
                   "supported_world_count": len(supported),
-                  "none_correct_rate": sum(r["model"] == "none" for r in rows if r["kind"] == "none") / 2,
+                  "none_correct_rate": sum(r["model"] == "none" for r in rows if r["kind"] == "none") / NULL_WORLDS,
                   "valid_rate": sum(r["valid"] for r in rows) / n,
                   "mean_units": sum(r["units"] for r in rows) / n,
                   "confidence_brier": sum(r["confidence_brier"] for r in rows) / n}

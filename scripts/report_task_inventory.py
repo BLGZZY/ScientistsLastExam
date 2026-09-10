@@ -127,7 +127,7 @@ CHINESE_NAMES = {
 # people deciding which task to look at. A task without an entry fails the inventory test,
 # so a new package cannot silently ship without one.
 CHINESE_BRIEFS = {
-    "ParticlePhysics/DarkMatterRecoilAttribution": ("受预算限制联合多靶材谱、背景与增益控制，判断反冲定律并估计质量", "机制与质量恢复；模型错设拒答、假发现和留出表现分列"),
+    "ParticlePhysics/DarkMatterRecoilAttribution": ("受预算限制联合多靶材谱、背景与增益控制,判断反冲定律并估计质量", "机制与质量恢复;模型错设拒答、假发现和留出表现分列"),
     'Microbiology/MetagenomeCompositionAssignment': (
         "从收费 marker 计数中恢复分类单元与丰度,保留近缘别名并识别参考库不足",
         "组成恢复、别名/库外拒答与假发现率分列"),

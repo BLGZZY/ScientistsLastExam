@@ -1,5 +1,4 @@
 """Scientific and adversarial invariants for ParticlePhysics/DarkMatterRecoilAttribution."""
-import copy
 import importlib.util
 import math
 import platform
@@ -7,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 from scipy.integrate import quad
-from scipy.linalg import expm
 from sle.metric_visibility import search_visible_metrics
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -50,27 +48,24 @@ def test_counter_seeded_batch_and_query_order_equivalence():
     for key in ('counts', 'background_counts', 'calibration_counts'):
         assert np.array_equal(np.array(batch[key]), np.array(first[key]) + second[key])
     assert first != second
-BAD = [None, {}, [], 'model', {'abstain': 1}, {'confidence': float('nan')}, {'model': []}, {'model': 'invalid'}, {'abstain': False, 'confidence': True}, {'abstain': True, 'confidence': float('inf')}, {'abstain': True, 'confidence': -1}, {'model': 'contact', 'mass_gev': float('nan')}, {'model': 'recurrent', 'feedback': True, 'report_feedback': 0.5}, {'model': 'report_only', 'feedback': 0.1, 'report_feedback': 0.5}]
+BAD = [None, {}, [], 'model', {'abstain': 1}, {'confidence': float('nan')}, {'model': []}, {'model': 'invalid'}, {'abstain': False, 'confidence': True}, {'abstain': True, 'confidence': float('inf')}, {'abstain': True, 'confidence': -1}, {'model': 'contact', 'mass_gev': float('nan')}, {'model': 'q2', 'mass_gev': True}, {'model': 'contact', 'mass_gev': 9.9}]
 
-@pytest.mark.parametrize('module', [MODULE])
 @pytest.mark.parametrize('answer', BAD)
-def test_malformed_answers_do_not_crash_or_gain_refusal_credit(module, answer):
-    result = module.evaluate(lambda *args: answer)
+def test_malformed_answers_do_not_crash_or_gain_refusal_credit(answer):
+    result = MODULE.evaluate(lambda *args: answer)
     assert result['combined_score'] == result['valid'] == 0
     assert result['development_correct_refusal_rate'] == 0
     assert all((not r['valid'] for r in result['per_instance']))
 
-@pytest.mark.parametrize('module', [MODULE])
-def test_exceptions_are_sanitized(module):
+def test_exceptions_are_sanitized():
 
     def candidate(*args):
         raise RuntimeError('candidate-controlled-token-do-not-echo')
-    result = module.evaluate(candidate)
+    result = MODULE.evaluate(candidate)
     assert result['valid'] == result['combined_score'] == 0
     assert 'candidate-controlled' not in str(result)
 
-@pytest.mark.parametrize('module', [MODULE])
-def test_caught_overbudget_is_sticky(module):
+def test_caught_overbudget_is_sticky():
 
     def candidate(problem, experiment):
         req = {'target': 0, 'units': problem['budget_units'] + 1}
@@ -79,16 +74,15 @@ def test_caught_overbudget_is_sticky(module):
         except ValueError:
             pass
         return {'abstain': True}
-    result = module.evaluate(candidate)
+    result = MODULE.evaluate(candidate)
     assert result['valid'] == result['combined_score'] == 0
 
-@pytest.mark.parametrize('module', [MODULE])
-def test_degenerate_strategies_and_global_rng_independence(module):
+def test_degenerate_strategies_and_global_rng_independence():
     for answer in ({'abstain': True}, {'model': 'none'}):
-        first = module.evaluate(lambda *args: answer)
+        first = MODULE.evaluate(lambda *args: answer)
         np.random.seed(777)
         np.random.random(1000)
-        second = module.evaluate(lambda *args: answer)
+        second = MODULE.evaluate(lambda *args: answer)
         assert first == second
         assert first['combined_score'] == 0 and first['valid'] == 1
         assert first['development_claim_count'] == 0
@@ -102,21 +96,16 @@ def test_correct_law_wrong_parameter_not_reclassified_as_false_discovery():
     row = MODULE.score_world(w, {'model': 'contact', 'mass_gev': 250})
     assert row['mechanism'] == 0 and row['false_claim'] is False
 
-def test_oracle_ceiling_recomputable_without_reference_score_literal():
-    for (module, kinds) in ((MODULE, ['contact', 'q2', 'none', 'unsupported']),):
-        for kind in kinds:
-            w = module.make_world(512, kind)
-            answer = {'model': kind}
-            if kind == 'unsupported':
-                answer = {'abstain': True}
-            elif True and kind != 'none':
-                answer['mass_gev'] = w['mass']
-            elif False and kind != 'none':
-                answer.update(feedback=w['parameters']['edges'][-2], report_feedback=w['parameters']['edges'][-1])
-            assert module.score_world(w, answer)['mechanism'] == 1
+@pytest.mark.parametrize('kind', ['contact', 'q2', 'none', 'unsupported'])
+def test_oracle_ceiling_recomputable_without_reference_score_literal(kind):
+    world = MODULE.make_world(512, kind)
+    answer = {'abstain': True} if kind == 'unsupported' else {'model': kind}
+    if kind in MODULE.LAWS:
+        answer['mass_gev'] = world['mass']
+    assert MODULE.score_world(world, answer)['mechanism'] == 1
 
-@pytest.mark.parametrize('module', [MODULE])
-def test_mutating_public_problem_cannot_raise_budget(module):
+
+def test_mutating_public_problem_cannot_raise_budget():
 
     def candidate(problem, experiment):
         problem['budget_units'] = 10 ** 9
@@ -125,10 +114,9 @@ def test_mutating_public_problem_cannot_raise_budget(module):
         except ValueError:
             pass
         return {'abstain': True}
-    assert module.evaluate(candidate)['valid'] == 0
+    assert MODULE.evaluate(candidate)['valid'] == 0
 
-@pytest.mark.parametrize('module', [MODULE])
-def test_world_boundaries_reset_candidate_session_including_split(module):
+def test_world_boundaries_reset_candidate_session_including_split():
 
     class StatefulProxy:
         resets = 0
@@ -142,9 +130,9 @@ def test_world_boundaries_reset_candidate_session_including_split(module):
             self.calls += 1
             return {'abstain': True}
     candidate = StatefulProxy()
-    result = module.evaluate(candidate)
+    result = MODULE.evaluate(candidate)
     assert result['valid'] == 1
-    assert candidate.calls == 20 and candidate.resets == 19
+    assert candidate.calls == 2 * MODULE.WORLD_COUNT and candidate.resets == candidate.calls - 1
 
 @pytest.mark.skipif(platform.system() != 'Linux', reason='Bubblewrap requires Linux')
 @pytest.mark.parametrize('task,entry', [('ParticlePhysics/DarkMatterRecoilAttribution', 'infer_recoil')])
@@ -156,3 +144,66 @@ def test_secure_worlds_cannot_share_globals_or_tmpfs(task, entry, tmp_path):
     result = evaluate_candidate(find_task(task, include_uncertified=True), path, timeout_s=60)
     assert result['valid'] == 1 and result['combined_score'] == 0
     assert result['development_valid_rate'] == result['heldout_valid_rate'] == 1
+
+
+@pytest.mark.parametrize('split', ['development', 'heldout'])
+def test_mass_coverage_is_stratified_for_each_law(split):
+    worlds = list(MODULE.split_worlds(split))
+    for law in MODULE.LAWS:
+        masses = np.array([w['mass'] for w in worlds if w['kind'] == law])
+        assert len(masses) >= 20 // len(MODULE.LAWS)
+        positions = np.log(masses / 22) / np.log(125 / 22)
+        assert sorted(np.floor(positions * len(masses)).astype(int)) == list(range(len(masses)))
+        assert masses.max() / masses.min() > 4
+    other = 'heldout' if split == 'development' else 'development'
+    assert {w['seed'] for w in worlds}.isdisjoint(w['seed'] for w in MODULE.split_worlds(other))
+
+
+@pytest.mark.parametrize('split', ['development', 'heldout'])
+def test_unsupported_has_exact_supported_single_target_twins(split):
+    # Even all exposure units cannot tell these paired worlds apart on one target:
+    # same rates, controls, calibration AND sampled observations. Joint inference
+    # is needed; a generic narrow-peak detector cannot certify misspecification.
+    for world in MODULE.split_worlds(split):
+        if world['kind'] != 'unsupported':
+            continue
+        assert max(world['target_masses']) / min(world['target_masses']) > 3
+        for t in range(3):
+            twin = MODULE.make_world(world['seed'], 'q2' if world['power'] else 'contact',
+                                     signal_mass=world['target_masses'][t])
+            np.testing.assert_array_equal(world['rates'][t], twin['rates'][t])
+            request = {'target': t, 'units': MODULE.BUDGET}
+            assert MODULE.Campaign(world)(request) == MODULE.Campaign(twin)(request)
+
+
+@pytest.fixture(scope='module')
+def reference_metrics():
+    reference = load(ROOT / 'benchmarks/Physics/DarkMatterRecoilAttribution/verification/reference_profile.py')
+    return MODULE.evaluate(reference.infer_recoil)
+
+
+def test_every_constant_mass_even_with_perfect_decisions_stays_far_below_reference(reference_metrics):
+    audit = load(ROOT / 'scripts/audit_dark_matter_recoil.py')
+    for split in MODULE.SPLIT_SEEDS:
+        bound = audit.constant_mass_bound(MODULE, list(MODULE.split_worlds(split)))
+        # This exact continuous bound includes perfect law/null/refusal decisions,
+        # so it dominates the reviewer's reference-decisions + constant-mass attack.
+        assert bound['score'] <= .6 * reference_metrics[split + '_mechanism_score']
+
+
+def test_full_four_way_single_target_probe_stays_below_reference(reference_metrics):
+    from sle.registry import find_task
+    audit = load(ROOT / 'scripts/audit_dark_matter_recoil.py')
+    probe = audit.shortcut_probe(find_task('ParticlePhysics/DarkMatterRecoilAttribution', include_uncertified=True))
+    for split, value in [('development', probe['development_best']), ('heldout', probe['heldout_selected_once'])]:
+        reference = reference_metrics[split + '_mechanism_score']
+        assert value < .7 * reference
+        assert reference - value > .15
+
+
+def test_null_refusal_and_scientific_ceiling_follow_the_actual_mixture():
+    for split in MODULE.SPLIT_SEEDS:
+        worlds = list(MODULE.split_worlds(split))
+        for answer in [{'abstain': True}, {'model': 'none'}]:
+            assert MODULE.normalized_score([MODULE.score_world(w, answer)['mechanism'] for w in worlds]) == 0
+        assert MODULE.normalized_score([1] * len(worlds)) == 1
