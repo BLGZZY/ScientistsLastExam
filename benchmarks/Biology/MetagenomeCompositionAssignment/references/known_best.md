@@ -56,6 +56,18 @@ Local report SHA256:
 `bc89792d8ca5bd0191637af9a023e29cac2c7d4c22aec92960aa3f55d86820be`.
 That raw report is also intentionally uncommitted.
 
+After PR review reduced implementation-specific reference details in the public
+prompt, the same one-proposal protocol ran on clean source
+`1b641fa79609376065c85095d28c06e6adf00d31`. The valid proposal scored
+0.734877700 development and 0.745303334 held-out, below the reference, with zero
+false claims and complete alias recovery, refusal and coverage on both splits.
+It used 3072 input and 9175 output tokens; the full run, including baseline and
+proposal evaluation, took 323.635 seconds with no infrastructure failures.
+Candidate SHA256: `b5f80b9e586aef7a1131171fa557134ab3bb83452ce54bd08b261dbe261bfc4b`.
+Local report SHA256:
+`541909cbe3ebeaea9c70ac6621b82e3cf5f572569b37250d795eb172c45cac55`.
+The raw report remains intentionally uncommitted.
+
 coarse0: valid=1.0; 0.745179412/0.744529192; wall 221.384s; SHA256 `9bbac7448354329b33f8f24c07b25f65b31e01749dfb042d57cd8b1a2edc3177`.
 
 coarse1: valid=1.0; 0.728135743/0.744529192; wall 292.779s; SHA256 `05ec9101d1938067a6f7c27f777a6036da63125102af567d2146fca051231a9d`.
@@ -103,6 +115,7 @@ the Linux contribution gate also passes.
 | Terra coarse2, independent first proposal | 0.747863 | 0.744293 |
 | Terra formal `batch_evolve` first proposal | 0.743402 | not search-visible |
 | Terra formal task-local-runtime first proposal | 0.750256 | not search-visible |
+| Terra final-prompt formal first proposal | 0.734878 | not search-visible |
 
 The evaluator, baseline and scientific-contract section of Task.md are byte-for-byte
 unchanged from the frozen calibration source.

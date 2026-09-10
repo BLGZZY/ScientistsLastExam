@@ -81,7 +81,10 @@ lineage:
     the task-local evaluator bridge, the same protocol on clean 226b263 produced
     one valid first proposal at 0.750256148, again below reference, with no
     infrastructure failures. Its raw report remains uncommitted under the same
-    policy.
+    policy. After the public reference recipe was reduced during PR review, one
+    final clean-tree batch_evolve first proposal on 1b641fa scored 0.734877700
+    development and 0.745303334 held-out, valid with all four reported axes full.
+    It remained below the reference; its raw report is likewise uncommitted.
   shortcut_discoverer: internal_reference_and_manual_review
   frozen_before_eval: false
   freeze_timestamp: null
