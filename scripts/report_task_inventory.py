@@ -34,6 +34,7 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 # Chinese name per task, shown in the first column beside the English directory name. The
 # directory name is the identifier and never changes; this is what a Chinese reader scans for.
 CHINESE_NAMES = {
+    'Microbiology/MetagenomeCompositionAssignment': "宏基因组组成指认",
     "Acoustics/RoomImpulseResponse": "房间声学处理设计",
     "Algorithm/GraphFromDistances": "距离查询重建图",
     "Algorithm/MatrixMultiplicationRank": "矩阵乘法秩",
@@ -82,6 +83,7 @@ CHINESE_NAMES = {
     "Exoplanets/TransmissionSpectrumSpecies": "透射光谱分子判定",
     "DiscreteGeometry/SpherePackingCertificate": "球堆积上界证书",
     "QuantumFoundations/BellBoundCertificate": "贝尔不等式上界证书",
+    "QuantumFoundations/FourSettingMomentCertificate": "四设置矩子集证书",
     "InformationTheory/ShannonCapacityCertificate": "奇圈香农容量双侧证书",
     "Mathematics/NonlinearCodeRecords": "非线性码规模纪录",
     "MedicinalChemistry/MolecularLeadOptimization": "分子先导组合优化",
@@ -124,6 +126,9 @@ CHINESE_NAMES = {
 # people deciding which task to look at. A task without an entry fails the inventory test,
 # so a new package cannot silently ship without one.
 CHINESE_BRIEFS = {
+    'Microbiology/MetagenomeCompositionAssignment': (
+        "从收费 marker 计数中恢复分类单元与丰度,保留近缘别名并识别参考库不足",
+        "组成恢复、别名/库外拒答与假发现率分列"),
     "Acoustics/RoomImpulseResponse": (
         "布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度",
         "清晰度/混响/均匀度综合效用;一阶反射代理与镜像源长程计算排序不同,含安装误差与老化偏移"),
@@ -297,6 +302,9 @@ CHINESE_BRIEFS = {
         "四个实例(CHSH 与三种基词预算下的 I3322)取均值,不设上限。分数是所证界到已知量子值距离的"
         "对数进步:免费的层级 1 界记 0,已发表的层级 2 界记 1,超过则大于 1。有理数精确验证,"
         "提交浮点数直接判零——数值 SDP 解不是证明。"),
+    "QuantumFoundations/FourSettingMomentCertificate": (
+        "I_4422^13 的精确 SOS,额外矩必须是冻结 NPA2 池的 Hamming-k 子集,不是 I3322 自由选词。",
+        "从精确层级 1 最优 5/8 到全池有理证书约 0.455331 的对数进度;参考约 0.58,无上限。"),
     "Mathematics/NonlinearCodeRecords": (
         "在四个 A(n,d) 未闭合的参数上构造尽可能大的二元码;已发表纪录全部由非线性码持有,线性构造够不到",
         "从平凡分块重复构造到已发表纪录的平均进度,无上限;验证只是逐对汉明距离计数,与构造方法无关"),
@@ -530,23 +538,53 @@ README_START = "<!-- task-inventory:start -->"
 README_END = "<!-- task-inventory:end -->"
 
 
+CHINESE_COUNT_WORDS = {
+    1: "一", 2: "二", 3: "三", 4: "四", 5: "五",
+    6: "六", 7: "七", 8: "八", 9: "九",
+}
+
+
 def render_readme_counts(rows: list[dict]) -> str:
     forms = Counter(r["form"] for r in rows)
     statuses = Counter(r["status"] for r in rows)
+    opt_cells = Counter(r["cell"] for r in rows if r["form"] == "optimization")
+    disc_cells = Counter(r["cell"] for r in rows if r["form"] == "discovery")
     disciplines = sorted({r["discipline"] for r in rows})
-    lines = [README_START, "",
-             "当前 %d 个任务包,横跨 %d 个学科,%s。" % (
-                 len(rows), len(disciplines), "、".join(
-                     "%d 个 %s" % (count, status) for status, count in sorted(statuses.items()))),
-             "",
-             "optimization(%d 个):在受约束的设计空间里把目标做得更好。" % forms["optimization"],
-             "discovery(%d 个):从受预算约束的观测里恢复机制,或拒绝不受支持的机制宣称。" % forms["discovery"],
-             "",
-             "| 学科 | optimization | discovery |", "|---|---:|---:|"]
-    for discipline in disciplines:
-        counts = Counter(r["form"] for r in rows if r["discipline"] == discipline)
-        lines.append("| %s | %d | %d |" % (discipline, counts["optimization"], counts["discovery"]))
-    lines.extend(["", "此处数量与 [完整任务清单](TASKS.md) 由同一注册表生成。", "", README_END])
+    opt_named = (
+        "engineering_design", "combinatorial", "molecular_design", "certificate_bound",
+    )
+    status_bits = []
+    for status in ("certified", "candidate"):
+        if statuses.get(status):
+            status_bits.append("%d 个 %s" % (statuses[status], status))
+    for status, count in sorted(statuses.items()):
+        if status not in ("certified", "candidate"):
+            status_bits.append("%d 个 %s" % (count, status))
+    lines = [
+        README_START, "",
+        "当前 %d 个任务包,横跨 %d 个学科,%s。" % (
+            len(rows), len(disciplines), "、".join(status_bits)),
+        "这一段的每个数字都由 `tests/test_readme_inventory_counts.py` 对着注册表核,改不动就是改错了。",
+        "",
+        "optimization(%d 个):在受约束的设计空间里把目标做得更好。分%s类:" % (
+            forms["optimization"], CHINESE_COUNT_WORDS[len(opt_named)]),
+        "工程设计(换热器、桁架、薄膜、解码器等 %d 题)、开放组合纪录(圆堆积、cap set、Ramsey、kissing、"
+        % opt_cells["engineering_design"],
+        "张量秩、超排列等 %d 题,无上限)、分子与大分子设计(%d 题)、证书上界(%d 题,产物是可验证的论证本身,"
+        % (opt_cells["combinatorial"], opt_cells["molecular_design"],
+           opt_cells["certificate_bound"]),
+        "分数是论证证明出的界有多强)。",
+        "分数由做出来的东西有多好决定;公开纪录是 score = 1 的见证,不是封顶。",
+        "",
+        "discovery(%d 个):从受预算约束的观测里恢复一个机制,或判断根本没有机制可恢复。"
+        % forms["discovery"],
+        "分五类:公式 %d、结构 %d、证据 %d、物质 %d、参数反演 %d。每题包含三种世界:"
+        % (disc_cells["formula"], disc_cells["structure"], disc_cells["evidence"],
+           disc_cells["substance"], disc_cells["parameter_inversion"]),
+        "机制在候选可表达的模型族内(该找出来)、机制在族外、根本没有机制(后两种该拒答)。",
+        "候选看不到自己面对的是哪一类。",
+        "", README_END,
+    ]
     return "\n".join(lines)
 
 

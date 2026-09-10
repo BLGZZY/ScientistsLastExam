@@ -42,22 +42,19 @@ Scientists' Last Exam
 
 <!-- task-inventory:start -->
 
-当前 83 个任务包,横跨 7 个学科,78 个 candidate、5 个 certified。
+当前 85 个任务包,横跨 7 个学科,5 个 certified、80 个 candidate。
+这一段的每个数字都由 `tests/test_readme_inventory_counts.py` 对着注册表核,改不动就是改错了。
 
-optimization(41 个):在受约束的设计空间里把目标做得更好。
-discovery(42 个):从受预算约束的观测里恢复机制,或拒绝不受支持的机制宣称。
+optimization(42 个):在受约束的设计空间里把目标做得更好。分四类:
+工程设计(换热器、桁架、薄膜、解码器等 16 题)、开放组合纪录(圆堆积、cap set、Ramsey、kissing、
+张量秩、超排列等 17 题,无上限)、分子与大分子设计(5 题)、证书上界(4 题,产物是可验证的论证本身,
+分数是论证证明出的界有多强)。
+分数由做出来的东西有多好决定;公开纪录是 score = 1 的见证,不是封顶。
 
-| 学科 | optimization | discovery |
-|---|---:|---:|
-| Biology | 3 | 5 |
-| Chemistry | 5 | 8 |
-| ComputerScience | 4 | 3 |
-| EarthScience | 0 | 7 |
-| Engineering | 8 | 5 |
-| Mathematics | 15 | 4 |
-| Physics | 6 | 10 |
-
-此处数量与 [完整任务清单](TASKS.md) 由同一注册表生成。
+discovery(43 个):从受预算约束的观测里恢复一个机制,或判断根本没有机制可恢复。
+分五类:公式 6、结构 6、证据 9、物质 6、参数反演 16。每题包含三种世界:
+机制在候选可表达的模型族内(该找出来)、机制在族外、根本没有机制(后两种该拒答)。
+候选看不到自己面对的是哪一类。
 
 <!-- task-inventory:end -->
 
