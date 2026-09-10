@@ -6,6 +6,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 from sle.registry import find_task
+from fwi_test_support import reference_result
 ROOT = Path(__file__).resolve().parents[1]
 EARTH = ROOT / 'benchmarks' / 'EarthScience'
 TASKS = {'WavePropagation/ActiveFullWaveformInversion': ('ActiveFullWaveformInversion', 'invert_velocity_model', 'discovery')}
@@ -42,12 +43,12 @@ class NewEarthSciencePackageTests(unittest.TestCase):
         for (task_id, (directory, entrypoint, role)) in TASKS.items():
             evaluator = _load(EARTH / directory / 'verification' / 'evaluator.py', 'new_earth_reference_evaluator_' + directory)
             reference = _load(EARTH / directory / 'verification' / 'reference_solver.py', 'new_earth_reference_' + directory)
-            result = evaluator.evaluate(getattr(reference, entrypoint))
+            result = reference_result()
             self.assertEqual(result['valid'], 1.0, task_id)
             self.assertGreater(result['combined_score'], 0.05, task_id)
             self.assertGreater(result['combined_score'], 0.3, task_id)
             self.assertLess(result['combined_score'], 0.8, task_id)
-            one_shot = evaluator.evaluate(lambda *args: reference.invert_velocity_model(*args[:-1], min(args[-1], 1)))
+            one_shot = reference_result(budget=1)
             self.assertEqual(one_shot['valid'], 1.0)
             self.assertGreater(result['combined_score'], one_shot['combined_score'] + 0.1)
             self.assertGreater(result['robustness_score'], one_shot['robustness_score'])

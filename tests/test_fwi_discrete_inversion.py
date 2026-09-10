@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+from fwi_test_support import reference_result
 
 ROOT = Path(__file__).resolve().parents[1]
 TASK = ROOT / "benchmarks/EarthScience/ActiveFullWaveformInversion"
@@ -141,9 +142,7 @@ def test_reference_preserves_explicit_source_subsets(sources, budget, expected):
 
 @pytest.fixture(scope="module")
 def reference_metrics():
-    oracle = load(TASK / "verification/evaluator.py", "spatial_regression_oracle")
-    reference = load(TASK / "verification/reference_solver.py", "spatial_regression_reference")
-    return oracle.evaluate(reference.invert_velocity_model)
+    return reference_result()
 
 
 @pytest.mark.parametrize("refine,threshold,lenses", [(False, 0.12, 1), (False, 0.24, 1), (True, 0.20, 1), (False, 0.20, 2), (False, 0.20, 3)])
