@@ -30,13 +30,16 @@ invariants:
 - An omitted mechanism is not the same scientific decision as a valid null mechanism.
 known_shortcuts: >-
   Revised four-way single-target probe includes null/contact/q2/abstain, all three
-  targets, 1/3/12 observation units and 233280 configurations. Measurements and exact
-  continuous constant-mass bounds are in references/known_best.md section 4 and the
-  revision evidence. Regression gates require even perfect-class constant masses to
+  targets, 1/3/12 observation units and 233280 configurations: best development
+  0.249535, selected heldout 0.130670, against reference 0.548485/0.499983. Exact
+  continuous constant-mass bounds with perfect class decisions are 0.296772/0.294044
+  (54.1%/58.8% of reference). Details are in references/known_best.md section 4 and
+  experiments/dark_matter_recoil_revision_2026-09-10.json. Regression gates require even perfect-class constant masses to
   stay at most 0.6 times reference on both splits, and the development-selected
   four-way probe below 0.7 times reference with more than 0.15 absolute separation.
   This finite builder probe is not exhaustive; repository-visible seeds permit
-  memorization outside the sandbox, and difficulty is not certified.
+  memorization outside the sandbox, and difficulty is not certified. Fixed-halo ablation improves heldout by 0.040096;
+  free halo fitting is not claimed to be uniformly necessary.
 review:
   domain: pending_external
   evaluator_security: automated_checks_passed_pending_external_review

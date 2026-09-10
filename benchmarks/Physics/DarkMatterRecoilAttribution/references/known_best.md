@@ -50,23 +50,34 @@ than four units per target; `ignore_gain` fixes gain to unity; `fixed_halo` cons
 all three speed amplitudes to be equal. Scores can vary slightly with SciPy version:
 the original audit and external review differed by about 2e-4 on one ablation.
 
-Revision construction measurements (local CI-pinned NumPy 1.24.4 / SciPy 1.10.1;
-Linux sandbox replay is recorded separately before submission):
+Linux sandbox measurements at clean source commit `fcddf932` (Python 3.12.3,
+NumPy 1.26.4, SciPy 1.13.1), recorded with full precision and provenance in
+`experiments/dark_matter_recoil_revision_2026-09-10.json`:
 
 | Strategy | Development | Heldout | Development loss vs reference |
 |---|---:|---:|---:|
-| baseline | 0.000000 | 0.000000 | 0.548432 |
-| reference | 0.548432 | 0.499973 | 0.000000 |
-| one_unit | 0.366044 | 0.235573 | 0.182388 |
-| ignore_gain | 0.341797 | 0.222797 | 0.206634 |
-| fixed_halo | 0.438221 | 0.540079 | 0.110211 |
+| baseline | 0.000000 | 0.000000 | 0.548485 |
+| reference | 0.548485 | 0.499983 | 0.000000 |
+| one_unit | 0.366034 | 0.235572 | 0.182450 |
+| ignore_gain | 0.341713 | 0.223420 | 0.206771 |
+| fixed_halo | 0.438222 | 0.540079 | 0.110262 |
 
-The fixed-halo restriction improves heldout by 0.040106. This can reflect finite-data
+The fixed-halo restriction improves heldout by 0.040096. This can reflect finite-data
 regularization and mass/halo degeneracy; it does not support a claim that free halo
 fitting is always necessary. No seed was selected to make every ablation lose on
 heldout. The reference refuses all four development outside-family worlds, but only
 three of four heldout ones; heldout false-discovery rate is 1/21. These are small
 synthetic samples, not population guarantees or calibrated discovery significance.
+
+Baseline runs took 9.94 / 9.73 seconds; reference runs took 36.12 / 36.07 seconds,
+12.0% of the 300-second runner timeout. Each pair's complete metrics JSON was
+identical. The outer `frontier_eval/run_eval.py` also returned the same reference
+score and valid=1; a nonexistent candidate retained its failure diagnostic.
+
+Local CI-pinned NumPy 1.24.4 / SciPy 1.10.1 gave reference 0.548432 / 0.499973;
+the largest ablation discrepancy was 0.000623 on ignored-gain heldout. This is
+cross-version numerical sensitivity, not within-version nondeterminism. The tests
+assert scientific separation and invariants rather than those score literals.
 
 ## 4. Shortcut probe
 
@@ -104,7 +115,9 @@ The original 480-strategy audit omitted refusal, so its reported 0.380949 maximu
 not the four-way family's maximum. The external reviewer found 0.507354 against
 reference 0.523729; using reference decisions and constant mass 57.8 yielded 0.657182.
 Run `.research/pr72_review_reproduction.py` to remeasure original commit `a222b592`
-with the completed probe and exact constant bounds. It labels oracle-assisted bounds
+with the completed probe and exact constant bounds. Our expanded family also finds
+a legal full-budget xenon shortcut scoring 0.644077 on the original development set;
+its development-selected heldout score is only 0.084405. It labels oracle-assisted bounds
 separately from legal candidates and records source hashes and environment versions.
 
 ## 5. Frontier draw

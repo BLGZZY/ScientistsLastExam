@@ -94,7 +94,7 @@ def make_world(seed, kind, *, signal_mass=None):
 
 
 def split_worlds(split):
-    """Stratify each law independently over log mass, without selecting seeds by score."""
+    """Pair log-mass strata across laws without selecting base seeds by score."""
     base = SPLIT_SEEDS[split]
     rng = np.random.default_rng([base, 20260910])
     lo, hi = np.log(MASS_RANGE)

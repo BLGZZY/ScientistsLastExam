@@ -12,7 +12,7 @@ These are catalog-level builder checks, not independent domain review or a proof
 
 This branch adds one task, its independent tests/audit script, registration and
 source-bound evidence. It has no dependency on another new task package.
-Reference/baseline repeats, ablations and the 480-strategy finite builder probe
+Reference/baseline repeats, ablations and the completed 233280-strategy four-way finite builder probe
 are reproducible with `scripts/audit_dark_matter_recoil.py`. Numerical equations and parameter
 recovery are checked separately from the reported discovery/refusal/coverage axes.
 
@@ -20,3 +20,11 @@ Status remains `candidate`. Independent model calibration, domain review and
 server-held reissue are outstanding. Repository-visible instances can be memorized;
 low-dimensional probes are not an exhaustive upper bound. The numerical model's
 scientific assumptions and limits are documented in Task.md and known_best.md.
+
+PR 72 review revision: paired log-mass strata and locally supported but jointly
+inconsistent target spectra replace the clustered signal sample and narrow-peak
+misspecification. Exact constant-mass bounds supplement the finite probe. The closest
+structural neighbour, `Gravitation/PTAHellingsDowns`, shares paid mechanism decisions
+and refusal; this task additionally estimates mass from nuclear-target energy spectra.
+Historical 480-strategy evidence is retained as pre-revision evidence, not reused to
+claim the revised task passed. See `references/known_best.md` in the task package.
