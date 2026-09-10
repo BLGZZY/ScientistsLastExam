@@ -135,13 +135,12 @@ def test_world_boundaries_reset_candidate_session_including_split():
     assert candidate.calls == 2 * MODULE.WORLD_COUNT and candidate.resets == candidate.calls - 1
 
 @pytest.mark.skipif(platform.system() != 'Linux', reason='Bubblewrap requires Linux')
-@pytest.mark.parametrize('task,entry', [('ParticlePhysics/DarkMatterRecoilAttribution', 'infer_recoil')])
-def test_secure_worlds_cannot_share_globals_or_tmpfs(task, entry, tmp_path):
+def test_secure_worlds_cannot_share_globals_or_tmpfs(tmp_path):
     from sle.evaluate import evaluate_candidate
     from sle.registry import find_task
     path = tmp_path / 'candidate.py'
-    path.write_text(f"from pathlib import Path\nseen = False\ndef {entry}(problem, experiment):\n    global seen\n    marker = Path('/tmp/previous_world')\n    if seen or marker.exists():\n        return []\n    seen = True\n    marker.write_text('visited')\n    return {{'model': 'none'}}\n")
-    result = evaluate_candidate(find_task(task, include_uncertified=True), path, timeout_s=60)
+    path.write_text("from pathlib import Path\nseen = False\ndef infer_recoil(problem, experiment):\n    global seen\n    marker = Path('/tmp/previous_world')\n    if seen or marker.exists():\n        return []\n    seen = True\n    marker.write_text('visited')\n    return {'model': 'none'}\n")
+    result = evaluate_candidate(find_task('ParticlePhysics/DarkMatterRecoilAttribution', include_uncertified=True), path, timeout_s=60)
     assert result['valid'] == 1 and result['combined_score'] == 0
     assert result['development_valid_rate'] == result['heldout_valid_rate'] == 1
 
