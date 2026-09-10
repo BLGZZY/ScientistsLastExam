@@ -22,6 +22,14 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--family", choices=("one", "three", "stop", "depth"), default="depth")
     args = parser.parse_args()
+    # Capture the code actually loaded, not a later checkout after long fits.
+    source_state = {
+        "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+        "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()),
+        "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
+                          for p in (TASK / "verification/evaluator.py",
+                                    ROOT / ".research/pr20_fwi_continuous_probe.py", Path(__file__))},
+    }
     oracle = load(TASK / "verification/evaluator.py", "threshold_oracle")
     probe = load(ROOT / ".research/pr20_fwi_continuous_probe.py", "threshold_probe")
     probe.LENSES, probe.STOP_NOISE, probe.DEPTH_CAP = {
@@ -74,13 +82,9 @@ def main():
     for split, metric in (("development", "combined_score"), ("heldout", "robustness_score")):
         assert abs(replay[metric] - best[split]["normalized"]) < 1e-12
     report = {
+        **source_state,
         "scope": "threshold_postprocessing_with_uncached_dev_selected_replay",
         "family": args.family, "platform": platform.platform(),
-        "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-        "dirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()),
-        "source_sha256": {str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest()
-                          for p in (TASK / "verification/evaluator.py",
-                                    ROOT / ".research/pr20_fwi_continuous_probe.py", Path(__file__))},
         "sweep": sweep, "selected_on_development": best, "uncached_replay": replay,
     }
     args.output.write_text(json.dumps(report, indent=2) + "\n")
