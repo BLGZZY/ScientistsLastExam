@@ -1,0 +1,36 @@
+{
+  "source_provenance": {
+    "git_available": true,
+    "git_revision": "f7785a6bb50a71fdf6cc45a3f12ef8eec986fc7b",
+    "source_tree_dirty": false,
+    "source_changes": [],
+    "source_scope": [
+      "sle",
+      "scripts",
+      "tests",
+      "benchmarks",
+      "requirements-upstream.txt"
+    ],
+    "command": [
+      "/Users/zzy/SLE/pr20-ci-pins-env/bin/python",
+      "scripts/audit_task_maturity.py",
+      "--output",
+      "/tmp/pr72-final-maturity.json",
+      "--markdown-output",
+      "/tmp/pr72-final-maturity.md"
+    ]
+  },
+  "inventory_count": 86,
+  "issues": [],
+  "execution_passed": true,
+  "trusted_evidence": true,
+  "trust_decision": "trusted_clean_revision",
+  "awaiting_freeze": [
+    "Microbiology/MetagenomeCompositionAssignment",
+    "Sensors/IMUBiasCalibration",
+    "ParticlePhysics/DarkMatterRecoilAttribution",
+    "QuantumFoundations/FourSettingMomentCertificate"
+  ],
+  "stale_tasks": [],
+  "scope": "Summary of audit_task_maturity.py; candidate additions still await maintainer freeze and calibration"
+}

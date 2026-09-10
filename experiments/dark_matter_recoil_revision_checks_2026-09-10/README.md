@@ -20,6 +20,8 @@ reference implementation is unchanged from the reviewed PR.
   Constant mass with reference decisions reaches 0.657192, and a legal single-target
   full-budget strategy reaches 0.644077, both above the old 0.523728 reference.
   This explicitly distinguishes oracle-assisted bounds from legal candidates.
+- `linux-focused.txt`: final documented source `f7785a6`, 110 passed with no skips;
+  includes genuine Bubblewrap process/tmpfs isolation and all new scoring regressions.
 - `local-focused.txt`: CI-pinned NumPy 1.24.4 / SciPy 1.10.1 on macOS, 101 passed,
   9 platform-dependent tests skipped. This is not a substitute for Linux isolation.
 
