@@ -59,7 +59,37 @@ class FocalMechanismStressInversionTests(unittest.TestCase):
             traction = tensor @ normal
             shear = traction - (traction @ normal) * normal
             cosine = float(shear @ slip / np.linalg.norm(shear))
-            self.assertAlmostEqual(abs(cosine), 1.0, places=10)
+            self.assertAlmostEqual(cosine, 1.0, places=10)
+
+    def test_zero_noise_preserves_planes_in_both_hemispheres_and_at_poles(self):
+        rng = np.random.default_rng(9123)
+        frames = [
+            (np.array([0., 0., sign]), np.array([1., 0., 0.]))
+            for sign in (-1., 1.)
+        ]
+        frames += [(np.array([1., 0., 0.]), np.array([0., 0., sign]))
+                   for sign in (-1., 1.)]
+        for _ in range(300):
+            normal = rng.normal(size=3)
+            normal /= np.linalg.norm(normal)
+            slip = rng.normal(size=3)
+            slip -= normal * (normal @ slip)
+            slip /= np.linalg.norm(slip)
+            frames.append((normal, slip))
+        for normal, slip in frames:
+            for n, s in ((normal, slip), (slip, normal), (-normal, -slip)):
+                plane = self.ev._plane_from_normal_slip(n, s)
+                observed = self.ev._perturb_plane(rng, *plane, 0.0)
+                self.assertGreaterEqual(observed[1], 0.0)
+                self.assertLessEqual(observed[1], 90.0)
+                actual_n = self.ref._normal_from_plane(*observed[:2])
+                actual_s = self.ref._slip_from_plane(*observed)
+                # An equivalent nodal-plane representation preserves the full
+                # double-couple tensor, not just an unsigned normal direction.
+                expected = np.outer(n, s) + np.outer(s, n)
+                actual = np.outer(actual_n, actual_s) + np.outer(actual_s, actual_n)
+                np.testing.assert_allclose(actual, expected, atol=2e-12, rtol=0)
+                self.assertAlmostEqual(abs(float(n @ actual_n)), 1.0, places=12)
 
     def test_truth_submission_scores_one(self):
         for spec in self.ev._BASE_DEVELOPMENT_SPECS:
@@ -80,7 +110,7 @@ class FocalMechanismStressInversionTests(unittest.TestCase):
         first = self.ev.evaluate(self.sol.infer_stress_orientation)
         second = self.ev.evaluate(self.sol.infer_stress_orientation)
         self.assertEqual(first["valid"], 1.0)
-        self.assertLessEqual(abs(first["combined_score"]), 0.01)
+        self.assertEqual(first["combined_score"], 0.0)
         self.assertEqual(json.dumps(first, sort_keys=True, default=str),
                          json.dumps(second, sort_keys=True, default=str))
         result = self.ev.evaluate(self.ref.infer_stress_orientation)
@@ -96,7 +126,10 @@ class FocalMechanismStressInversionTests(unittest.TestCase):
                                 self.ref.infer_stress_orientation(problem, reanalyze, 0))
         self.assertEqual(free["valid"], 1.0)
         self.assertGreater(full["combined_score"] - free["combined_score"], 0.1)
-        self.assertGreater(full["robustness_score"] - free["robustness_score"], 0.3)
+        # Revised normalized-shear reference also improves the free path.
+        # Pin a useful >0.05 gain, not the old Michael solver's >0.3 gap.
+        # This is an information-value regression, not admission evidence.
+        self.assertGreater(full["robustness_score"] - free["robustness_score"], 0.05)
 
     def test_reanalysis_is_charged_once_per_event(self):
         world = self.ev._world((33011, "supported"))

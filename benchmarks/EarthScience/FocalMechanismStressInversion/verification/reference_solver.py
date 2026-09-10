@@ -1,165 +1,183 @@
-"""Truth-blind reference witness: Michael linear inversion with plane iteration.
+"""Public-input stress inversion with paired-mechanism averaging and active re-analysis.
 
-Uses only the public catalog and the charged re-analysis budget. Alternates a
-least-squares deviatoric-stress fit (shear traction projected onto the chosen planes)
-with per-event nodal-plane swaps that reduce misfit; after a first pass it re-analyzes
-the worst-misfit events within budget and refits. A bimodal or flat misfit tail
-declares a mixed or incoherent catalog and refuses. It is a method witness, not
-independent verification; it deliberately lacks bootstrapped confidence intervals,
-gridded global search over the four-dimensional stress space, and multi-regime
-clustering.
+Averaging double-couple tensors uses both noisy nodal-plane observations without
+assuming either one is the fault. A four-parameter normalized-shear fit then selects
+planes jointly with stress; paid observations target ambiguous plane choices. This is
+an executable method reference, not proof of difficulty or independent certification.
 """
-
 from __future__ import annotations
 
-import math
+import itertools
 
 import numpy as np
+from scipy.optimize import minimize
 
-MISFIT_TAIL_DEG = 35.0
-MEAN_MISFIT_DEG = 18.0
-TAIL_FRACTION = 0.18
+GRID_SHAPE = (8, 6, 9, 4)
+MULTISTART_COUNT = 3
+# Chosen on development diagnostics; probes use independent gates and report sweeps.
+MEAN_MISFIT_DEG = 20.0
 
 
 def _normal_from_plane(strike, dip):
-    tr, dp = math.radians(strike), math.radians(dip)
-    return np.asarray((-math.sin(dp) * math.sin(tr),
-                       -math.sin(dp) * math.cos(tr), math.cos(dp)))
+    tr, dp = np.deg2rad([strike, dip])
+    return np.array([-np.sin(dp) * np.sin(tr), -np.sin(dp) * np.cos(tr), np.cos(dp)])
 
 
 def _slip_from_plane(strike, dip, rake):
-    tr, dp, lam = math.radians(strike), math.radians(dip), math.radians(rake)
-    return (math.cos(lam) * np.asarray((math.cos(tr), -math.sin(tr), 0.0))
-            + math.sin(lam) * np.asarray((math.cos(dp) * math.sin(tr),
-                                          math.cos(dp) * math.cos(tr), math.sin(dp))))
+    tr, dp, lam = np.deg2rad([strike, dip, rake])
+    return (np.cos(lam) * np.array([np.cos(tr), -np.sin(tr), 0.0])
+            + np.sin(lam) * np.array([np.cos(dp) * np.sin(tr),
+                                      np.cos(dp) * np.cos(tr), np.sin(dp)]))
 
 
-def _shear(tensor, normal):
-    traction = tensor @ normal
-    shear = traction - (traction @ normal) * normal
-    magnitude = float(np.linalg.norm(shear))
-    return shear / magnitude if magnitude > 1e-12 else shear
+def _planes(events):
+    normals = np.array([[_normal_from_plane(*event[key][:2])
+                         for key in ("plane_a", "plane_b")] for event in events])
+    slips = np.array([[_slip_from_plane(*event[key])
+                       for key in ("plane_a", "plane_b")] for event in events])
+    return normals, slips
 
 
-def _misfit_deg(tensor, normal, slip):
-    shear = _shear(tensor, normal)
-    norm = float(np.linalg.norm(shear))
-    if norm < 1e-9:
-        return 90.0
-    cosine = float(np.clip(shear @ slip / norm, -1.0, 1.0))
-    return math.degrees(math.acos(abs(cosine)))
+def _moment_observations(events):
+    normals, slips = _planes(events)
+    moments = (normals[:, :, :, None] * slips[:, :, None, :]
+               + slips[:, :, :, None] * normals[:, :, None, :])
+    return moments.mean(axis=1)
 
 
-def _solve_tensor(planes):
-    """Weighted least squares on shear-parallel-to-slip for fixed plane choices."""
-    matrix, target = [], []
-    for normal, slip in planes:
-        rows = np.zeros((3, 5))
-        rows[0] = [normal[0], 0.0, normal[1], normal[2], 0.0]
-        rows[1] = [0.0, normal[1], normal[0], 0.0, normal[2]]
-        rows[2] = [-normal[2], -normal[2], 0.0, normal[0], normal[1]]
-        projector = np.eye(3) - np.outer(normal, normal)
-        matrix.append(projector @ rows)
-        target.append(projector @ slip)
-    matrix = np.vstack(matrix)
-    target = np.concatenate(target)
-    solution = np.linalg.lstsq(matrix, target, rcond=None)[0]
-    return np.asarray([
-        [solution[0], solution[2], solution[3]],
-        [solution[2], solution[1], solution[4]],
-        [solution[3], solution[4], -solution[0] - solution[1]]])
+def _paired_planes(moments, events):
+    # Project the mean symmetric moment tensor onto its double-couple directions.
+    _, vectors = np.linalg.eigh(moments)
+    normal = (vectors[:, :, 2] + vectors[:, :, 0]) / np.sqrt(2.0)
+    slip = (vectors[:, :, 2] - vectors[:, :, 0]) / np.sqrt(2.0)
+    observed_normals, _ = _planes(events)
+    swap = (np.abs(np.sum(normal * observed_normals[:, 0], axis=1))
+            < np.abs(np.sum(slip * observed_normals[:, 0], axis=1)))
+    normal, slip = (np.where(swap[:, None], slip, normal),
+                    np.where(swap[:, None], normal, slip))
+    normals = np.stack([normal, slip], axis=1)
+    slips = np.stack([slip, normal], axis=1)
+    # A plane normal and its slip must flip together to preserve the moment tensor.
+    signs = np.where(np.sum(normals * observed_normals, axis=2) >= 0.0, 1.0, -1.0)
+    return normals * signs[:, :, None], slips * signs[:, :, None]
 
 
-def _axes_and_ratio(tensor):
-    eigenvalues, eigenvectors = np.linalg.eigh(tensor)
-    order = np.argsort(eigenvalues)[::-1]
-    eigenvalues = eigenvalues[order]
-    sigma1 = eigenvectors[:, order[0]]
-    sigma3 = eigenvectors[:, order[2]]
-    span = eigenvalues[0] - eigenvalues[2]
-    ratio = float(np.clip((eigenvalues[0] - eigenvalues[1]) / span, 0.0, 1.0)) \
-        if span > 1e-12 else 0.5
-    return sigma1, sigma3, ratio
+def _stress_frames(parameters):
+    parameters = np.atleast_2d(parameters)
+    trend, plunge, rotation = np.deg2rad(parameters[:, :3]).T
+    ratio = parameters[:, 3]
+    one = np.stack([np.cos(plunge) * np.cos(trend),
+                    np.cos(plunge) * np.sin(trend), np.sin(plunge)], axis=1)
+    tangent = np.stack([-np.sin(trend), np.cos(trend), np.zeros_like(trend)], axis=1)
+    other = np.cross(one, tangent)
+    three = np.cos(rotation)[:, None] * tangent + np.sin(rotation)[:, None] * other
+    two = np.cross(three, one)
+    tensors = (one[:, :, None] * one[:, None, :]
+               + (1.0 - ratio[:, None, None]) * two[:, :, None] * two[:, None, :])
+    return tensors, one, three
 
 
-def _angles(axis):
-    norm = np.linalg.norm(axis)
-    plunge = math.degrees(math.asin(max(-1.0, min(1.0, axis[2] / norm))))
-    trend = math.degrees(math.atan2(axis[1], axis[0])) % 360.0
-    return [float(trend), float(plunge)]
+def _angles(tensors, normals, slips):
+    traction = np.einsum("gij,epj->gepi", tensors, normals)
+    shear = traction - normals[None] * np.sum(traction * normals[None], axis=-1)[..., None]
+    magnitude = np.linalg.norm(shear, axis=-1)
+    cosine = np.sum(shear * slips[None], axis=-1) / np.maximum(magnitude, 1e-12)
+    # Slip polarity is observable. abs(cosine) would also admit reversed stress.
+    return np.rad2deg(np.arccos(np.clip(cosine, -1.0, 1.0)))
 
 
-def _fit(events, choice):
-    planes = [(normal, slip) for (normal, slip), pick in zip(events, choice)]
-    tensor = _solve_tensor(planes)
-    misfits = [_misfit_deg(tensor, normal, slip) for normal, slip in events]
-    return tensor, misfits
+def _parameter_grid(shape):
+    return np.array(list(itertools.product(
+        np.linspace(0.0, 360.0, shape[0], endpoint=False),
+        np.linspace(0.0, 90.0, shape[1]),
+        np.linspace(0.0, 180.0, shape[2], endpoint=False),
+        np.linspace(0.05, 0.95, shape[3]))))
+
+
+def _fit_stress(normals, slips, weights, grid, previous=None, continuous=True):
+    tensors, _, _ = _stress_frames(grid)
+    objectives = []
+    for begin in range(0, len(grid), 256):
+        angles = _angles(tensors[begin:begin + 256], normals, slips)
+        objectives.extend(np.mean(np.min(angles, axis=2) ** 2 * weights[None], axis=1))
+    order = np.argsort(objectives, kind="stable")
+    parameters = grid[order[0]].copy()
+    if continuous:
+        def objective(candidate):
+            angles = _angles(_stress_frames(candidate)[0], normals, slips)[0]
+            return float(np.mean(np.min(angles, axis=1) ** 2 * weights))
+
+        starts = [grid[i] for i in order[:MULTISTART_COUNT]]
+        if previous is not None:
+            starts.insert(0, previous)
+        best = objective(parameters)
+        for start in starts:
+            result = minimize(objective, start, method="L-BFGS-B",
+                              bounds=[(None, None), (-90.0, 90.0), (None, None), (0.0, 1.0)],
+                              options={"maxiter": 180, "ftol": 1e-11})
+            # Keep the best finite candidate, even if an iteration limit was reached.
+            if np.isfinite(result.fun) and result.fun < best:
+                parameters, best = result.x, float(result.fun)
+    angles = _angles(_stress_frames(parameters)[0], normals, slips)[0]
+    return parameters, angles
+
+
+def _axis_angles(axis):
+    return [float(np.rad2deg(np.arctan2(axis[1], axis[0])) % 360.0) % 360.0,
+            float(np.rad2deg(np.arcsin(np.clip(axis[2], -1.0, 1.0))))]
+
+
+def _solve(problem, reanalyze, budget_units, *, pair_averaging=True,
+           continuous=True, weighted=True, query_policy="ambiguous", grid_shape=GRID_SHAPE,
+           refusal_threshold=MEAN_MISFIT_DEG):
+    input_events = list(problem["events"])
+    events = [dict(event) for event in sorted(input_events, key=lambda event: event["id"])]
+    coarse_sigma = float(problem["noise_sigma_deg"])
+    fine_sigma = float(problem["reanalysis_sigma_deg"])
+    moments = _moment_observations(events)
+    uncertainty = np.full(len(events), coarse_sigma)
+    grid = _parameter_grid(grid_shape)
+
+    def fit(previous=None):
+        normals, slips = (_paired_planes(moments, events) if pair_averaging else _planes(events))
+        weights = (coarse_sigma / uncertainty) ** 2 if weighted else np.ones(len(events))
+        return _fit_stress(normals, slips, weights, grid, previous, continuous)
+
+    parameters, angles = fit()
+    count = min(int(budget_units), len(events))
+    if query_policy == "first":
+        indices = np.arange(count)
+    elif query_policy == "worst":
+        indices = np.argsort(-np.min(angles, axis=1), kind="stable")[:count]
+    elif query_policy == "ambiguous":
+        indices = np.argsort(np.abs(angles[:, 0] - angles[:, 1]), kind="stable")[:count]
+    else:
+        raise ValueError("unknown acquisition policy")
+    queried = []
+    for index in indices:
+        refreshed = dict(reanalyze(events[index]["id"]))
+        new_moment = _moment_observations([refreshed])[0]
+        precision = 1.0 / coarse_sigma ** 2 + 1.0 / fine_sigma ** 2
+        moments[index] = (moments[index] / coarse_sigma ** 2 + new_moment / fine_sigma ** 2) / precision
+        uncertainty[index] = precision ** -0.5
+        events[index] = refreshed
+        queried.append(refreshed["id"])
+    if count:
+        parameters, angles = fit(parameters)
+    mean_residual = float(np.mean(np.min(angles, axis=1)))
+    diagnostics = {"mean_residual_deg": mean_residual, "queried_ids": queried,
+                   "parameters": parameters.tolist(), "angles_deg": angles.tolist()}
+    if mean_residual > refusal_threshold:
+        return {"sigma1": None, "sigma3": None, "R": None, "plane_assignments": None,
+                "abstain": True, "confidence": 0.1}, diagnostics
+    _, one, three = _stress_frames(parameters)
+    assignment_by_id = {event["id"]: int(choice)
+                        for event, choice in zip(events, np.argmin(angles, axis=1))}
+    return {"sigma1": _axis_angles(one[0]), "sigma3": _axis_angles(three[0]),
+            "R": float(parameters[3]),
+            "plane_assignments": [assignment_by_id[event["id"]] for event in input_events],
+            "abstain": False, "confidence": 0.75}, diagnostics
 
 
 def infer_stress_orientation(problem, reanalyze, budget_units):
-    events = []
-    for event in problem["events"]:
-        events.append((_normal_from_plane(*event["plane_a"][:2]),
-                       _slip_from_plane(*event["plane_a"]),
-                       _normal_from_plane(*event["plane_b"][:2]),
-                       _slip_from_plane(*event["plane_b"]),
-                       event["id"]))
-
-    rng = np.random.default_rng(1234)
-    starts = [[0] * len(events), [1] * len(events)]
-    for _ in range(6):
-        starts.append([int(v) for v in rng.integers(0, 2, size=len(events))])
-
-    def planes_for(choice):
-        return [((normal_a if pick == 0 else normal_b),
-                 (slip_a if pick == 0 else slip_b))
-                for (normal_a, slip_a, normal_b, slip_b, _), pick
-                in zip(events, choice)]
-
-    def converge(choice, rounds):
-        tensor, misfits = _fit(planes_for(choice), choice)
-        for _ in range(rounds):
-            changed = 0
-            for index, (normal_a, slip_a, normal_b, slip_b, _) in enumerate(events):
-                misfit_a = _misfit_deg(tensor, normal_a, slip_a)
-                misfit_b = _misfit_deg(tensor, normal_b, slip_b)
-                better = 0 if misfit_a <= misfit_b else 1
-                if better != choice[index]:
-                    choice[index] = better
-                    changed += 1
-            tensor, misfits = _fit(planes_for(choice), choice)
-            if not changed:
-                break
-        return tensor, misfits
-
-    best_choice, best_tensor, best_misfits = None, None, None
-    for start in starts:
-        choice = list(start)
-        tensor, misfits = converge(choice, 8)
-        if best_misfits is None or float(np.mean(misfits)) < float(np.mean(best_misfits)):
-            best_choice, best_tensor, best_misfits = list(choice), tensor, misfits
-    choice, tensor, misfits = list(best_choice), best_tensor, best_misfits
-
-    # Spend the re-analysis budget on the worst-misfit events, then refit once.
-    worst = sorted(range(len(events)), key=lambda i: -misfits[i])[:int(budget_units)]
-    for index in worst:
-        refreshed = reanalyze(events[index][4])
-        events[index] = (
-            _normal_from_plane(*refreshed["plane_a"][:2]),
-            _slip_from_plane(*refreshed["plane_a"]),
-            _normal_from_plane(*refreshed["plane_b"][:2]),
-            _slip_from_plane(*refreshed["plane_b"]),
-            events[index][4])
-    tensor, misfits = converge(choice, 4)
-
-    mean_misfit = float(np.mean(misfits))
-    tail = float(np.mean([m > MISFIT_TAIL_DEG for m in misfits]))
-    if mean_misfit > MEAN_MISFIT_DEG or tail > TAIL_FRACTION:
-        return {"sigma1": None, "sigma3": None, "R": None,
-                "plane_assignments": None, "abstain": True, "confidence": 0.1}
-
-    sigma1, sigma3, ratio = _axes_and_ratio(tensor)
-    return {
-        "sigma1": _angles(sigma1), "sigma3": _angles(sigma3), "R": ratio,
-        "plane_assignments": list(choice), "abstain": False, "confidence": 0.75,
-    }
+    return _solve(problem, reanalyze, budget_units)[0]

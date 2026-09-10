@@ -1,0 +1,12 @@
+{
+  "timestamp_utc": "2026-09-10T08:57:17.824086+00:00",
+  "phase": "after development and training, before first revised heldout or confirmation evaluation",
+  "selection": "96 events, 10/3 degree noise, normalized shear floor .04; score formula unchanged; reference mean gate20, independent probe default25 and full threshold sweep",
+  "source_sha256": {
+    "benchmarks/EarthScience/FocalMechanismStressInversion/verification/evaluator.py": "91e21fa11db09b7203fc4a6753a920570612564fc5b3eed76d5359fb72640404",
+    "benchmarks/EarthScience/FocalMechanismStressInversion/verification/reference_solver.py": "3d2f071b414fe5a8e41e11d3140d10f72a76d9456236c2e2742934732b7f80e5",
+    ".research/pr74_grid_probe.py": "44d5e5395802141d762c8150e26b5e0a5ea6159f8f794807a03d652305621ddc",
+    "benchmarks/EarthScience/FocalMechanismStressInversion/solution.py": "1aee41922acfaa8bfdc23f7e2c88ad5187318df2965c4915b6b435044e262a83"
+  },
+  "limitations": "Local method confirmation only, not frontier-model calibration or secret server-held data; predeclared seeds in pr74_revision_plan.md."
+}

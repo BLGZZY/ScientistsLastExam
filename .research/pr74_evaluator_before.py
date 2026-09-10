@@ -20,10 +20,10 @@ DIFFICULTY = 3
 _DIFFICULTY_LADDER = {
     1: {"coarse_sigma_deg": 4.0, "fine_sigma_deg": 1.2, "shear_floor": 0.18},
     2: {"coarse_sigma_deg": 6.0, "fine_sigma_deg": 1.8, "shear_floor": 0.16},
-    3: {"coarse_sigma_deg": 10.0, "fine_sigma_deg": 3.0, "shear_floor": 0.04},
+    3: {"coarse_sigma_deg": 8.5, "fine_sigma_deg": 2.6, "shear_floor": 0.14},
 }
 
-EVENT_COUNT = 96
+EVENT_COUNT = 48
 REANALYSIS_BUDGET = 16
 REANALYSIS_COST = 1
 
@@ -61,7 +61,7 @@ def _axis_from_angles(trend_deg, plunge_deg):
 
 
 def _stress_tensor(sigma1_axis, sigma3_axis, ratio):
-    """Normalized reduced tensor with eigenvalues 1, 1-R, 0 (not trace-free)."""
+    """Deviatoric tensor with eigenvalues 1, 1-R, 0 on the given axes."""
     e1 = sigma1_axis / np.linalg.norm(sigma1_axis)
     e3 = sigma3_axis / np.linalg.norm(sigma3_axis)
     e3 = e3 - e1 * (e1 @ e3)
@@ -77,16 +77,12 @@ def _plane_from_normal_slip(normal, slip):
     strike direction (cos s, -sin s, 0) and the up-dip direction
     (cos(d) sin(s), cos(d) cos(s), sin(d)); rake is the slip angle from strike.
     """
-    normal = np.asarray(normal, dtype=float) / np.linalg.norm(normal)
-    slip = np.asarray(slip, dtype=float)
-    if normal[2] < 0.0:
-        normal, slip = -normal, -slip
+    normal = normal / np.linalg.norm(normal)
     dip = math.degrees(math.acos(max(-1.0, min(1.0, normal[2]))))
     strike = math.degrees(math.atan2(-normal[0], -normal[1])) % 360.0
     tr, dipr = math.radians(strike), math.radians(dip)
     cos_lam = slip[0] * math.cos(tr) - slip[1] * math.sin(tr)
-    sin_lam = float(slip @ np.asarray((math.cos(dipr) * math.sin(tr),
-                                       math.cos(dipr) * math.cos(tr), math.sin(dipr))))
+    sin_lam = slip[2] / max(math.sin(dipr), 1e-12)
     lam = math.degrees(math.atan2(sin_lam, cos_lam))
     rake = ((lam + 180.0) % 360.0) - 180.0
     return strike, dip, rake
@@ -138,11 +134,8 @@ def _perturb_plane(rng, strike, dip, rake, sigma_deg):
     noisy = (strike + rng.normal(0, sigma_deg),
              dip + rng.normal(0, sigma_deg),
              rake + rng.normal(0, 2.0 * sigma_deg))
-    tr, dp, lam = np.deg2rad(noisy)
-    normal = np.asarray((-np.sin(dp)*np.sin(tr), -np.sin(dp)*np.cos(tr), np.cos(dp)))
-    slip = (np.cos(lam)*np.asarray((np.cos(tr), -np.sin(tr), 0.0))
-            + np.sin(lam)*np.asarray((np.cos(dp)*np.sin(tr), np.cos(dp)*np.cos(tr), np.sin(dp))))
-    return list(_plane_from_normal_slip(normal, slip))
+    dip = min(max(noisy[1], 5.0), 89.0)
+    return [float(noisy[0] % 360.0), float(dip), float(((noisy[2] + 180.0) % 360.0) - 180.0)]
 
 
 def _world(spec):

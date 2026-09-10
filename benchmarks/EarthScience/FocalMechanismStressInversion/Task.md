@@ -27,13 +27,13 @@ def infer_stress_orientation(problem, reanalyze, budget_units):
 `problem` is a mapping with the keys
 
 ```text
-event_count                 number of events (48)
+event_count                 number of events (96)
 events                      list of {id, plane_a, plane_b}; each plane is
                             [strike_deg, dip_deg, rake_deg] (Aki-Richards); the two
                             nodal planes are listed in arbitrary order
 plane_convention            the geometry statement above
-noise_sigma_deg             coarse mechanism uncertainty (8.5 degrees)
-reanalysis_sigma_deg        tightened uncertainty after re-analysis (2.6 degrees)
+noise_sigma_deg             coarse mechanism uncertainty (10 degrees)
+reanalysis_sigma_deg        tightened uncertainty after re-analysis (3 degrees)
 reanalysis_budget           16 credits
 reanalysis_cost             1 credit per event, once per event
 model_note                  Wallace-Bott statement and the R convention
@@ -73,11 +73,25 @@ seismic sequence.
 
 ## Oracle and difficulty
 
-Stress tensors are seeded (uniform orientation, R uniform on 0.15–0.85); fault normals
-are sampled with a slip-tendency floor; slip follows the Wallace-Bott shear direction;
-both nodal planes are perturbed by Gaussian angular noise and listed in seeded order.
-Difficulty levels 1–3 raise the coarse noise (4 → 8.5 degrees) and lower the sampling
-floor; level 3 is the shipped default. The lower levels remain available for diagnostics.
+Stress axes are sampled with sigma1 trend uniform on [0,360), plunge uniform on
+[5,80] degrees, and sigma3 rotation uniform in its perpendicular plane; this is
+not an isotropic orientation prior. R is uniform on [0.15,0.85]. The reduced
+stress tensor has eigenvalues (1,1-R,0), and is not trace-free. Fault normals are
+sampled uniformly on the sphere, conditional on a minimum resolved-shear magnitude
+divided by the tensor's Frobenius norm. This floor is not a friction criterion.
+Slip follows the signed Wallace-Bott shear direction.
+
+Each listed nodal plane receives independent Gaussian perturbations in strike,
+dip and rake. The resulting vectors are converted back to canonical angles;
+normal and slip flip together when needed. Dip is not clipped. The noise is
+coordinate-dependent SDR noise, not an isotropic rotation distribution. Paid
+re-analysis is a fresh independent perturbation of the same underlying mechanism,
+preserving its plane labels.
+
+All levels contain 96 events and a 16-credit budget. Levels 1–3 use coarse/fine
+noise of 4/1.2, 6/1.8 and 10/3 degrees respectively. Level 3 is the default and
+uses a normalized shear floor of 0.04; more weak-shear events increase sensitivity
+to angular noise. These choices do not establish admission difficulty.
 
 ## Rules
 

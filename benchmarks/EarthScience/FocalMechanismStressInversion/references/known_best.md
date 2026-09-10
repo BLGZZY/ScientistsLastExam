@@ -2,196 +2,115 @@
 
 ## 1. Reference method
 
-`verification/reference_solver.py` is standalone and uses only the public catalog and
-the charged re-analysis budget. Multi-start plane-choice initialization (all-a, all-b,
-six seeded random rows), alternating linear least-squares deviatoric-tensor fits with
-per-event plane swaps, re-analysis of the worst-misfit events within budget, and
-refusal when the converged misfit distribution exceeds a mean of 18 degrees or a 35
-degree tail fraction of 0.18. It is a method witness, not independent verification; it
-deliberately lacks bootstrapped confidence intervals, gridded four-dimensional global
-search, and multi-regime clustering.
+The standalone NumPy/SciPy reference uses public observations and the 16-credit
+interface. It averages the two observed double-couple tensors per event, projects
+onto double-couple directions, fuses independent coarse/fine observations by inverse
+angular variance, and minimizes signed normalized-shear angular squared error. A
+1728-point global seed grid and three continuous L-BFGS-B starts fit the four stress
+parameters; the updated fit additionally starts from the previous estimate. Paid
+observations target ambiguous plane assignments. The mean-residual refusal threshold
+is 20 degrees. This is an approximate SDR-noise treatment, not an exact likelihood.
+
+Michael (1984), doi:10.1029/JB089iB13p11517, motivates linear stress fitting; Bott
+(1959), doi:10.1017/S0016756800059987, motivates the shear-direction assumption.
+Vavryčuk (2014), https://doi.org/10.1093/gji/ggu224, discusses the equal-shear assumption
+and how fault-selection errors particularly affect the shape ratio. Our implementation
+is a benchmark-specific method, not a reproduction or published SoTA claim.
 
 ## 2. Baseline and normalization
 
-The shipped `solution.py` fits one tensor on the first-listed planes without iteration,
-budget use or regime checks, and never abstains. Measured on 2026-09-05 the baseline
-scores exactly `0.000000` development and `0.000000` robustness; submitting the true
-axes, ratio and plane row scores one.
+`solution.py` still fits one tensor to first-listed planes, without iteration,
+re-analysis or refusal. The score formula and supported/refusal world inventories
+are unchanged. Normalization subtracts the always-abstain score; axis, R and plane
+recovery combine geometrically. Functional tests require a valid zero baseline and
+a truth submission scoring one. Tests passing does not establish admission difficulty.
 
 ## 3. Capability comparisons and ablations
 
-Current shipped level-3 replay (2026-09-08):
+Use `.research/pr74_diagnostics.py` for reference, no-paid-observation, no-pair-averaging,
+no-precision-weighting, fixed-first acquisition, no-continuous-refinement and historical
+Michael-reference comparisons on the same revised oracle. Reports contain per-world
+components, public residuals, acquisition IDs, ungated scores and gate sweeps.
 
-| variant | development | held out |
-|---|---:|---:|
-| complete reference | 0.622620 | 0.573022 |
-| same solver, no paid re-analysis | 0.469429 | 0.139507 |
-| same solver, no refusal gates | 0.022620 | 0.000000 |
-| best of twelve constant regimes | 0.000000 | 0.000000 |
+The revised reference also improves the free path. The paid-information test therefore
+requires a development gain above 0.10 and held-out gain above 0.05, replacing the old
+Michael solver's held-out gain above 0.30. This narrower claim concerns information
+value, not difficulty or certification. Paid observations need not always be essential.
 
-Reproduce with `python .research/pr20_diagnostics.py --output /tmp/pr20-focal.json`.
-The script uses the public-input reference and charged interface, keeps the evaluator
-unchanged, and reports host/runtime details. This is method diagnostic evidence,
-not a clean frontier-model draw. Paid re-analysis adds 0.153192 development and
-0.433516 held out; refusal contributes separately. Historical tables below are
-retained with their original dates and do not describe the current default.
+## 4. Shortcut probes and unresolved admission
 
+**PR #74 remains draft: independent four-dimensional grids still approach or exceed
+the reference.** `.research/pr74_grid_probe.py` imports neither reference nor evaluator.
+It covers 1728-, 6912- and 62208-point grids, fixed-first or residual-based acquisition,
+and dense grids with three local refinement rounds. The stronger paired variants
+use both nodal-plane observations and uncertainty weighting, and target ambiguity.
+All probes use their own default gate (25 degrees); diagnostics sweep 12,16,20,22,25,28,32.
+A weak inherited gate must not be treated as a shortcut-family upper bound.
 
-Historical level-1 oracle-direct ablations, measured 2026-09-05 (no longer the shipped default):
+The old grid-separation unit test was removed because it encoded that misleading
+claim. Geometry, valid artifacts, signed shear, budget and permutation invariance
+are now tested independently. The scientific admission audit retains the previous
+requirements (absolute reference gap greater than 0.15 AND probe below 75% of reference)
+and exits 1 when any swept probe violates them:
 
-| variant | development | robustness | FDR | refusal |
-|---|---:|---:|---:|---:|
-| full reference | 0.6983 | 0.7307 | 0.00 | 1.00 |
-| no re-analysis spend | 0.7195 | 0.6874 | 0.00 | 1.00 |
-| no multistart (all-a only) | 0.6983 | 0.7307 | 0.00 | 1.00 |
-| no refusal gates | 0.0983 | 0.0000 | 1.00 | 0.00 |
+```bash
+python .research/pr74_check_admission.py /tmp/development.json /tmp/heldout.json
+```
 
-Re-analysis trades development smoothness for held-out robustness on these seeds; the
-multistart is neutral on the frozen world set (it is insurance against the
-plane-assignment local optimum observed during construction under an earlier converge
-schedule) and the refusal gates carry most of the score. These are local debugging
-numbers, not frozen benchmark evidence.
-
-### 2026-09-07 paid re-analysis probe at difficulty levels 2–3
-
-The free path (identical solver with the re-analysis spend disabled) was compared with the
-full reference at coarse mechanism noise 4.0°/6.0°/8.5° (levels 1/2/3, the same public
-ladder):
-
-| level | full reference dev/rob | free path dev/rob |
-|---:|---:|---:|
-| 1 | 0.6983 / 0.7307 | 0.7195 / 0.6874 |
-| 2 | 0.5293 / 0.6130 | 0.6304 / 0.6270 |
-| 3 (historical run) | 0.6226 / 0.5730 | 0.4811 / 0.1395 |
-
-The paid re-analysis is not uniformly necessary: at levels 1–2 the free path matches or beats
-it, so "paid precision matters" would have been an overstatement at the former level-1 default. It becomes
-decisive only at level 3 (8.5° coarse noise), where the free path loses 0.14 development and
-0.43 robustness. Recorded honestly; no oracle or reference change was made.
-
-## 4. Shortcut probes
-
-### September 9 four-dimensional stress-grid review
-
-The maintainer's PR20 review reports a 12x8x12x6 = 6912-point search at
-**0.346496/0.081461 development/held-out**, and a 24x12x24x9 = 62208-point
-search plus three refinement rounds at **0.246501/0.161891**. These numbers are
-maintainer-reported, not claimed as our independent replay of unavailable source.
-The search varies the principal-axis trend/plunge, orthogonal-axis rotation and R,
-selects the lower angular residual of the two nodal planes per event, re-analyzes
-the 16 worst events, and applies mean/tail residual refusal.
-
-The independently reconstructed `.research/pr20_focal_grid_probe.py` uses the same
-family and grid sizes, with all coordinates explicitly fixed in source. Under the
-CI-pinned NumPy 1.24.4/SciPy 1.10.1 combination it scores **0.402325/0.000000**
-(coarse) and **0.347491/0.159656** (dense plus refinement), versus the unchanged
-reference's **0.622620/0.573022**. Grid endpoints and implementation choices differ
-from the unavailable maintainer source, so the scores must not be equated.
-Reproduce all three methods and the final reference residuals with
-`.research/pr20_focal_review_diagnostics.py --output /tmp/focal-review.json`.
-
-The review also reports clearly separated average angular residuals: supported
-catalogs 7.35–14.34 degrees, mixed/incoherent catalogs 17.47–22.77 degrees for its
-probe. Thus refusal is comparatively easy for that tested method/world inventory;
-it is not evidence of a difficult open-set classification problem. Once refusal
-is correct, the normalized score is driven by supported-world axis, ratio and
-plane recovery through their geometric mean. Selecting whichever nodal plane fits
-best can also lower residuals for a wrong stress tensor; low angular misfit alone
-does not establish correct scientific recovery.
-
-Our unchanged-reference instrumentation separately measures supported means
-7.982–17.446 degrees, mixed means 25.052–31.905 degrees and incoherent means
-28.482–30.427 degrees. These are reference residuals, not the reviewer's grid-probe
-residuals; both sets indicate separation on this finite world inventory. Exact
-per-world values and source hashes are in `review_diagnostics_2026-09-09.json`.
-
-Current level-3 values are in section 3. The following two numbers are historical level-1 measurements, not the shipped level-3 default.
-
-- Constant-regime family (twelve fixed azimuths, R = 0.5, plane-a everywhere):
-  **0.000** best.
-- Removing the refusal gates (always report): **0.098** with false-discovery rate 1.0.
-
-The 2026-09-10 maintainer review supersedes the earlier shortcut-separation claim.
-A 6912-point grid with an independent 22–28 degree refusal threshold scores
-0.586586/0.496309; an 864-point grid scores 0.455447/0.542578, versus the
-reference 0.622620/0.573022. These are maintainer-reported measurements, not a
-new author reproduction. The local probe inherits a stricter reference gate and
-its scores do not represent this family's upper bound. Passing the existing
-grid-probe tests is therefore not admission evidence. This draft remains blocked
-until the reference or scientific regimes establish sufficient separation.
-Source: https://github.com/Geniusyingmanji/ScientistsLastExam/pull/20#issuecomment-5614869028
+This is an explicit unresolved audit, not an expected failure hidden in a green suite.
+The maintainer's September 10 review motivated this correction:
+https://github.com/Geniusyingmanji/ScientistsLastExam/pull/20#issuecomment-5614869028
+Exact maintainer source is unavailable; these probes are independent members of the
+same family, not an exact replay of the reported numbers.
 
 ## 5. Frontier-model calibration
 
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before
-exposure, must show that the first proposal does not reach the competent reference.
-Server-held catalogs and independent seismology review remain required.
+Not run. Server-held catalogs, independent seismology review, and frozen frontier-model
+calibration remain absent. Local seed confirmation and Linux sandbox validation do not
+replace them. No scoring-policy exception has been requested or assumed.
 
 ## 6. Construction errors and revisions
 
-Three construction errors were caught locally on 2026-09-05 before any model saw the
-task. (i) The plane-row generator referenced an undefined loop variable and invalidated
-every reference run. (ii) A single-start fit converged to a plane-assignment local
-optimum on a held-out world (mean misfit 26.6 degrees) and falsely abstained a
-supported catalog; the converge schedule and starts were rebuilt. (iii) Refusal gates
-set against pre-reanalysis misfits misfired in both directions — a mixed world passed
-(mean 21.3 against a 22-degree gate) and a supported world failed; gates were
-recalibrated against the converged distribution (18 degrees / 0.18 tail). All three
-are pinned in `tests/test_focal_mechanism_stress_inversion.py`.
+The September 10 revision fixes a geometry error: negative-z normal representations
+could produce dips above 90 degrees, then `_perturb_plane` clipped dip even at zero
+noise. Simultaneous normal/slip sign flips now preserve the moment tensor, and noisy
+SDR coordinates are canonicalized through vectors. Full-sphere, horizontal/vertical
+and auxiliary-plane tests cover this failure. A grid output near zero azimuth could
+also round to exactly 360 degrees; reference and probe now wrap the final float.
+
+The revised level 3 has 96 events (formerly 48), 10/3 degree coarse/fine SDR noise
+(formerly 8.5/2.6), and a normalized shear floor of 0.04 (formerly 0.14). This admits
+more weak-shear mechanisms and reduces the fraction that can be reanalyzed. It does
+not change scoring constants and has not solved the shortcut-separation problem.
+Noise is coordinate-dependent; the stress-axis prior is not isotropic; the sampling
+floor is a normalized shear magnitude, not frictional slip tendency. Independent
+scientific review of these modeling choices remains required.
+
+Historical documentation is archived in `.research/pr74_historical_known_best.md`.
+The former oracle and Michael solver are preserved as `.research/pr74_evaluator_before.py`
+and `.research/pr74_reference_before.py`. September 9 JSON evidence describes that
+historical implementation only. Obsolete PR20 drivers were removed because their
+gate mutation and private-helper instrumentation no longer match the reference.
 
 ## 7. Robustness and reproducibility
 
-Development and held-out metrics stay separate; the held-out set uses fresh tensors,
-mixtures, incoherent catalogs and noise. Determinism was checked by comparing two full
-evaluation dictionaries. Real Linux sandbox replay is now recorded below; global
-evidence refresh and independent replication remain pending. See the task card citations for background; the
-explicitly declared synthetic catalog is not certified by those publications.
-
-At clean revision `05d15d2`, two full Linux sandbox runs produced identical metrics:
-0.622620424 development / 0.573022358 held out, in 3.22 / 3.32 seconds. The full
-contribution gate passed 15/15 checks. The combined task/framework suite passed
-204 tests and 40 subtests without skips, and the clean audit covered 85 tasks.
-Python 3.12.3, NumPy 1.26.4 and SciPy 1.13.1 were already installed. Existing
-administrator permission was used for namespace setup while the original
-bubblewrap/seccomp candidate restrictions and host settings remained unchanged.
-`linux_validation_2026-09-09.json` records both outputs, source hashes and commands.
-These results are contributor validation, separate from GitHub CI and domain acceptance.
-
-## Reproduce
+Source hashes were frozen in `.research/pr74_source_freeze.json` after development
+and predeclared training, before revised held-out and confirmation evaluation.
+The additional 15-world training/confirmation inventories were predeclared in
+`.research/pr74_revision_plan.md`. They are local method tests, not secret held-out
+worlds. Reference/oracle/probe parameters were not retuned after confirmation.
 
 ```bash
+python .research/pr74_diagnostics.py --split development --output /tmp/development.json
+python .research/pr74_diagnostics.py --split heldout --output /tmp/heldout.json
+python .research/pr74_diagnostics.py --split confirmation --output /tmp/confirmation.json
 python scripts/measure_reference.py \
   --task EarthScience/FocalMechanismStressInversion \
-  --reference verification/reference_solver.py \
-  --entry infer_stress_orientation
+  --reference verification/reference_solver.py --entry infer_stress_orientation
 ```
 
-`--task` takes the on-disk path under `benchmarks/`, not the logical id
-`Geophysics/FocalMechanismStressInversion` (the fine-grained domain stays in `metadata.yaml`);
-the pre-2026-09-07 command passed the logical id and resolved to no directory.
-
-### 2026-09-08 evaluator-contract re-review
-
-The external `frontier_eval/run_eval.py` entrypoint now delegates to the trusted
-`sle eval` sandbox path instead of importing candidate code in the oracle process.
-Malformed submissions no longer count as discovery attempts. Confidence calibration
-uses actual supported-world mechanism recovery as its target, and zero for refusals
-or unsupported worlds; the combined-score normalization is unchanged. These changes
-have targeted local regressions; they do not imply independent domain certification
-or replace clean Linux sandbox replay.
-Principal axes must be orthogonal; abstention requires empty or null axes and plane
-assignments with null R. Re-analysis rejects boolean/floating-point IDs. Both split
-confidence metrics and the discovery-attempt count are now published separately.
-
-### 2026-09-08 default moves to the measured paid-information regime
-
-Level 3 is now the shipped default (8.5-degree coarse, 2.6-degree re-analysis noise).
-The scientific generator and three-level ladder are unchanged. A fresh local probe of
-the complete reference gives `0.622620` development / `0.573022` held out. Calling the
-same reference with a zero re-analysis budget gives `0.469429` / `0.139507`; this drops
-development recovery by `0.153192` and held-out recovery by `0.433516`. The baseline
-remains valid with exactly zero development and held-out scores at all three levels.
-Unlike the former default, the active regime makes paid precision useful. The historical
-probe table above is preserved; the current no-budget method differs from that earlier
-ablation and is not silently substituted into its record. These remain local diagnostics,
-not a frozen frontier-model calibration draw.
+The last command uses the on-disk EarthScience path; the logical registry ID remains
+`Geophysics/FocalMechanismStressInversion`. Current committed-source Linux replay is
+recorded separately in `linux_validation_2026-09-10.json` when completed. The sandbox
+entrypoint, charged interface, orthogonality/abstention contracts and separate
+confidence calibration remain intact.

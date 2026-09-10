@@ -12,7 +12,7 @@ policy:
 tasks:
   Geophysics/FocalMechanismStressInversion:
     status: candidate
-    reason: deterministic level-3 focal-mechanism stress inversion behind two-fold nodal-plane ambiguity with charged re-analysis, mixed-regime and incoherent refusal worlds; the complete Michael witness reaches 0.623/0.573 versus 0.469/0.140 without paid re-analysis, with a valid zero baseline; pending clean Linux calibration, server-held catalogs, independent seismology review and bootstrapped-confidence replication
+    reason: Corrected focal geometry and stronger public-input reference with paid re-analysis; independent paired stress grids still approach the reference, leaving shortcut separation an unresolved admission blocker. Pending frozen frontier-model calibration, server-held catalogs and independent seismology review.
     citation_ids:
       - doi:10.1029/JB089iB13p11517
       - doi:10.1017/S0016756800059987
