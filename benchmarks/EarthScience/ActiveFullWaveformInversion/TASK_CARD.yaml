@@ -46,7 +46,9 @@ known_shortcuts: 'The September 10 maintainer review invalidated the previous cl
   reference 0.714101/0.660180. The old 58.7/55.0 percent ratios were not upper bounds. This revision changes
   the world family and recording duration; archived scores are not transferable. scripts/audit_fwi_revision.py
   tests continuous one/three/five-blob families with noise and depth priors and all single/pair source
-  choices. New measurements and remaining admission limitations are recorded in references/known_best.md.'
+  choices. The final three-shot reference measures 0.664800/0.551567; best development-selected single
+  and pair measure 0.512128/0.391881 and 0.620585/0.469126. These finite audits are not universal shortcut
+  bounds. Full threshold sweeps, uncertainty and remaining admission limitations are recorded in references/known_best.md.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -64,7 +66,7 @@ provenance:
   target_source: Repository-visible deterministic acoustic simulator with development and held-out structural,
     noise and model-misspecification regimes.
   task_contract_public_before_evaluation: true
-  fresh_confirmation_status: not_completed
+  fresh_confirmation_status: predeclared_procedural_seeds_completed_external_validation_pending
 novelty_risk:
   level: medium
   rationale: Geophysics/GravityInversion also uses paid observations and model-inadequacy refusal, but
@@ -133,5 +135,6 @@ public_model_disclosure: The finite-difference stencil, damping, wavelet and acq
 evaluation_budget:
   timeout_seconds: 1200
   acquisition_units: 3
-  measurement_source: Current clean Linux timings are recorded in references/known_best.md; previous nine-world
-    timing claims are historical and do not apply to this revision.
+  measurement_source: Two final-source Linux sandbox runs took 618.68 and 607.13 seconds under concurrent
+    diagnostic load; identical metrics and source hashes are recorded in references/review_revision_2026-09-11.json.
+    Previous nine-world timing claims are historical and do not apply to this revision.

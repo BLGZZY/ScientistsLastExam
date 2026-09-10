@@ -20,7 +20,7 @@ The new truth family is a smooth random Fourier field, independent of both the
 Gaussian probe's shape family and the reference interpolation grid. It covers the
 whole depth range. Acquired and sealed records extend from 210 to 300 samples to
 observe later arrivals. Both splits contain ten supported worlds with disjoint
-seeds, followed by three independent unsupported controls.
+seeds, followed by three unsupported controls with separately seeded noise.
 
 The unsupported reasons are unresolved near-null structure, incorrect source timing,
 and attenuation over heterogeneous structure. Every regime varies with seed. Near-null
@@ -42,16 +42,27 @@ score comparability; no old score is relabelled as a result on the new oracle.
 
 ## 3. Reference and acquisition measurements
 
-Current clean Linux measurements will be recorded after the source freeze. The
-source sweep in `scripts/audit_fwi_revision.py --budget-sweep` includes all five
-single shots and all ten pairs, using the same inversion implementation. Source 3
-alone is not a justified estimate of the best one-shot method. The first exhaustive
-scan found pair 9/21 at 0.620585 development, above the old fixed triple
-3/15/28 at 0.546014. The revised central triple measures 0.664800 in local
-development diagnostics; clean Linux and confirmation numbers follow below. Budget is a charged
-constraint; a large marginal value for the third shot must not be assumed. A 50-threshold sweep with a fresh, uncached replay of the
-development-selected threshold also checks that low probe scores are not merely
-caused by excessive refusal.
+Clean Linux measurements on the revised world family:
+
+| Acquisition policy | Development | Heldout |
+|---|---:|---:|
+| Best single on development: 15 | 0.512128 | 0.391881 |
+| Best pair on development: 9/21 | 0.620585 | 0.469126 |
+| Final fixed triple: 9/15/21 | 0.664800 | 0.551567 |
+| Previous fixed triple: 3/15/28 | 0.546014 | 0.535452 |
+
+All five single shots and all ten pairs were evaluated. The heldout maxima across
+those sweeps are 0.467643 (single 9) and 0.502308 (pair 21/28); these are disclosed
+as post-hoc diagnostics, not used to select the reference. The third-shot gain over
+the development-selected pair is 0.044215 development / 0.082441 heldout. This is
+a point comparison of fixed acquisition policies, not proof of a universal budget
+advantage or an optimal adaptive policy.
+
+The final reference correctly refuses all three unsupported worlds in each split,
+with supported coverage 1.0 / 0.9. Remaining headroom comes from imperfect spatial
+reconstruction and one supported heldout refusal. Its fixed interpolation grids,
+regularization and source plan leave opportunities for better inversion; exact
+derivatives alone are not an explanation of that headroom.
 
 ## 4. Continuous shortcut families
 
@@ -66,12 +77,42 @@ reference **0.714101/0.660180**. The previously published 58.7%/55.0% ratios wer
 only measurements of an incomplete family, not bounds. Existing 0.15 margin and
 70% ratio guards are retained and extended to continuous fitting on both splits.
 Exact maintainer source remains unavailable; the new probe is a reconstruction of
-its described methods, not a claim of exact-source replay.
+its described methods, not a claim of exact-source replay. The continuous probes
+use the fixed outer aperture 3/15/28. The exhaustive source sweep applies to the
+reference inversion, not every probe/source combination. These finite families
+therefore establish measured regression guards, not an upper bound on all
+continuous fitting, joint multi-blob optimization or adaptive acquisition.
+
+Each family sweeps 50 final-fit refusal thresholds from 0.02 to 1.00. Fitting is
+cached only for threshold postprocessing, followed by an uncached full replay at
+the development-selected threshold:
+
+| Continuous family | Selected threshold | Development | Heldout | Maximum heldout across sweep |
+|---|---:|---:|---:|---:|
+| One Gaussian | 0.32 | 0.020892 | 0.009515 | 0.009515 |
+| Three Gaussians | 0.18 | 0.044213 | 0.035202 | 0.056006 |
+| Five with noise stop | 0.24 | 0.051192 | 0.000000 | 0.045501 |
+| Five with noise stop and depth cap | 0.22 | 0.136683 | 0.059821 | 0.059821 |
+
+Even the post-hoc maxima over all 200 tested policies retain the existing 0.15
+absolute margin and 70% ratio guards on both splits. The strongest measured
+ratios are 20.56% development / 10.85% heldout; they describe this finite sweep,
+not a universal upper bound. The original default-threshold measurements, including
+zero scores, are retained in the raw evidence rather than substituted for this
+stronger test.
 
 ## 5. Sampling uncertainty and confirmation
 
 The audit reports stratified world-bootstrap intervals (20,000 draws) and supported
-world standard errors. The sample remains small and procedural; intervals are not
+world standard errors. The final reference has development 95% interval
+[0.586477, 0.733683] (supported standard error 0.039673) and heldout interval
+[0.353602, 0.714032] (standard error 0.097611).
+
+On the predeclared separate seeds, the unchanged central reference scores
+**0.459468 / 0.538004**, with intervals [0.253282, 0.651284] /
+[0.339053, 0.708603]. The default depth-capped continuous probe scores **0 / 0**;
+this confirmation did not sweep its refusal thresholds. The lower development
+score is retained as evidence of sample variation, without seed or solver retuning. The sample remains small and procedural; intervals are not
 claims about independent geology. `--fresh` uses predeclared separate seeds, without
 choosing them based on scores. Model calibration and external domain review remain
 pending. These diagnostics do not certify the task.
@@ -80,7 +121,7 @@ pending. These diagnostics do not certify the task.
 
 A self-check found that the first near-null amplitude was below pointwise noise
 but detectable by aggregating traces (best-three squared separation about 3435
-and 3270). It was reduced before sandbox confirmation. The near-null is explicitly
+and 3270). It was reduced before the two final same-source sandbox confirmations. The near-null is explicitly
 a shared negative control, rather than using tiny seed differences to claim
 independent geological worlds.
 
@@ -105,15 +146,36 @@ because it was present before the PR split; no Focal task remains in this packag
 ```sh
 OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --output /tmp/fwi-review.json
 OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --methods reference finite_difference --budget-sweep --output /tmp/fwi-budget.json
-OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --fresh --output /tmp/fwi-fresh.json
+OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_revision.py --fresh --methods reference gaussian_depth --output /tmp/fwi-fresh.json
+for family in one three stop depth; do
+  OPENBLAS_NUM_THREADS=1 python scripts/audit_fwi_thresholds.py --family "$family" --output "/tmp/fwi-threshold-$family.json"
+done
+python scripts/audit_fwi_null_compatibility.py --output /tmp/fwi-null-compatibility.json
 python -m pytest tests/test_fwi_discrete_inversion.py tests/test_new_earth_science_tasks.py tests/test_pr9_earth_hardening.py tests/test_pr9_earth_contracts.py tests/test_earth_pr_review_regressions.py -q
 ```
 
 The expanded 26-world evaluation exceeded the former 600-second cap in the Linux
 method audit (700 seconds for the preceding fixed triple under concurrent load).
 The wrapper and card now permit 1200 seconds; metadata gives a 900-second wall-time
-estimate, not a second timeout. The higher compute cost is a limitation of this
+estimate, not a second timeout. Two final same-source real Linux sandbox runs took
+618.68 and 607.13 seconds under concurrent diagnostic load, with exactly identical
+full metrics and valid=1. The final evaluator/reference/wrapper hashes are recorded
+in `review_revision_2026-09-11.json`. The higher compute cost is a limitation of this
 revision, not evidence of greater scientific difficulty.
+
+The evidence JSON includes complete per-world scores, all source subsets, threshold
+sweeps and uncached replays. Original runs retain their original revisions. The
+first source/probe runs preceded the central-aperture choice and the near-null
+correction; explicit subsets are unchanged, and the included 124 full-row
+compatibility checks prove that the near-null correction leaves all recorded
+policies unchanged, including confirmation controls. Earlier records are not
+relabeled as final-head evaluations.
+
+Validation completed in stages: 44 FWI tests; 14 final numerical/null/source checks;
+102 Linux integration tests with eight subtests; contribution gate 15/15. A separate
+Linux run of the repository tests excluding the five FWI files passed 1175 tests
+and 508 subtests, with 50 skips. These staged runs are not presented as a single
+final-head full-suite run; GitHub CI is the final-head integration check.
 
 Publishable measurements require a clean Linux checkout and real sandbox replay.
 Diagnostic reports retain source hashes, revision, dirty state, dependencies and
