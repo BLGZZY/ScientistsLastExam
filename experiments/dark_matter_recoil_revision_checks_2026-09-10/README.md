@@ -2,8 +2,12 @@
 
 The Linux sandbox audit and full-suite run use clean source commit
 `fcddf93266c66343ebaefae77765e8689c707a4e`, which includes upstream main
-`913ebe5`. Subsequent changes only document measurements, correct a docstring,
-remove an unused research-script import and attach evidence. The production
+`913ebe5`. The immediate evidence follow-up changes only document measurements, correct a docstring,
+remove an unused research-script import and attach evidence. Upstream main later
+advanced to `eb9fca9` (clock-read fix, rebound preflight evidence and README count
+checks); merge `7557aff` incorporates it and updates README to 86 tasks / 81
+candidates / 44 discovery / 10 evidence tasks. Supplemental post-merge tests are
+recorded separately. The production
 reference implementation is unchanged from the reviewed PR.
 
 - `../dark_matter_recoil_revision_2026-09-10.json`: clean-revision trusted sandbox
@@ -20,6 +24,10 @@ reference implementation is unchanged from the reviewed PR.
   Constant mass with reference decisions reaches 0.657192, and a legal single-target
   full-budget strategy reaches 0.644077, both above the old 0.523728 reference.
   This explicitly distinguishes oracle-assisted bounds from legal candidates.
+- `main-sync-tests.txt`: upstream merge `7557aff`, README counts, clock/protocol,
+  recovery/preflight and sentinel checks: 83 passed, 1 skipped, 7 subtests passed.
+- `maturity-summary.json`: 86 tasks, no issues or stale tasks; four candidate tasks
+  await maintainer freezing, including this new task.
 - `linux-focused.txt`: final documented source `f7785a6`, 110 passed with no skips;
   includes genuine Bubblewrap process/tmpfs isolation and all new scoring regressions.
 - `local-focused.txt`: CI-pinned NumPy 1.24.4 / SciPy 1.10.1 on macOS, 101 passed,
