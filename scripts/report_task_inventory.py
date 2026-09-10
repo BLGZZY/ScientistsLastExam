@@ -34,6 +34,7 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 # Chinese name per task, shown in the first column beside the English directory name. The
 # directory name is the identifier and never changes; this is what a Chinese reader scans for.
 CHINESE_NAMES = {
+    "Geophysics/FocalMechanismStressInversion": "震源机制应力反演",
     'Microbiology/MetagenomeCompositionAssignment': "宏基因组组成指认",
     "Acoustics/RoomImpulseResponse": "房间声学处理设计",
     "Algorithm/GraphFromDistances": "距离查询重建图",
@@ -126,6 +127,9 @@ CHINESE_NAMES = {
 # people deciding which task to look at. A task without an entry fails the inventory test,
 # so a new package cannot silently ship without one.
 CHINESE_BRIEFS = {
+    "Geophysics/FocalMechanismStressInversion": (
+        "在高角噪声和双节面歧义下付费复测并反演主应力轴、形状比与断层面;混合机制或无信号须拒答",
+        "轴/形状比/平面指派几何均值;误发现与拒答分列,全面弃权为零"),
     'Microbiology/MetagenomeCompositionAssignment': (
         "从收费 marker 计数中恢复分类单元与丰度,保留近缘别名并识别参考库不足",
         "组成恢复、别名/库外拒答与假发现率分列"),

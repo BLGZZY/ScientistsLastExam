@@ -10,6 +10,12 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
+  Geophysics/FocalMechanismStressInversion:
+    status: candidate
+    reason: deterministic level-3 focal-mechanism stress inversion behind two-fold nodal-plane ambiguity with charged re-analysis, mixed-regime and incoherent refusal worlds; the complete Michael witness reaches 0.623/0.573 versus 0.469/0.140 without paid re-analysis, with a valid zero baseline; pending clean Linux calibration, server-held catalogs, independent seismology review and bootstrapped-confidence replication
+    citation_ids:
+      - doi:10.1029/JB089iB13p11517
+      - doi:10.1017/S0016756800059987
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.

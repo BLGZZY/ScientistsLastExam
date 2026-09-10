@@ -1,0 +1,113 @@
+schema_version: 2
+scientific_question: Can a noisy focal-mechanism catalog with two-fold nodal-plane
+  ambiguity be resolved into one stress regime (axes, shape ratio, plane assignments),
+  while refusing catalogs that mix regimes or carry no coherent signal?
+artifact: Principal stress axes as (trend, plunge) pairs, the shape ratio R, a 0/1
+  plane choice per event, optional abstention and a confidence scalar.
+oracle:
+  model: deterministic seeded deviatoric stress tensors, slip-tendency-filtered fault
+    sampling with Wallace-Bott slip directions, Aki-Richards nodal-plane geometry,
+    Gaussian angular perturbation of both planes per event in seeded order, regime
+    mixtures and uniform incoherent catalogs
+  feasibility: bounded mutually orthogonal principal-axis angles and R, a complete 0/1 plane row, charged unique
+    re-analysis within a sixteen-credit budget
+  deterministic: true
+  external_tooling: none beyond NumPy
+difficulty_ladder:
+  default_level: 3
+  levels:
+    1: 4-degree coarse noise, 1.2-degree re-analysis
+    2: 6-degree coarse noise, 1.8-degree re-analysis
+    3: 8.5-degree coarse noise, 2.6-degree re-analysis
+normalization:
+  baseline: single un-iterated tensor fit on first-listed planes
+  reference: multi-start Michael inversion with plane swaps, budgeted re-analysis and
+    misfit-distribution refusal
+  score: geometric mean of axis, shape-ratio and plane-assignment scores on supported
+    worlds, normalized above always abstaining; false discovery and refusal separate
+citations:
+- id: doi:10.1029/JB089iB13p11517
+  title: "Determination of stress from slip data: Faults and folds"
+- id: doi:10.1017/S0016756800059987
+  title: The mechanics of oblique slip faulting
+invariants:
+- the Wallace-Bott shear of the true tensor lies along every true slip direction
+- both nodal planes of an event are perturbed independently and listed in seeded order
+- axes are scored on absolute cosine so sign flips are free
+- principal axes form a physical orthogonal frame, with absolute unit-vector dot at most 1e-6
+- invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
+- a full abstention scores exactly zero after normalization
+- re-analysis is charged, once per event, and overspending invalidates the world
+known_shortcuts: "DRAFT BLOCKER (maintainer review 2026-09-10): an independently implemented 6912-point grid with a 22-28 degree refusal threshold scores 0.586586/0.496309 versus reference 0.622620/0.573022; an 864-point grid scores 0.455447/0.542578. The inherited refusal gate suppresses the older probes below and these are historical diagnostics, not evidence of a family upper bound. At the shipped level-3 default, twelve constant-regime candidates (fixed azimuth, R=0.5, plane-a assignments) all score 0.000000 development and held out. The complete reference scores 0.622620/0.573022; removing paid re-analysis gives 0.469429/0.139507 and removing refusal gives 0.022620/0.000000 with false-discovery rate 1.0. Recomputed with .research/pr20_diagnostics.py on 2026-09-08; these are method probes, not frontier-model calibration. Independent seismology review remains pending. The maintainer reports four-dimensional stress-grid searches at 0.346496/0.081461 (6912 points) and 0.246501/0.161891 (62208 points plus refinement). Independent same-family probes in .research/pr20_focal_grid_probe.py score 0.402325/0.000000 and 0.347491/0.159656 under CI-pinned dependencies; these do not claim exact replay of unavailable maintainer source. Refusal residuals are well separated in the reported probes and should not be presented as intrinsically hard classification."
+licensing:
+  task_package: repository_license_not_declared
+  external_assets: none
+  note: All runtime worlds are generated from original repository code; cited publications
+    are not redistributed.
+contamination:
+  status: cannot_be_ruled_out
+  rationale: The catalog generator, plane convention and refusal regimes are public and
+    were built with AI assistance; server-held catalogs and independent samplers are
+    still required.
+review:
+  domain: pending_external_seismology
+  evaluator_security: targeted_regressions_and_real_linux_sandbox_checks
+provenance:
+  class: procedural
+  target_source: Repository-visible deterministic focal-mechanism catalogs with
+    development and held-out tensors, mixtures, incoherent regimes and noise.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+novelty_risk:
+  level: medium
+  rationale: Geophysics/GravityInversion shares paid observations and model-inadequacy refusal, but fits potential-field parameters. This task recovers a second-order stress tensor and one of two nodal planes for each event, refusing mixed-regime and incoherent catalogs. The separately proposed WavePropagation/ActiveFullWaveformInversion in PR #20 instead returns a spatial velocity grid and predicts sealed waveforms. Public catalog construction remains a contamination risk; builder-model independence is not established.
+lineage:
+  status: complete
+  builder_model_ids:
+  - glm-5.3
+  builder_scaffolds:
+  - repository-native-earth-science-task-pattern
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: 2026-09-05 local build caught a broken plane-row generator scope bug, a single-start tensor fit stuck in a plane-assignment local optimum on a held-out world, and refusal gates miscalibrated against the converged misfit distribution; each was fixed and pinned by tests.
+  shortcut_discoverer: initial_internal_red_team
+  frozen_before_eval: false
+  freeze_timestamp: null
+construction_audit:
+  status: initial_internal
+  author_domain: AI-assisted benchmark engineering
+  reviewer_domain: pending_external_seismology
+  expert_hours: null
+  red_team_rounds: 2
+  oracle_disagreement_status: not_quantified
+  independent_recomputation_status: standalone_public_model_references_pending
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
+difficulty_assessment:
+  status: unverified_candidate
+  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
+    and clean frontier-model calibration before certification
+  remaining_risk: The 2026-09-10 maintainer grid probe reaches 94.2 percent of the development reference and the smaller grid reaches 94.7 percent on held out; shortcut separation is an unresolved admission blocker. The shipped default is level 3, where the full witness scores 0.622620
+    development and 0.573022 held out; the same method with no paid re-analysis scores
+    0.469429 and 0.139507. A clean frontier draw must still establish the difficulty
+    of joint plane assignment and stress recovery beyond the complete witness.
+
+frontier_eng_overlap_review:
+  date: '2026-09-06'
+  classification: 无
+  nearest: torsion_profile_fitting
+  distinction: Recover a stress tensor and per-event nodal plane choices, with mixed-regime
+    refusal; FE fits force-field torsion energy scales. Both fit numbers, but neither
+    the observable nor latent scientific structure is shared.
+  evidence: .research/focal_frontier_eng_overlap_2026-09-06.md
+  status: available_catalog_scope_confirmed_by_maintainer
+
+evaluation_budget:
+  timeout_seconds: 300
+  reanalysis_units: 16
+  reference_wall_seconds_linux: [3.22, 3.32]
+  measurement_source: Two identical real Linux sandbox runs at 05d15d2 on 2026-09-09; full contribution gate and regression evidence in references/linux_validation_2026-09-09.json. Not a frontier-model calibration run.
