@@ -4,7 +4,7 @@
 
 Full-waveform inversion (FWI) estimates subsurface wave speed from complete seismic traces.
 The objective is highly non-convex: a model can fit acquired traces while putting interfaces in
-the wrong place, and an acoustic model should not be trusted when attenuation or anisotropy is
+the wrong place, and an acoustic model should not be trusted when attenuation or an incorrect source time is
 needed. This benchmark therefore combines charged acquisition, structural recovery, sealed-shot
 prediction and calibrated refusal.
 
@@ -27,8 +27,10 @@ The grid spacing and time increment are the supplied `spacing_m` and successive
 `time_s` differences. These acquisition physics define the public forward problem;
 the velocity anomalies and sealed assessment shots remain hidden.
 
-The evaluator contains supported velocity anomalies, a no-anomaly null world, and data with
-attenuation/phase effects outside the public acoustic family. Out-of-family attenuation may
+The evaluator contains supported heterogeneous velocity fields, near-null worlds whose
+structure is below the acquisition noise scale, and data with attenuation or source-timing
+effects outside the public acoustic family. Structure can occur throughout the full depth
+range; setting the deepest portion to background is not a valid general assumption. Out-of-family attenuation may
 coexist with velocity anomalies; neither visible structure nor total signal energy alone
 establishes that an acoustic interpretation is adequate. Hidden worlds, noise and sealed
 source frequencies are not visible to the candidate.
@@ -71,7 +73,7 @@ attempts; coverage counts valid, non-abstaining supported-world submissions.
 - `combined_score` is development mechanism recovery normalized so always abstaining is zero.
 - Supported worlds use depth-weighted velocity recovery and wave-equation prediction on sealed
   shots and frequencies.
-- Null and resolvable out-of-family worlds reward calibrated refusal.
+- Near-null and resolvable out-of-family worlds reward calibrated refusal.
 - Waveform relative L2 error, travel-time behavior, confidence, false discovery, correct refusal
   and supported-world discovery coverage are retained separately.
 - `robustness_score` uses held-out anomaly topologies, noise and velocity contrasts.
@@ -92,8 +94,8 @@ acoustic benchmark, not a claim of field-scale seismic imaging.
 
 The evaluator uses NumPy for fixed-grid time/receiver waveform alignment and misfit
 reduction. The propagation model itself remains the stated local reduced-order finite-difference
-model. Evaluator difficulty levels 1–3 progressively increase observation noise and the number of
-simultaneous anomalies; level 1 is the shipped default. Levels 2 and 3 are diagnostic-only
+model. Evaluator difficulty levels 1–3 progressively increase observation noise and the spatial complexity of the
+velocity field; level 1 is the shipped default. Levels 2 and 3 are diagnostic-only
 settings, not validated difficulty tiers.
 
 ## Rules
@@ -109,7 +111,7 @@ References: Virieux & Operto (2009), DOI `10.1190/1.3238367`; Symes (2020), arXi
 
 ## 关系与区别 / Relationship to nearby tasks
 
-GravityInversion fits a potential field and RadialVelocityPlanets infers orbital signals. This task pays for acoustic shots and reconstructs a velocity field, with no-anomaly and attenuating worlds requiring refusal.
+GravityInversion fits a potential field and RadialVelocityPlanets infers orbital signals. This task pays for acoustic shots and reconstructs a velocity field, with unresolved near-null, source-timing and attenuating worlds requiring refusal.
 
 ## Admission and reference scope
 

@@ -17,7 +17,7 @@ _DIFFICULTY_LADDER = {
 GRID_SHAPE = (20, 32)
 SPACING_M = 50.0
 DT_S = 0.003
-N_TIME = 210
+N_TIME = 300
 BACKGROUND_MIN = 2100.0
 BACKGROUND_MAX = 3000.0
 VELOCITY_BOUNDS = (1500.0, 4200.0)
@@ -31,14 +31,27 @@ DEVELOPMENT_SPECS = (
     (41017, "supported", 1),
     (41023, "supported", 2),
     (41039, "supported", 3),
+    (41059, "supported", 4),
+    (41063, "supported", 5),
+    (41071, "supported", 6),
+    (41077, "supported", 7),
+    (41081, "supported", 8),
+    (41087, "supported", 9),
     (41047, "null", 0),
     (41051, "misspecified", 1),
-    (41023, "structured_attenuation", 2),
+    (41093, "structured_attenuation", 2),
 )
 HELDOUT_SPECS = (
     (51001, "supported", 4),
     (51007, "supported", 5),
     (51019, "supported", 6),
+    (51059, "supported", 7),
+    (51061, "supported", 8),
+    (51071, "supported", 9),
+    (51077, "supported", 10),
+    (51083, "supported", 11),
+    (51089, "supported", 12),
+    (51097, "supported", 13),
     (51031, "null", 0),
     (51043, "misspecified", 2),
     (51053, "structured_attenuation", 8),
@@ -60,20 +73,24 @@ def _background():
 
 def _velocity(seed, variant, kind):
     base = _background()
-    if kind not in ("supported", "structured_attenuation"):
-        return base
     rng = np.random.default_rng(int(seed))
     zz, xx = np.mgrid[0:GRID_SHAPE[0], 0:GRID_SHAPE[1]]
-    count = min(5, 1 + int(variant % 3) + _difficulty_profile()["extra_anomalies"])
-    for index in range(count):
-        cx = rng.uniform(6.0, GRID_SHAPE[1] - 6.0)
-        cz = rng.uniform(4.5, GRID_SHAPE[0] - 6.0)
-        sx = rng.uniform(3.2, 6.0)
-        sz = rng.uniform(2.4, 4.4)
-        sign = -1.0 if (variant + index) % 2 else 1.0
-        amplitude = sign * rng.uniform(520.0, 900.0)
-        base += amplitude * np.exp(-0.5 * (((xx - cx) / sx) ** 2 + ((zz - cz) / sz) ** 2))
-    return np.clip(base, *VELOCITY_BOUNDS)
+    # Random Fourier features generate smooth heterogeneous media without a
+    # Gaussian-blob catalog or the reference solver's interpolation grid.
+    # Independent horizontal/depth wave numbers populate the entire model,
+    # including depths beyond the former free cz <= 14 shortcut.
+    correction = np.zeros(GRID_SHAPE)
+    count = 32 + 8 * _difficulty_profile()["extra_anomalies"]
+    for _ in range(count):
+        kx, kz = rng.normal(0.0, 0.3, 2)
+        correction += rng.normal() * np.cos(
+            kx * xx + kz * zz + rng.uniform(0.0, 2.0 * np.pi))
+    correction *= 180.0 / max(float(np.std(correction)), 1e-12)
+    # Seed-varying near-null structures are below the acquisition noise scale;
+    # refusal means no resolvable anomaly, rather than recognizing one constant.
+    if kind == "null":
+        correction *= 0.001
+    return np.clip(base + correction, *VELOCITY_BOUNDS)
 
 
 def _ricker(time_s, frequency_hz):
@@ -117,8 +134,10 @@ def _world(spec):
     seed, kind, variant = spec
     velocity = _velocity(seed, variant, kind)
     noise = (0.0025 + 0.0005 * (variant % 3)) * _difficulty_profile()["noise_multiplier"]
+    rng = np.random.default_rng(np.random.SeedSequence([int(seed), 713]))
     return {"seed": int(seed), "kind": kind, "variant": int(variant), "velocity": velocity,
-            "noise": noise}
+            "noise": noise, "attenuation": float(rng.uniform(1.4, 2.6)),
+            "source_delay": float(rng.uniform(1.2, 2.4))}
 
 
 def _waveform_relative_l2(proposed, observed):
@@ -157,8 +176,15 @@ class _Acquisition:
                 raise RuntimeError("shot budget exceeded")
             self.used += 1
             self.calls.append(source)
-            attenuation = 1.8 if self.world["kind"] in ("misspecified", "structured_attenuation") else 0.0
+            attenuation = self.world["attenuation"] if self.world["kind"] == "structured_attenuation" else 0.0
             clean = simulate_waveforms(self.world["velocity"], source, 12.0, attenuation)
+            if self.world["kind"] == "misspecified":
+                # Incorrect source timing is a different model failure from
+                # attenuation. A fractional delay preserves waveform amplitude.
+                sample = np.arange(N_TIME)
+                clean = np.column_stack([np.interp(
+                    sample - self.world["source_delay"], sample, trace, left=0.0)
+                    for trace in clean.T])
             scale = max(float(np.std(clean)), 1e-8)
             sigma = self.world["noise"] * scale
             # Domain-separated streams keep paired velocity controls useful without

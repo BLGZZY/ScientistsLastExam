@@ -14,6 +14,9 @@ import numpy as np
 _STAGES = (((3, 5), 5.0), ((5, 8), 2.0), ((7, 11), 0.0))
 _REGULARIZATION = 0.003
 _MAX_NFEV = 30
+# Both derivatives are numerically validated. Finite differences were cheaper
+# in the independent review; exact tangents remain available for audit.
+_USE_EXACT_JACOBIAN = False
 
 
 def _laplacian(field):
@@ -131,9 +134,9 @@ def invert_velocity_model(
     background_traces = model.forward(background)
     background_norm = max(float(np.linalg.norm(background_traces)), 1e-12)
     relative = np.linalg.norm(observed - background_traces) / background_norm
-    energy_ratio = np.linalg.norm(observed) / background_norm
-    # The previous reference's refusal gates are retained, not retuned to scores.
-    if relative < 0.006 or energy_ratio < 0.95:
+    # Signal energy alone cannot distinguish attenuation from a supported
+    # velocity perturbation. Leave model adequacy to the fitted residual.
+    if relative < 0.006:
         return refusal
 
     noise = np.asarray([row["noise_std"] for row in gathers])[:, None, None]
@@ -162,22 +165,30 @@ def invert_velocity_model(
                 velocity = np.clip(unclipped, *velocity_bounds_m_s)
                 active = ((unclipped > velocity_bounds_m_s[0])
                           & (unclipped < velocity_bounds_m_s[1])).ravel()
-                prediction, jacobian = model.jacobian(velocity, 900.0 * basis * active[:, None])
+                if _USE_EXACT_JACOBIAN:
+                    prediction, jacobian = model.jacobian(velocity, 900.0 * basis * active[:, None])
+                else:
+                    prediction = model.forward(velocity)
+                    jacobian = None
                 residual = weights * (prediction - observed) / normalization
-                jacobian = weights[:, :, :, None] * jacobian / normalization
+                if jacobian is not None:
+                    jacobian = weights[:, :, :, None] * jacobian / normalization
                 if smoothing:
                     residual = gaussian_filter1d(residual, smoothing, axis=1)
-                    jacobian = gaussian_filter1d(jacobian, smoothing, axis=1)
+                    if jacobian is not None:
+                        jacobian = gaussian_filter1d(jacobian, smoothing, axis=1)
                 cache.update(
                     x=values.copy(),
                     residual=np.r_[residual.ravel(), regularizer @ values],
-                    jacobian=np.vstack([jacobian.reshape((-1, len(values))), regularizer]),
+                    jacobian=(np.vstack([jacobian.reshape((-1, len(values))), regularizer])
+                              if jacobian is not None else None),
                 )
             return cache["residual"], cache["jacobian"]
 
         result = least_squares(
             lambda values: residual_jacobian(values)[0], parameters,
-            jac=lambda values: residual_jacobian(values)[1], bounds=(-1.5, 1.5),
+            jac=(lambda values: residual_jacobian(values)[1]) if _USE_EXACT_JACOBIAN else "2-point",
+            bounds=(-1.5, 1.5),
             max_nfev=_MAX_NFEV, ftol=1e-7, xtol=1e-7, gtol=1e-8,
         )
         parameters = result.x

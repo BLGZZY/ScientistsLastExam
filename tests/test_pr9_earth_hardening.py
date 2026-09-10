@@ -133,7 +133,7 @@ def _fwi_travel_time_only(grid_shape, spacing_m, background_velocity_m_s, veloci
     model = 1.0 / (1.0 / background + delta_slowness)
     return {'velocity_m_s': np.clip(model, *velocity_bounds_m_s), 'confidence': 0.8, 'abstain': False}
 
-@pytest.mark.parametrize('probe,bound,false_discovery', [(_fwi_zero_inversion, 0.001, 1.0 / 3.0), (_fwi_constant_lens, 0.16, 0.0), (_fwi_travel_time_only, 0.001, 0.0)])
+@pytest.mark.parametrize('probe,bound,false_discovery', [(_fwi_zero_inversion, 0.001, 1.0 / 3.0), (_fwi_constant_lens, 0.16, 1.0 / 3.0), (_fwi_travel_time_only, 0.001, 1.0 / 3.0)])
 def test_fwi_shortcut_probes_stay_far_below_reference(probe, bound, false_discovery):
     fwi = load('EarthScience', 'ActiveFullWaveformInversion')
     result = fwi.evaluate(probe)
