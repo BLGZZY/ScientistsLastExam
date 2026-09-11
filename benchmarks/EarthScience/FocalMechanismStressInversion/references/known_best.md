@@ -1,5 +1,50 @@
 # Reference and admission record — FocalMechanismStressInversion
 
+## September 11 review response (metric revision September 12)
+
+The [maintainer's fixed replay](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/74#issuecomment-5632737907)
+keeps this draft blocked. At task head `8193c5aa6abff91ff8cbbce9f617518ff3bb9b61`,
+the reported development reference/probe scores are 0.7854573533 / 0.7751364580;
+held-out scores are 0.7967725501 / 0.8142296792. These are attributed review
+measurements, not a new run by this revision. The fixed public probe used
+`GRID_SHAPE=(24,12,24,9), PAIRED=True, QUERY_POLICY="ambiguous", SIGNED=True,
+LOCAL_ROUNDS=3, THRESHOLD_DEG=25`. Both methods used 16 paid units per catalog;
+the probe used more CPU, so this is not evidence of cheaper computation.
+
+There is a stronger obstruction than the small observed gap: with scores bounded
+by one, a probe scoring 0.7751364580 cannot be below 75% of *any* reference score.
+The required reference would exceed 1.0335152773. Improving the reference alone
+cannot pass the disclosed criterion on this oracle. Scientific task redesign and
+effective capability ablations are still needed; neither score rescaling, weaker
+competitors nor a relaxed gate is an acceptable substitute. No such redesign or
+new independent difficulty calibration is claimed here. Previously inspected
+held-out and confirmation inventories must not be relabeled as fresh calibration.
+
+The audit now blocks missing strong-probe reports, empty sweeps, non-finite or
+out-of-range scores, and boundary equality. It checks the configured probe as well
+as every swept threshold, and reports when the score ceiling prevents separation.
+The archived diagnostic bundle can be inspected directly (expected exit code 1):
+
+```bash
+python .research/pr74_check_admission.py benchmarks/EarthScience/FocalMechanismStressInversion/references/method_diagnostics_2026-09-10.json
+```
+
+The evaluator now defines FDR as false claims divided by all valid non-abstaining
+claims, with zero for no claims. `positive_claim_count` and
+`heldout_positive_claim_count` expose that denominator. The old statistic remains
+under `development_false_positive_rate` / `heldout_false_positive_rate` and uses
+all unsupported catalogs. Supported-world discovery attempts and coverage retain
+their existing meanings. Invalid submissions and refusals are excluded from the
+claim denominator; no-claim FDR zero does not establish successful recovery.
+
+The metric change does not modify catalog generation, per-world scores, reference,
+probe or acquisition policy. All dated JSON evidence and the September 10 source
+freeze remain historical and unchanged: their FDR fields, where present, use the
+old unsupported-catalog denominator. Their source hashes do not certify this
+revised evaluator. A new clean Linux replay and source freeze are required before
+claiming validation of the revised metric dictionaries; independent calibration
+must follow scientific separation, not precede it.
+
 ## 1. Reference method
 
 The standalone NumPy/SciPy reference uses public observations and the 16-credit

@@ -67,6 +67,13 @@ attempts; coverage counts valid, non-abstaining supported-world submissions.
   tensor scores zero.
 - Mechanism recovery, false discovery rate, correct refusal rate and discovery coverage
   are reported separately with their denominators; a full abstention scores exactly zero.
+- `development_false_discovery_rate` and `heldout_false_discovery_rate` divide false
+  claims by **all valid, non-abstaining claims**, on supported and unsupported catalogs.
+  The denominator is `positive_claim_count` (or `heldout_positive_claim_count`);
+  zero claims gives FDR zero, which does not imply recovery or coverage.
+  `*_false_positive_rate` preserves the separate false-claims / unsupported-catalogs
+  statistic. Correct refusal rate also uses all unsupported catalogs as denominator.
+  `discovery_attempt_count` remains the supported-world count used for coverage.
 - `robustness_score` repeats the audit on held-out tensors, mixtures and noise.
 
 This is a deterministic synthetic seismological catalog, not a claim about any real

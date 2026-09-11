@@ -39,6 +39,7 @@ invariants:
 - axes are scored on absolute cosine so sign flips are free
 - principal axes form a physical orthogonal frame, with absolute unit-vector dot at most 1e-6
 - invalid artifacts do not count as discovery attempts and confidence tracks recovery quality
+- FDR divides false claims by all valid non-abstaining claims (zero for no claims); false-positive rate divides by unsupported catalogs
 - a full abstention scores exactly zero after normalization
 - re-analysis is charged, once per event, and overspending invalidates the world
 known_shortcuts: 'UNRESOLVED: revised Linux reference 0.783503/0.796709 versus dense paired grid plus
@@ -119,9 +120,10 @@ frontier_eng_overlap_review:
 evaluation_budget:
   timeout_seconds: 300
   reanalysis_units: 16
-  measurement_source: Current source replay is recorded in references/linux_validation_2026-09-10.json;
-    September 9 evidence describes the historical implementation only. Contributor validation is separate
-    from model calibration.
+  measurement_source: references/linux_validation_2026-09-10.json records the pre-September-12 metric
+    implementation; its source freeze does not certify the revised FDR dictionaries. A fresh clean Linux
+    replay is pending. September 9 evidence describes the earlier implementation only. Contributor validation
+    is separate from model calibration.
   reference_wall_seconds_linux:
   - 16.96
   - 17.407
