@@ -195,3 +195,47 @@ def test_plan_denominator_is_fixed_and_legacy_scope_explicit():
     assert report["intent_to_evaluate"]["completion_rate"] == 1 / 8
     assert report["intent_to_evaluate"]["missing_runs"] == 7
     assert batch.aggregate_runs([run])["denominator_scope"] == "observed_runs_only_legacy"
+
+
+def test_real_run_manifest_uses_summary_budget_and_sums_per_call_tokens(tmp_path):
+    from sle.algorithms.common import ensure_run_manifest, write_summary
+    from sle.llm import LLMClient, LLMConfig
+    from sle.protocol import TrajectoryEvent, summarize_trajectory
+    from sle.registry import find_task
+
+    directory = tmp_path / "actual-format"
+    directory.mkdir()
+    spec = find_task("Chemistry/LennardJonesCluster")
+    manifest = ensure_run_manifest(
+        directory, spec=spec, llm=LLMClient(LLMConfig(model="fixture")),
+        algorithm="greedy_rewrite", seed=0, feedback_mode="selection_blind", resume=False)
+    assert "budget" not in manifest
+    events = []
+    for step in range(3):
+        score = .6 if step == 0 else .2
+        events.append(TrajectoryEvent(
+            step=step, oracle_calls=step + 1, budget_units=step + 1,
+            score=score, best_score=.6, valid=True, accepted=step == 0,
+            wall_seconds=1, cumulative_wall_seconds=step + 1,
+            candidate_sha256=str(step) * 64, parent_sha256="0" * 64,
+            metrics={"combined_score": score, "valid": 1},
+            llm={"input_tokens": 10 + step, "output_tokens": 20 + step,
+                 "total_tokens": 30 + 2 * step} if step else {}).to_dict())
+    (directory / "trajectory.jsonl").write_text("\n".join(map(json.dumps, events)))
+    summary = summarize_trajectory(events, budget=3)
+    summary.update(budget=2, task_id=spec.task_id, algorithm="greedy_rewrite", seed=0,
+                   feedback_mode="selection_blind")
+    write_summary(directory, summary)
+    row = cross.read_runs(tmp_path)[0]
+    assert row["status"] == "ok"
+    assert row["budget"] == 2
+    assert row["budget_source"] == "summary.json"
+    assert row["best"] == .6
+    assert row["input_tokens"] == 23
+    assert row["output_tokens"] == 43
+    assert cross.attributable_score_run(row)
+    summary["budget"] = 3
+    write_summary(directory, summary)
+    row = cross.read_runs(tmp_path)[0]
+    assert row["status"] == "incomplete_proposal_horizon"
+    assert not cross.attributable_score_run(row)

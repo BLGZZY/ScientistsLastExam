@@ -60,6 +60,9 @@ class CampaignTests(unittest.TestCase):
                                    "candidate_sha256": str(step) * 64, "parent_sha256": "0" * 64,
                                    "metrics": {"combined_score": score, "valid": 1},
                                    "llm": {"total_tokens": 3}, "algorithm_metadata": {}})
+                if cohort["active_wall_horizon_s"] is not None:
+                    events[-1]["cumulative_wall_seconds"] = cohort["active_wall_horizon_s"] + 1
+                    events[-1]["wall_seconds"] = events[-1]["cumulative_wall_seconds"] - events[-2]["cumulative_wall_seconds"]
                 payload = "\n".join(json.dumps(event) for event in events) + "\n"
                 (directory / "trajectory.jsonl").write_text(payload)
                 entries.append({"task": plan["bindings"]["task_id"], "algorithm": plan["algorithm"],
@@ -179,6 +182,37 @@ class CampaignTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "changed after planning"):
                 campaign.execute(plan)
         run.assert_not_called()
+
+    def test_active_wall_flag_without_measured_horizon_is_incomplete(self):
+        plan = self.plan(budget_mode="active_wall", budgets=[10], proposal_cap=2)
+        self.populate(plan)
+        cell = plan["cells"][0]
+        trajectory = Path(cell["workdir"]) / "trajectory.jsonl"
+        events = [json.loads(line) for line in trajectory.read_text().splitlines()]
+        events[-1]["cumulative_wall_seconds"] = 3.0
+        events[-1]["wall_seconds"] = 1.0
+        payload = "\n".join(map(json.dumps, events)) + "\n"
+        trajectory.write_text(payload)
+        path = Path(plan["cohorts"][0]["batch_output"])
+        batch = json.loads(path.read_text())
+        batch["runs"][0]["trajectory_snapshot"]["trajectory_sha256"] = hashlib.sha256(payload.encode()).hexdigest()
+        path.write_text(json.dumps(batch))
+        replayed = campaign.replay(plan)
+        self.assertEqual(replayed["cells"][0]["status"], "incomplete")
+        self.assertIn("before the active-wall horizon", replayed["cells"][0]["detail"])
+
+    def test_failed_execution_cannot_pass_by_replaying_previous_complete_results(self):
+        plan = self.plan()
+        self.populate(plan)
+        path = self.root / "plan.json"
+        output = self.root / "output.json"
+        path.write_text(json.dumps(plan))
+        with patch.object(campaign, "execute", return_value=[{"cohort": "budget_00", "returncode": 2}]):
+            rc = campaign.main("delta_ladder", ["--plan", str(path), "--output", str(output), "--execute"])
+        report = json.loads(output.read_text())
+        self.assertEqual(rc, 2)
+        self.assertEqual(report["status"], "execution_failed")
+        self.assertEqual(report["replay_status"], "complete")
 
     def test_invalid_budgets_and_rewriting_an_existing_plan_are_rejected(self):
         for budgets in ([0], [2, 1], [1, 1], [float("inf")], [1.5]):

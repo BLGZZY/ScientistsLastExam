@@ -94,6 +94,15 @@ class ShortcutContractTests(unittest.TestCase):
         self.assertEqual(len(migration), 85)
         self.assertTrue(set(migration).issubset({spec.task_id for spec in list_tasks(None)}))
 
+    def test_missing_and_malformed_task_cards_fail_as_structured_results(self):
+        card = self.root / "TASK_CARD.yaml"
+        self.assertEqual(inspect_probe(self.spec, None, skip_eval=True)["status"], "failed")
+        for source in ("[", "- not-a-mapping\n"):
+            card.write_text(source)
+            result = inspect_probe(self.spec, None, skip_eval=True)
+            self.assertEqual(result["status"], "failed")
+            self.assertFalse(result["passed"])
+
     def test_existing_pairing_shortcut_is_executed_as_a_regression_not_a_calibration(self):
         # Existing exact oracle regression: no model call, no frozen evidence output,
         # and no assertion that this task passes the new difficulty gate.

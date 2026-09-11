@@ -205,6 +205,9 @@ def _cell_result(plan, cohort, cell, batch):
                     raise ValueError("active-wall replay requires measured event times")
                 if event.get("accepted") is True and wall > horizon:
                     raise ValueError("an incumbent was accepted after the active-wall horizon")
+            if events[-1]["cumulative_wall_seconds"] < horizon:
+                result.update(status="incomplete", detail="trajectory ends before the active-wall horizon")
+                return result
         result.update(status="complete", baseline=selected[0]["score"], endpoint=selected[-1]["score"],
                       baseline_gain=selected[-1]["score"] - selected[0]["score"],
                       trajectory_sha256=hashlib.sha256(trajectory.read_bytes()).hexdigest(),
@@ -365,6 +368,11 @@ def main(kind, argv=None):
             "complete_cells": 0, "scientific_admission": "not_assessed", "trusted_evidence": False,
             "commands": [batch_command(plan, cohort) for cohort in plan["cohorts"]]}
         report["execution_outcomes"] = outcomes
+        execution_ok = all(outcome["returncode"] == 0 for outcome in outcomes)
+        if not execution_ok:
+            # A prior complete replay does not make a failed new execution pass.
+            report["replay_status"] = report["status"]
+            report["status"] = "execution_failed"
         report["report_commands"] = report_commands(plan, args.reports or args.output.parent / "science_reports")
         if args.reports:
             report["science_reports"] = build_reports(plan, report, args.reports)
@@ -372,6 +380,6 @@ def main(kind, argv=None):
         atomic_write_text(args.output, json.dumps(report, indent=2, allow_nan=False) + "\n")
         print(report["status"], str(args.output))
         reports_ok = not args.reports or report["science_reports"]["status"] == "generated"
-        return 0 if report["status"] in {"planned", "complete"} and reports_ok else 2
+        return 0 if execution_ok and report["status"] in {"planned", "complete"} and reports_ok else 2
     except (OSError, ValueError, KeyError) as exc:
         parser.error(str(exc))

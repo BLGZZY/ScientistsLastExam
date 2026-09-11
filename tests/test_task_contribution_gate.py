@@ -107,5 +107,24 @@ class TaskContributionGateTests(unittest.TestCase):
         self.assertFalse(checks["deterministic_baseline"]["ok"])
 
 
+def test_missing_initial_solution_produces_failed_structural_report(tmp_path):
+    import shutil
+    from dataclasses import replace
+    from scripts import check_task_contribution as gate
+
+    original = gate.find_task("Mathematics/RamseyLowerBound", include_uncertified=True)
+    task_dir = tmp_path / original.task_dir.name
+    shutil.copytree(original.task_dir, task_dir)
+    spec = replace(original, task_dir=task_dir, eval_dir=task_dir / "frontier_eval")
+    spec.initial_program_path.unlink()
+    with mock.patch.object(gate, "find_task", return_value=spec), mock.patch.object(gate, "ROOT", tmp_path):
+        report = gate.check_task(spec.task_id, skip_eval=True)
+    checks = {row["check"]: row for row in report["checks"]}
+    assert checks["required_files"]["ok"] is False
+    assert "solution.py" in checks["required_files"]["detail"]
+    assert report["phases"]["structural"] == "failed"
+    assert report["passed"] is False
+
+
 if __name__ == "__main__":
     unittest.main()

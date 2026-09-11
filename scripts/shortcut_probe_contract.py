@@ -70,10 +70,16 @@ def validate_contract(contract, task_dir):
 
 
 def inspect_probe(spec, evaluate, *, timeout_s=180.0, skip_eval=False):
-    card = yaml.safe_load((spec.task_dir / "TASK_CARD.yaml").read_text()) or {}
-    contract = card.get("shortcut_probe")
     result = {"status": "pending", "passed": False, "observations": [],
               "scope": "declared shortcut guard only; independent model calibration still required"}
+    try:
+        card = yaml.safe_load((spec.task_dir / "TASK_CARD.yaml").read_text()) or {}
+        if not isinstance(card, dict):
+            raise ValueError("task card root must be a mapping")
+    except (OSError, ValueError, yaml.YAMLError) as exc:
+        result.update(status="failed", detail="cannot read task card: " + str(exc))
+        return result
+    contract = card.get("shortcut_probe")
     if contract is None:
         migration = json.loads(MIGRATION.read_text()).get("tasks", {}).get(spec.task_id)
         result.update(status="migration_pending" if migration else "failed",

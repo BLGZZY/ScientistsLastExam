@@ -116,16 +116,38 @@ def read_runs(runs_root: Path) -> list[dict]:
                 raise ValueError("empty trajectory")
             proposals = rows[1:]
             valid = sum(bool(row.get("valid")) for row in proposals)
-            usage = next((row["llm"] for row in reversed(rows) if row.get("llm")), {})
             summary_path = workdir / "summary.json"
             summary = json.loads(summary_path.read_text()) if summary_path.is_file() else {}
+            # ensure_run_manifest does not record the proposal budget. The runner
+            # records it in summary.json; trajectory length is the observed count,
+            # never a substitute for the planned horizon.
+            recorded_budget = summary.get("budget")
+            if run["budget"] is not None and recorded_budget is not None and run["budget"] != recorded_budget:
+                raise ValueError("manifest and summary proposal budgets disagree")
+            if run["budget"] is None:
+                run["budget"] = recorded_budget
+                run["budget_source"] = "summary.json" if recorded_budget is not None else "unrecorded"
+            else:
+                run["budget_source"] = "run_manifest.json"
+            if run["budget"] is not None and (type(run["budget"]) is not int or run["budget"] < 0):
+                raise ValueError("recorded proposal budget must be a nonnegative integer")
+            for field, expected in (("task_id", run["task"]), ("algorithm", run["algorithm"]),
+                                    ("seed", run["seed"]), ("feedback_mode", run["mode"])):
+                if field in summary and summary[field] != expected:
+                    raise ValueError("summary identity differs from manifest: " + field)
+            def usage_total(field):
+                values = [(event.get("llm") or {}).get(field) for event in proposals]
+                return sum(values) if all(type(v) is int and v >= 0 for v in values) else None
+            status = "protocol_incomplete" if summary.get("protocol_incomplete") or not valid else "ok"
+            if status == "ok" and run["budget"] is not None and len(proposals) != run["budget"]:
+                status = "incomplete_proposal_horizon"
             run.update(
-                status="protocol_incomplete" if summary.get("protocol_incomplete") or not valid else "ok",
+                status=status,
                 best=float(selected[-1]["score"]), valid=valid, proposals=len(proposals),
                 observed_budget=len(proposals),
                 selection_evidence=trajectory_selection_evidence(rows),
-                input_tokens=int(usage.get("input_tokens", 0) or 0),
-                output_tokens=int(usage.get("output_tokens", 0) or 0),
+                input_tokens=usage_total("input_tokens"),
+                output_tokens=usage_total("output_tokens"),
             )
         except (OSError, ValueError) as exc:
             run.update(status="invalid_trajectory", error="%s: %s" % (trajectory, exc))
@@ -294,14 +316,14 @@ def main(argv: list[str] | None = None) -> int:
     print("=== cost ===")
     cost_rows = []
     for model in sorted(tokens):
-        total_in = sum(a for a, _ in tokens[model])
-        total_out = sum(b for _, b in tokens[model])
+        total_in = sum(a for a, _ in tokens[model]) if all(a is not None for a, _ in tokens[model]) else None
+        total_out = sum(b for _, b in tokens[model]) if all(b is not None for _, b in tokens[model]) else None
         price = PRICES.get(model)
-        dollars = (total_in / 1e6 * price[0] + total_out / 1e6 * price[1]) if price else None
+        dollars = (total_in / 1e6 * price[0] + total_out / 1e6 * price[1]) if price and total_in is not None and total_out is not None else None
         cost_rows.append({"model": model, "runs": len(tokens[model]),
                           "input_tokens": total_in, "output_tokens": total_out,
                           "estimated_usd": dollars})
-        print("  %-20s %3d runs  in=%9d  out=%9d  %s"
+        print("  %-20s %3d runs  in=%9s  out=%9s  %s"
               % (model[:20], len(tokens[model]), total_in, total_out,
                  "$%.2f" % dollars if dollars is not None else "no published price"))
 

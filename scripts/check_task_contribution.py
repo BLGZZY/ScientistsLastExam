@@ -158,7 +158,9 @@ def check_task(task_id: str, timeout_s: float = 180.0, *, skip_eval: bool = Fals
     else:
         _ok(rows, "numeric_keys", "")
 
-    keys = subscript_keys(spec.initial_program_path.read_text(encoding="utf-8"))
+    initial_source = (spec.initial_program_path.read_text(encoding="utf-8")
+                      if spec.initial_program_path.is_file() else "")
+    keys = subscript_keys(initial_source)
     keys |= evaluator_problem_keys(source)
     constraints = spec.eval_dir / "constraints.txt"
     if constraints.is_file():
