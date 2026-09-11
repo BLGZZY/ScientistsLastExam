@@ -1,4 +1,8 @@
-# PR80 admission repair: fixed pre-measurement plan
+# PR80 admission repair and fixed validation
+
+**Current status:** complete positional method and declared shortcut guard validated; genuine model first-proposal evidence remains pending. At frozen source `c02e402f7ee709521c5843f6abd3256b6e57f872`, the standard contribution gate passed structural/runtime/shortcut phases and all 151 targeted Linux tests passed without skips. Difficulty remains `unassessed`. Exact validation details are in `pr80_validation_2026-09-11.json`; no task file changes follow this freeze in this repair branch.
+
+## Original fixed plan
 
 Source: PR head `4bb95061846a28a3025f4eb05cdd52210e12b11a`, integrated onto current main
 `3069479717c2d0db0b040babb42390bdcbb60cb1` while preserving both histories. This branch does
@@ -90,3 +94,14 @@ then obtain genuine first-proposal frontier evidence before any admission decisi
 makes 13 calls (two baselines, two blanket refusals, three malformed fixtures and six declared
 reference/probe calls). They are separate from the 14-call method pilot and do not extend its
 candidate grid. No global evidence is refreshed and no model draw occurs in this branch.
+
+## Final validation
+
+The separate 13-call contribution gate completed successfully at c02e402. Final same-source
+Linux pytest executed all 151 collected tests: 151 passed, zero failures/errors/skips, in
+241.44 seconds. This is the seven-file targeted suite, not an entire-repository claim.
+The public validation JSON contains the exact gate report and JUnit hash; it contains no
+per-world observations, candidate output, private worker errors or credentials. The method
+pilot retains its original 5c5b358 provenance and all 14 records. There were no model calls,
+world or anchor changes, parameter tuning, or global evidence refresh. Scientific admission
+still requires the independently scheduled first-proposal draws and domain review.
