@@ -44,6 +44,25 @@ HeatExchanger 和 Truss 的两份既有冻结候选分别在旧 main 与本批�
 新增 docstring 与数字/bytes 常量的区别回归。便携卡片/库存/分类回归 20 passed，另 5 subtests。
 CI 固定要求执行 #80 的 18 项检查及旧任务隔离的 20 项检查，缺收集或跳过均不能算通过。
 
+## 合并前全局冻结与验证
+
+新 certification v86 / baseline v70 / maturity v28 已生成：86 道基线各双跑，
+86/86 有效且确定，基础设施失败 0；这是基线确定性证据，异常候选调用数为 0，不能冒称异常覆盖。
+公共 baseline v70 从保留的私有原件投影，保留评测源 `15fc7050`，另记导出源 `1e290833`；
+完整指标、隐藏逐字段差值、原错误消息和原始命令保留在 Git 外部的 0700/0600 文件中。
+公共预检只保留允许的指标、汇总判定和哈希；隐藏字段漂移仍参与完整判定，不能因公开过滤变成通过。
+
+wrapper v4 为 86/86，通过的 recovery v10 为 8/8 场景；preflight v3 对 7 道任务各运行 3 次，
+得到 70 pass、0 fail、0 missing。spec v14、manifest v11、artifacts v11 保留 7 份候选源码，
+仅对有实际兼容报告支撑的 Heat/Truss 变更建立新绑定。
+严格冻结库存测试在 `36e6e02c` 上为 15 文件、166 passed、0 failed、0 skipped，不能替代完整 GitHub CI。
+详细来源和哈希见 `experiments/global_freeze_validation_2026-09-11_v1.json`。
+
+新私有 raw baseline 和 preflight 的 blob 不在本批分支可达历史中；旧公开 v68 原样保留。
+随后修正 rebind 生成器的说明：实际行为变更通过固定产物兼容测量或重新测量迁移时，
+不再错误地标成 declarative-only。该修改只改新记录的解释，不改拒绝规则、原有证据或科学测量。
+CI 的真实世界依赖已在独立 Linux Python 3.10 环境按 20 个固定版本安装并核对，13 个模块导入及 pip check 通过。
+
 ## 保留的队列与后续条件
 
 新的 GitHub 快照记录 34 个 open PR、15 个 draft，原始 head 未按本地修复分支改写。
