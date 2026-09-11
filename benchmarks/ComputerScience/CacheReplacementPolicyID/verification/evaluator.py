@@ -430,9 +430,9 @@ PUBLIC_PROBLEM = {
     "run_budget": RUN_BUDGET,
     "max_trace_length": MAX_TRACE,
     "max_states": MAX_STATES,
-    "reset": "every run starts from the same state: the set is flushed and blocks 0, 1, ..., "
-             "ways-1 are loaded in that order, so block i sits in way i, and the replacement "
-             "metadata is whatever those loads left",
+    "reset": "every run starts from the policy's prescribed reset procedure with blocks "
+             "0, 1, ..., ways-1 resident, block i in way i; deterministic policies reset to "
+             "the same metadata, while a randomized policy may draw fresh reset metadata",
     "run_model": "run(trace) plays the trace, a list of integer block addresses in "
                  "0..2147483647 that all map to this set, from the reset state and returns one "
                  "boolean per access, True for a hit; a block is a hit exactly when it is in the "

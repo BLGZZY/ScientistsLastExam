@@ -90,9 +90,11 @@ def identify(problem, run):
 
 ### The reset state
 
-Every run starts from the same state. The set is flushed, then blocks 0, 1, ..., W-1 are loaded
-in that order, so block i sits in way i. The policy's metadata is whatever those W loads left. Any
-other integer names a block that is not in the set.
+Every run starts with blocks 0, 1, ..., W-1 resident and block i in way i. Each policy has a
+prescribed reset procedure: a deterministic policy always starts with the same metadata, while
+a randomised policy may draw fresh reset metadata. The setup costs W accesses. This is the
+synthetic oracle's initialization contract, not a reconstruction of a particular CPU's flush or
+warm-up circuit. Any other integer names a block that is not in the set.
 
 ### `run(trace)`
 
