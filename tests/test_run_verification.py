@@ -122,6 +122,7 @@ class RunVerificationTests(unittest.TestCase):
         score: float,
         accepted: bool,
         recorded_feedback_mode: str | None = None,
+        provider_wall: float = 0.0,
     ) -> str:
         parent = (root / "best_program.py").read_text(encoding="utf-8")
         program = "def solve():\n    return 2\n"
@@ -175,9 +176,9 @@ class RunVerificationTests(unittest.TestCase):
                 best_score=best_score,
                 valid=True,
                 accepted=accepted,
-                wall_seconds=receipt["evaluation_wall_seconds"],
+                wall_seconds=provider_wall + receipt["evaluation_wall_seconds"],
                 cumulative_wall_seconds=(
-                    prior_cumulative + receipt["evaluation_wall_seconds"]
+                    prior_cumulative + (provider_wall + receipt["evaluation_wall_seconds"])
                 ),
                 candidate_sha256=candidate_hash,
                 parent_sha256=sha256_text(parent),
@@ -188,6 +189,7 @@ class RunVerificationTests(unittest.TestCase):
                     "selection_policy": _selection_policy(recorded_mode),
                     "accepted_semantics": _accepted_semantics(recorded_mode),
                     "proposal_slot": 1,
+                    "proposal_published_wall_seconds": prior_cumulative + provider_wall,
                     "prompt_source_step": 0,
                     "feedback_released_through_step": 0,
                     "prompt_sha256": prompt_hash,

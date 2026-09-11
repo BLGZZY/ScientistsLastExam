@@ -108,6 +108,7 @@ def write_verified_run(root: Path, *, budget: int = 10) -> None:
             "parent_sha256": sha256_text(incumbent),
             "prompt_sha256": prompt_hash,
         }, lambda step=step: {"combined_score": step / 100.0, "valid": 1.0})
+        published = cumulative
         cumulative += receipt["evaluation_wall_seconds"]
         append_event(root / "trajectory.jsonl", TrajectoryEvent(
             step=step, oracle_calls=step + 1, score=step / 100.0,
@@ -122,6 +123,7 @@ def write_verified_run(root: Path, *, budget: int = 10) -> None:
                 "selection_policy": "online_incumbent",
                 "accepted_semantics": "online_incumbent_update",
                 "proposal_slot": step,
+                "proposal_published_wall_seconds": published,
                 "prompt_source_step": step - 1,
                 "feedback_released_through_step": step - 1,
                 "prompt_sha256": prompt_hash,
