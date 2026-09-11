@@ -19,10 +19,10 @@ optimization 关注有效目标改进；discovery 还需要分别检查机制、
 | C 报告 | 集成 #66；基线参与 incumbent、明确旧 acceptance、保持任务/模型/算法/反馈/seed/预算身份、同 run/split 三轴、计划分母、真实 manifest 的预算与 token 读取 | 新科学结论需新的完整实验矩阵 |
 | D 全局证据 | 在 Linux 固定科学依赖下刷新 85 题认证、基线、成熟度和恢复审计，保留所有旧版本 | 最终全量 CI 与发布状态见本次 PR |
 | E 公开入口 | 集成 #37/#69 并补修；85 个 wrapper 复用共享入口、公开指标 allowlist、固定错误类别、私有目录/路径检查 | 全库存回放结果见下方验证记录 |
-| F 测试覆盖 | 公开 CI 保存 JUnit 并区分执行、失败、跳过；增加便携篡改/缺失/漂移样例；历史原件单独审计，修复 Photovoltaic 无效 git pathspec | 私有历史通道需保留原始 runs，公开 CI 缺少这些数据时仍明确报告跳过 |
+| F 测试覆盖 | 公开 CI 保存 JUnit 并区分执行、失败、跳过；仓库内集成 PR 与 main 同样强制冻结库存；增加便携篡改/缺失/漂移样例；历史原件单独审计，修复 Photovoltaic 无效 git pathspec | 私有历史通道需保留原始 runs，公开 CI 缺少这些数据时仍明确报告跳过 |
 | G 贡献门 | 可执行 shortcut 合同、重复评测与声明核对；结构/运行/捷径/难度分列；跳过或缺声明返回 incomplete | 85 个旧任务逐项迁移，不能由迁移清单自动豁免；现有探针覆盖不等于难度证明 |
 | H 标定工具 | 新增 `calibrate_task.py` / `run_delta_ladder.py`；固定哈希计划、执行/恢复/回放、完整分母、分离报告；两格真实模型 pilot 完成 | 正式多 seed、多模型和反馈配对实验 |
-| I PR 整理 | 35 个未合 PR 的固定 head 队列；#60/#73 固定探针复验；#17 独立拆分审查与修复分支 | 其余优先投稿复验、#17 格式/profile/family 分批验收；未直接合入任务投稿 |
+| I PR 整理 | 35 个未合 PR 的固定 head 队列；#60/#73 固定探针复验；其余 8 项源码/参数准备清单；#17 三项工程修复的独立分支 | 其余优先投稿复验、#17 格式/profile/family 分批验收；未直接合入任务投稿 |
 | J 正式实验 | 保留任务、模型、预算和反馈配对所需工具；明确实验前置条件 | 难度证据与任务准入未齐，尚未启动正式多模型/长时测量 |
 
 框架集成保留 #37、#66、#69 的提交祖先；没有整包合入 #17。
@@ -44,7 +44,10 @@ optimization 关注有效目标改进；discovery 还需要分别检查机制、
   内容完整性本身不证明当前运行时兼容；相关迁移拒绝仍被测试保留。
 
 旧集成点 `c29f7076` 的全量测试与当前源码的追加验证分别记录，不把旧提交的全量结果标成最终 HEAD 的全量结果。
-最终公开 CI 和完整测试计数将在完成后补录。
+旧集成点全量为 1,349 passed、15 failed、48 skipped（41 分 55 秒）；15 项失败位于冻结 manifest、measurement-health/preflight 和 maturity。
+最终追加验证与公开 CI 状态以[集成 PR #81](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/81) 的验证记录为准。
+JUnit、必要测试清单、历史原件审计与摘要保存在私有持久目录
+`/home/azureuser/workspace-gzy/zyf/sle-operator-evidence/2026-09-11/validation`；复制前后文件摘要核对一致。
 
 ## Pilot 与投稿审查的边界
 
@@ -59,8 +62,11 @@ CapSet 与 ActiveLawDiscovery 各一个 `selection_blind`、budget=1、seed=0 �
 issue #78 的 0.884294 策略缺少精确源码/阈值，未被本轮证伪或判定已修复。
 
 [PR 队列](pr_intake_queue_2026-09-11.md) 保留各 head 和下一动作。
+[剩余 8 项复验清单](shortcut_revalidation_backlog_2026-09-11.md) 核对全部远端 head 和 40 份源码摘要，建议从 #74、#72 开始；本轮清单不包含新评测。
 [PR #17 审查](pr17_review_2026-09-11.md) 单列预算恢复、timeout、时钟验证与旧 run 格式的兼容问题；
 family/lifetime credit 尚无真实 wave 任务证据，不用于本轮科学结论。
+三个工程修复保存在[独立修复分支](https://github.com/Geniusyingmanji/ScientistsLastExam/compare/5bf41028801cb02800ffdcc8f2102c10b8b371d3...codex/pr17-runtime-verifier-fixes)，
+129 项 mock/synthetic 回归通过、7 项已有 macOS sandbox 检查跳过；Linux runtime profile 仍需验收。该分支未合入本轮主框架。
 
 下一批按顺序补齐剩余优先投稿的可执行探针、reference 能力与合同声明，完成独立首提案标定后，
 才将选定的 optimization/discovery 任务放进冻结的多 seed、normal/selection_blind 预算矩阵。
