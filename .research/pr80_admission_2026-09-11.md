@@ -43,3 +43,50 @@ while preserving module/file state across legal callbacks inside one world. A re
 regression checks all 18 boundaries, imported-module attributes and temporary files; no mock
 worker substitutes for this isolation test. The fixed scientific pilot will use the repaired
 revision; no pre-reset pilot result is reused.
+
+## Independent fixed Linux method measurements (2026-09-11)
+
+| Frozen candidate | Development | Held out | Dev false/claims | Held false/claims |
+|---|---:|---:|---:|---:|
+| Baseline | 0.000000 | 0.000000 | 12/12 | 6/6 |
+| Complete positional reference | 0.819398 | 0.729870 | 0/6 | 0/3 |
+| First position only | 0.570283 | 0.479870 | 0/5 | 0/2 |
+| No scan | 0.176793 | 0.229870 | 0/2 | 0/1 |
+| No library | 0.571429 | 0.500000 | 0/4 | 0/2 |
+| Positional, no confirmation | 0.322314 | 0.000000 | 2/7 | 5/6 |
+| Historical strongest fixed shortcut | 0.427426 | 0.000000 | 1/6 | 2/4 |
+
+All seven candidates ran twice at clean source `5c5b358cdf47ec3ce1319fc722cc88bd4afcb0f2`.
+Every one of the 14 runs was valid in all 12 development and six held-out worlds; each complete
+metric pair was identical. Runtime: Linux Python 3.8.10, NumPy 1.24.4, SciPy 1.10.1, numerical
+thread counts one, 300-second task timeout. The runtime source hash is
+`e29d3b1d7b0e0f9f5b1b09a8c0a45ace098ad8790547d0333c1940e0a421bea9`; the only `sle/*.py`
+change from main3069479 is the contributor's DataPrivacy logical-domain mapping. Full metrics
+are private; scalar measurements and exact source hashes are in
+`.research/pr80_method_qualification_2026-09-11.json`.
+
+The full reference reaches 0.8193980000000003; both declared probes stay below the unchanged
+10% margin threshold 0.7374582000000003. Each substantive capability ablation lowers the
+score: later-position scanning, scanning as a whole, the library, and confirmation. This is
+fixed candidate-method qualification, not a model difficulty or iteration result. The old
+318-policy grid is author provenance; only its fixed reported strongest alternative and the
+stronger positional no-confirmation alternative were re-evaluated here, without new grid
+selection, seed tuning or changed worlds. True frontier first-proposal evidence is still missing.
+
+## Novelty source reconciliation
+
+All 47 Appendix-A entries in [the formal paper](https://arxiv.org/html/2604.12290v1#A1)
+and all 78 rows in the [current pinned repository catalog](https://github.com/Einsia/Frontier-Engineering/blob/e3fa29c193356af2ce1ec8b3d23ab1a2e2410071/TASK_DETAILS.md)
+were compared by artifact and oracle. No same problem class was found. Cryptographic tasks
+optimize implementation throughput; rare-event communication tasks optimize estimators.
+Neither asks for a paid-sample privacy-inequality counterexample or a calibrated refusal.
+The machine crosswalk is `pr80_frontier_novelty_2026-09-11.json`, with both source hashes.
+The 78 rows expand to 84 when EngDesign's seven sub-problems are separated. The historical
+95-entry snapshot named in CONTRIBUTING is unresolved and is not relabelled 95/95 reviewed.
+These are catalog-level comparisons, not review of every external implementation.
+
+Next: run the repository contribution gate as a separate fixed technical-validation plan,
+then obtain genuine first-proposal frontier evidence before any admission decision. The gate
+makes 13 calls (two baselines, two blanket refusals, three malformed fixtures and six declared
+reference/probe calls). They are separate from the 14-call method pilot and do not extend its
+candidate grid. No global evidence is refreshed and no model draw occurs in this branch.

@@ -4,11 +4,40 @@
 
 The tables below retain the contributor's historical in-process measurements at PR head `4bb95061846a28a3025f4eb05cdd52210e12b11a`. They are not current Linux sandbox measurements. In particular, the original columns labelled false discovery used false claims / all worlds; that is a world-level fraction, not FDR. The repaired oracle publishes false claims / valid claims with explicit counts; zero claims remain unavailable under the metric contract. This correction does not change the mechanism score, worlds, seeds or anchors.
 
-The previous first-query reference deliberately omitted later positions and is inadequate as an admission reference. `verification/reference_positional.py` now packages the existing positional method with original helper source inlined and no parameter changes. Source hashes and the exact adaptation are recorded in `.research/pr80_source_adaptation_2026-09-11.json`. The original method remains a no-later-position control. Fixed source-matched no-scan, no-library and no-confirmation programs are standalone, and the machine shortcut contract includes the historical strongest no-confirmation alternative as well as the full positional method without confirmation. All new expected scores are null until independent measurements are reviewed.
+The previous first-query reference deliberately omitted later positions and is inadequate as an admission reference. `verification/reference_positional.py` now packages the existing positional method with original helper source inlined and no parameter changes. Source hashes and the exact adaptation are recorded in `.research/pr80_source_adaptation_2026-09-11.json`. The original method remains a no-later-position control. Fixed source-matched no-scan, no-library and no-confirmation programs are standalone, and the machine shortcut contract includes the historical strongest no-confirmation alternative as well as the full positional method without confirmation. The fixed pilot below now supplies measured expected scores in a separate card update; no model difficulty pass is implied.
 
 The discrete compliance derivation, branch-coupling delta argument and truncation limits are in `references/compliance_argument.md`. Complete novelty comparison and real first-proposal model evidence remain outstanding. No new model call or global evidence refresh is included in this repair.
 
 The following historical narrative is retained for provenance; it does not override this current admission status.
+
+## Independent fixed Linux method measurements (2026-09-11)
+
+| Frozen candidate | Development | Held out | Dev false/claims | Held false/claims |
+|---|---:|---:|---:|---:|
+| Baseline | 0.000000 | 0.000000 | 12/12 | 6/6 |
+| Complete positional reference | 0.819398 | 0.729870 | 0/6 | 0/3 |
+| First position only | 0.570283 | 0.479870 | 0/5 | 0/2 |
+| No scan | 0.176793 | 0.229870 | 0/2 | 0/1 |
+| No library | 0.571429 | 0.500000 | 0/4 | 0/2 |
+| Positional, no confirmation | 0.322314 | 0.000000 | 2/7 | 5/6 |
+| Historical strongest fixed shortcut | 0.427426 | 0.000000 | 1/6 | 2/4 |
+
+All seven candidates ran twice at clean source `5c5b358cdf47ec3ce1319fc722cc88bd4afcb0f2`.
+Every one of the 14 runs was valid in all 12 development and six held-out worlds; each complete
+metric pair was identical. Runtime: Linux Python 3.8.10, NumPy 1.24.4, SciPy 1.10.1, numerical
+thread counts one, 300-second task timeout. The runtime source hash is
+`e29d3b1d7b0e0f9f5b1b09a8c0a45ace098ad8790547d0333c1940e0a421bea9`; the only `sle/*.py`
+change from main3069479 is the contributor's DataPrivacy logical-domain mapping. Full metrics
+are private; scalar measurements and exact source hashes are in
+`.research/pr80_method_qualification_2026-09-11.json`.
+
+The full reference reaches 0.8193980000000003; both declared probes stay below the unchanged
+10% margin threshold 0.7374582000000003. Each substantive capability ablation lowers the
+score: later-position scanning, scanning as a whole, the library, and confirmation. This is
+fixed candidate-method qualification, not a model difficulty or iteration result. The old
+318-policy grid is author provenance; only its fixed reported strongest alternative and the
+stronger positional no-confirmation alternative were re-evaluated here, without new grid
+selection, seed tuning or changed worlds. True frontier first-proposal evidence is still missing.
 
 ## Reference (truth-blind): a first-query dissent scan, a screened library, one confirmed pair
 

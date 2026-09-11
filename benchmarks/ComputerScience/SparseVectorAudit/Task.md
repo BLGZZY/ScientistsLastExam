@@ -153,6 +153,35 @@ A sealed held-out set of six further worlds, two where the claim holds and four 
 is scored too, under the same keys with the `heldout_` prefix, and is not visible to a searcher.
 `per_instance` carries one row per world.
 
+## Independent fixed Linux method measurements (2026-09-11)
+
+| Frozen candidate | Development | Held out | Dev false/claims | Held false/claims |
+|---|---:|---:|---:|---:|
+| Baseline | 0.000000 | 0.000000 | 12/12 | 6/6 |
+| Complete positional reference | 0.819398 | 0.729870 | 0/6 | 0/3 |
+| First position only | 0.570283 | 0.479870 | 0/5 | 0/2 |
+| No scan | 0.176793 | 0.229870 | 0/2 | 0/1 |
+| No library | 0.571429 | 0.500000 | 0/4 | 0/2 |
+| Positional, no confirmation | 0.322314 | 0.000000 | 2/7 | 5/6 |
+| Historical strongest fixed shortcut | 0.427426 | 0.000000 | 1/6 | 2/4 |
+
+All seven candidates ran twice at clean source `5c5b358cdf47ec3ce1319fc722cc88bd4afcb0f2`.
+Every one of the 14 runs was valid in all 12 development and six held-out worlds; each complete
+metric pair was identical. Runtime: Linux Python 3.8.10, NumPy 1.24.4, SciPy 1.10.1, numerical
+thread counts one, 300-second task timeout. The runtime source hash is
+`e29d3b1d7b0e0f9f5b1b09a8c0a45ace098ad8790547d0333c1940e0a421bea9`; the only `sle/*.py`
+change from main3069479 is the contributor's DataPrivacy logical-domain mapping. Full metrics
+are private; scalar measurements and exact source hashes are in
+`.research/pr80_method_qualification_2026-09-11.json`.
+
+The full reference reaches 0.8193980000000003; both declared probes stay below the unchanged
+10% margin threshold 0.7374582000000003. Each substantive capability ablation lowers the
+score: later-position scanning, scanning as a whole, the library, and confirmation. This is
+fixed candidate-method qualification, not a model difficulty or iteration result. The old
+318-policy grid is author provenance; only its fixed reported strongest alternative and the
+stronger positional no-confirmation alternative were re-evaluated here, without new grid
+selection, seed tuning or changed worlds. True frontier first-proposal evidence is still missing.
+
 ## Historical construction measurements
 
 The following numbers are the contributor's in-process measurements at PR head
@@ -160,8 +189,7 @@ The following numbers are the contributor's in-process measurements at PR head
 first-query-only method is retained as an ablation. The current method candidate is
 `verification/reference_positional.py`, a standalone packaging of the existing all-position
 method (historical 0.819 development / 0.730 held out); it leaves finite sampling and event
-selection headroom, without intentionally excluding query positions. Current fixed sandbox
-reference/probe/ablation measurements and actual frontier first proposals remain pending.
+selection headroom, without intentionally excluding query positions. Current fixed sandbox measurements are recorded below; actual frontier first proposals remain pending.
 
 ## Where the original first-query scale sat
 

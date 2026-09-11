@@ -23,11 +23,12 @@ normalization:
   baseline: the classic pair, the first query one above the threshold and every other one below against every
     query at the threshold, run 2000 times each, the single output with the largest smoothed count ratio claimed
     as a violation, never declining
-  reference: 'verification/reference_positional.py promotes the contributor''s already fixed complete positional
-    scan: all query positions, original StatDP-style library and fresh Clopper-Pearson confirmation. It inlines
-    public helpers without changing parameters or decisions. Historical in-process scores were 0.819 development
-    / 0.730 held out; independent Linux qualification is pending. The first-query-only method is retained as
-    a capability ablation, not the admission reference.'
+  reference: verification/reference_positional.py packages the contributor's existing all-position scan with
+    its original public helpers, StatDP-style screened library and fresh Clopper-Pearson confirmation, without
+    parameter changes. In the fixed current Linux sandbox pilot it scores 0.8193980000000003 development /
+    0.72987 held out, with no false claims. The original first-position method is a lower-capability control
+    (0.5702832857142858 / 0.47987), not the admission reference. Remaining headroom is finite sampling and
+    event selection; no query position is intentionally omitted.
   score: development mechanism recovery normalized above always-abstain; a witness in a violating world scores
     (min(L, 2 epsilon) - epsilon) / (min(A, 2 epsilon) - epsilon) against the builder's anchor A, a false witness
     scores minus one there and zero in a compliant world, declining scores zero and one; witness strength,
@@ -87,19 +88,23 @@ invariants:
   raise its own budget; the same vector run twice gives fresh runs and counts do not depend on the order of
   calls; malformed submissions score zero and never raise out of the evaluator
 - held-out split, per-world rows and the discovery axes remain evaluator-only
-known_shortcuts: a 318-strategy sweep over blind straddle guesses at every offset on either side (100, all
-  scoring zero), screen-and-claim of the baseline pair or the StatDP-style library at 1000 to 24000 runs a
-  vector with the single output or the ratio prefix above a threshold of 1 to 4 (176, best 0.248), the reference's
-  first-query scan followed by screen-and-claim (24, best 0.427) and screen-then-confirm of the baseline pair
-  at three levels (18, all zero) tops out at 0.427 on the development split and 0.000 held out, 75 per cent
-  of the reference, by claiming the best screened pair without confirmation; re-drawn on eight other seeds
-  that strategy averages 0.063 with fifty false discoveries; 289 of the 318 score zero These are historical
-  author in-process measurements, not independent sandbox results. A machine contract now includes the fixed
-  reported legacy best and the stronger full-positional method with confirmation removed; their current results
-  remain unmeasured.
+known_shortcuts: 'Author provenance records a 318-policy in-process search, not independently rerun in full.
+  The fixed current Linux pilot at 5c5b358cdf47ec3ce1319fc722cc88bd4afcb0f2 evaluates seven frozen programs
+  twice each; all 14 results are valid on all 18 worlds and all seven complete metric pairs repeat identically.
+  Full positional reference: 0.8193980000000003 development / 0.72987 held out; first-position-only: 0.5702832857142858
+  / 0.47987; no scan: 0.17679285714285717 / 0.22987; no library: 0.5714285714285715 / 0.5; positional no confirmation:
+  0.3223138571428571 / 0; original strongest no-library-confirmation shortcut: 0.4274261428571428 / 0. The
+  latter two are the executable probes; both are below the unchanged 10% margin threshold 0.7374582000000003.
+  Their false claims / valid claims are 2/7 and 1/6 on development, 5/6 and 2/4 held out; the full reference
+  has 0/6 and 0/3. No invalid low score supports this comparison. Model difficulty and iterative improvement
+  remain unmeasured.'
 review:
   domain: pending_external_differential_privacy
-  evaluator_security: automated_bad_candidate_crash_sweep_determinism_and_abstention_normalization_checks
+  evaluator_security: Current source uses the shared stdlib wrapper, all-world fail-closed validity and fresh
+    candidate process/tmpfs per world. A real CandidateProxy regression fails before the reset fix and passes
+    after, while preserving state across two callbacks inside each world. 150 targeted Linux tests passed at
+    3294e2a and the added isolation regression passed at 5c5b358; final contribution-gate validation is separate.
+    No independent domain review or certification is claimed.
 provenance:
   class: procedural
   target_source: Repository-visible deterministic worlds with twelve development deployments (three compliant,
@@ -107,7 +112,7 @@ provenance:
     one compliant-branch, two noise-scale, two branch), each with its own number of queries, cutoff and run
     seed; anchors from an exact-objective search recorded in the evaluator and recomputed on every run.
   task_contract_public_before_evaluation: true
-  fresh_confirmation_status: not_completed
+  fresh_confirmation_status: fixed_linux_method_qualification_complete_frontier_draw_pending
 novelty_risk:
   level: medium
   rationale: Statistical auditing of differential privacy is published, from hypothesis tests on counts (Ding
@@ -167,12 +172,12 @@ construction_audit:
   expert_hours: null
   red_team_rounds: 6
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the
-    twelve-rung ablation ladder, the 318-strategy shortcut probe, the per-world construction statistics, the
-    eight-seed robustness check and the construction checks from the scripts in .research/sparse_vector_audit;
-    the twenty-seven bad-candidate shapes are in tests/test_sparse_vector_audit.py; the sandbox evaluation
-    of scripts/check_task_contribution.py has not been run because the task was built on a machine without
-    Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
+  independent_recomputation_status: The fixed 14-call Linux pilot is recorded in .research/pr80_method_qualification_2026-09-11.json
+    with source/runtime/task/candidate hashes and full-metric hashes. All seven pairs are valid and identical,
+    with no model calls. The original 318-policy grid and eight-seed robustness remain author in-process provenance,
+    not independent replay. The original first-position omission was repaired by packaging its already documented
+    positional method, not by lowering a threshold. Independent geometric-tail/compliance controls and true
+    process/tmpfs world-isolation regression were added.
 metric_contract:
   mechanism:
     metric: witness_strength
@@ -207,14 +212,14 @@ shortcut_probe:
   metric: combined_score
   reference:
     candidate: verification/reference_positional.py
-    expected_score: null
+    expected_score: 0.8193980000000003
   probes:
   - id: legacy_best_without_library_confirmation
     candidate: verification/probe_legacy_no_confirmation.py
-    expected_score: null
+    expected_score: 0.4274261428571428
   - id: positional_without_confirmation
     candidate: verification/probe_positional_no_confirmation.py
-    expected_score: null
+    expected_score: 0.3223138571428571
   relative_margin: 0.1
   score_tolerance: 1.0e-06
 evaluation_budget:
