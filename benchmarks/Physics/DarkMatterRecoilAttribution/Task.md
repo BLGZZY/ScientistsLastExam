@@ -108,6 +108,15 @@ recovery are separate evaluator-only diagnostics. Only development selection and
 validity/feasibility reach search; no heldout rows or axes enter the feedback prompt.
 Invalid worlds do not receive correct-refusal credit.
 
+For each split, diagnostics expose `false_discovery_count / claim_count`,
+`correct_refusal_count / refusal_world_count`, and
+`supported_claim_count / supported_world_count`. Null correctness is
+`none_correct_count / none_world_count`; validity is
+`valid_world_count / world_count`, and mean exposure is
+`experiment_units_sum / world_count`. These aggregates and the confidence Brier
+mean are evaluator-only. Brier correctness concerns the law/null/refusal decision;
+it does not treat a correct law with an inaccurate mass as a false discovery.
+
 Finite observations may leave mass/halo degeneracy; estimation uncertainty and
 adaptive exposure allocation are real limitations. Seeds are repository-visible:
 this candidate package is not a server-held contamination-resistant challenge.

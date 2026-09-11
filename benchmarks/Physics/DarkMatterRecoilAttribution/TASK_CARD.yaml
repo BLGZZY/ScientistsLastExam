@@ -89,3 +89,25 @@ long_horizon:
   measurement_health_passed: false
   material_headroom_after_2h: false
   evidence: []
+
+# Same fixed candidates and NumPy 1.24.4/SciPy 1.10.1 measurements as the
+# independent eight-run replay; provenance and limitations are in known_best §4.
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_profile.py
+    expected_score: 0.5486397428
+  probes:
+    - id: fixed_mass_57_8
+      candidate: verification/shortcut_fixed_mass.py
+      expected_score: 0.2903389817
+    - id: published_four_way
+      candidate: verification/shortcut_four_way.py
+      expected_score: 0.2495350510
+  relative_margin: 0.3
+  score_tolerance: 0.000001
+evaluation_budget:
+  eval_timeout_s: 300
+  experiment_units_per_world: 12
+  rationale: Explicit 300-second override; reference took about 38 seconds in the fixed Linux replay.

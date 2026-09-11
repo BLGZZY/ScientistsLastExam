@@ -120,6 +120,46 @@ a legal full-budget xenon shortcut scoring 0.644077 on the original development 
 its development-selected heldout score is only 0.084405. It labels oracle-assisted bounds
 separately from legal candidates and records source hashes and environment versions.
 
+### Fixed-probe machine contract (2026-09-11 integration)
+
+`TASK_CARD.yaml::shortcut_probe` executes the unchanged reference and two fixed
+single-file candidates through the current sandbox. `shortcut_fixed_mass.py` is
+the complete reference with only the final positive mass replaced by 57.8, a
+faithful derivative of the disclosed reviewer strategy; the original reviewer
+single-file bytes are unavailable. `shortcut_four_way.py` preserves the author's
+`peak_features` and `probe_answer` function source and the previously
+development-selected configuration `[1, 1, 60, 2, 95.83680934806682, 1, 0.5]`.
+Neither candidate imports the oracle, reads repository data, or searches parameters.
+The fixed-mass derivative still performs the full reference fit and is an ability
+ablation, not a cheap-compute shortcut.
+
+The declarations come from eight independent fixed sandbox replays at task head
+`8497bd455d3090087e6a15e99fb85f5fae75e5cd`, runtime
+`2660c38a413fb7281d0e7012a6446eb384a934d1`, Python 3.8.10,
+NumPy 1.24.4 and SciPy 1.10.1 with BLAS/OMP threads fixed to one. Full metrics were
+identical within each pair, and all 448 world records were valid. See
+`references/shortcut_replay_provenance.json` for original candidate hashes,
+source segments, score/count aggregates and private-original hashes; the full
+independent report is on branch `codex/sle-shortcut-revalidation` at
+`.research/pr72_shortcut_review_2026-09-11.{md,json}`.
+
+| Fixed candidate | Development | Heldout |
+|---|---:|---:|
+| reference | 0.5486397428 | 0.5000127063 |
+| reference decisions, mass 57.8 | 0.2903389817 | 0.2439422043 |
+| previously selected four-way probe | 0.2495350510 | 0.1306702190 |
+
+The machine guard retains the previously declared 30% relative separation on the
+development selection score, with absolute numerical matching tolerance 1e-6.
+These declarations are specific to the pinned environment; the differing historical
+scores above are not interchangeable. The guard does not re-run the grid, establish
+its current optimum, or replace the exact constant-mass bound or model calibration.
+The current integration changes the wrapper, documents the contract and adds
+aggregate numerators/denominators; world generation, scores, reference and fixed
+candidate bytes remain unchanged. Its complete metric payload therefore differs
+from the historical replay even if all shared scalar scores match. Fresh current
+contribution checks must be recorded separately, not relabelled as the historical run.
+
 ## 5. Frontier draw
 
 Not run. The package remains `candidate`; `hard` is an intended tier, not measured

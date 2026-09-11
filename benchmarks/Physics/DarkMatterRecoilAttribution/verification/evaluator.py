@@ -214,14 +214,23 @@ def evaluate(candidate):
         false = sum(r["false_claim"] for r in rows)
         supported = [r for r in rows if r["kind"] in LAWS]
         rejected = [r for r in rows if r["kind"] == "unsupported"]
+        nulls = [r for r in rows if r["kind"] == "none"]
+        correct_refusals = sum(r["correct_refusal"] for r in rejected)
+        supported_claims = sum(r["claim"] for r in supported)
+        correct_nulls = sum(r["model"] == "none" for r in nulls)
         values = {"mechanism_score": normalized_score([r["mechanism"] for r in rows]),
                   "false_discovery_rate": false / claims if claims else 0.0,
                   "false_discovery_count": false, "claim_count": claims,
-                  "correct_refusal_rate": sum(r["correct_refusal"] for r in rejected) / len(rejected),
+                  "correct_refusal_rate": correct_refusals / len(rejected),
+                  "correct_refusal_count": correct_refusals,
                   "refusal_world_count": len(rejected),
-                  "discovery_coverage": sum(r["claim"] for r in supported) / len(supported),
+                  "discovery_coverage": supported_claims / len(supported),
+                  "supported_claim_count": supported_claims,
                   "supported_world_count": len(supported),
-                  "none_correct_rate": sum(r["model"] == "none" for r in rows if r["kind"] == "none") / NULL_WORLDS,
+                  "none_correct_rate": correct_nulls / len(nulls),
+                  "none_correct_count": correct_nulls, "none_world_count": len(nulls),
+                  "valid_world_count": sum(r["valid"] for r in rows), "world_count": n,
+                  "experiment_units_sum": sum(r["units"] for r in rows),
                   "valid_rate": sum(r["valid"] for r in rows) / n,
                   "mean_units": sum(r["units"] for r in rows) / n,
                   "confidence_brier": sum(r["confidence_brier"] for r in rows) / n}

@@ -1,5 +1,0 @@
-ParticlePhysics/DarkMatterRecoilAttribution baseline 0.0 passed True
-ParticlePhysics/DarkMatterRecoilAttribution reference 0.5237284587 passed True
-ParticlePhysics/DarkMatterRecoilAttribution one_unit 0.2354096567
-ParticlePhysics/DarkMatterRecoilAttribution ignore_gain 0.3175553758
-ParticlePhysics/DarkMatterRecoilAttribution fixed_halo 0.5120251179
