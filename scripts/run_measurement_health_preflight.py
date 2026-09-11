@@ -40,6 +40,7 @@ from sle.evaluate import evaluate_candidate  # noqa: E402
 from sle.provenance import finalize_report_trust, source_provenance  # noqa: E402
 from sle.registry import find_task  # noqa: E402
 from sle.spec import load_task_spec  # noqa: E402
+from sle.metric_visibility import SEARCH_VISIBLE_KEYS  # noqa: E402
 from scripts.run_secure_baseline import (  # noqa: E402
     _digest, _open_private, _public_metrics, _validate_new_outputs,
 )
@@ -1537,9 +1538,14 @@ def public_projection(report: dict[str, Any], private_sha256: str) -> dict[str, 
              if isinstance(value, (dict, list))} for result in results
         ]
         noise["results"] = [_public_metrics(result) for result in results]
+        spans = noise.get("numeric_field_spans", {})
+        noise["complete_numeric_field_spans_sha256"] = _digest(spans)
+        noise["numeric_field_spans"] = {
+            key: value for key, value in spans.items() if key in SEARCH_VISIBLE_KEYS
+        }
         noise["published_results_scope"] = (
-            "search-visible scalars only; all spans, full payload hashes and decisions "
-            "were computed from the private complete results")
+            "search-visible results and per-field spans only; the maximum numeric span, "
+            "full payload hashes, complete span-map hash and decisions use private complete results")
     return public
 
 

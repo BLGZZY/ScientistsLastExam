@@ -149,8 +149,10 @@ def test_private_directory_and_symlink_locations_fail_closed(tmp_path, monkeypat
 
 def test_public_preflight_preserves_hidden_drift_and_seals_results():
     calls = iter(["DO_NOT_PUBLISH_A", "DO_NOT_PUBLISH_B"])
+    hidden_values = iter([0.25, 0.75])
     noise = preflight._evaluate_repeated(None, Path("unused"), 2, 1,
         lambda *args: {"combined_score": 0.5, "valid": 1.0,
+                       "heldout_secret_scalar": next(hidden_values),
                        "per_world": [{"true_parameter": next(calls)}]})
     report = {"schema_version": 1, "source_provenance": {"git_revision": "b" * 40},
               "tasks": [{"task": "Fixture/Task", "checks": {"fixed_artifact_noise": noise}}]}
@@ -160,9 +162,13 @@ def test_public_preflight_preserves_hidden_drift_and_seals_results():
     assert got["noise_span"] == 0
     assert got["exact_payload_match"] is False
     assert got["canonical_payload_sha256"] == noise["canonical_payload_sha256"]
-    assert got["numeric_field_spans"] == noise["numeric_field_spans"]
+    assert got["numeric_field_spans"] == {"combined_score": 0.0, "valid": 0.0}
+    assert "heldout_secret_scalar" not in got["numeric_field_spans"]
+    assert got["maximum_numeric_field_span"] == 0.5
+    assert got["complete_numeric_field_spans_sha256"] == baseline._digest(noise["numeric_field_spans"])
     assert got["results"] == [{"combined_score": 0.5, "valid": 1.0}] * 2
     assert "DO_NOT_PUBLISH" not in json.dumps(public)
+    assert "heldout_secret_scalar" not in json.dumps(public)
     assert "DO_NOT_PUBLISH" in json.dumps(report)
 
 
