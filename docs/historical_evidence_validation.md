@@ -11,7 +11,8 @@ python scripts/audit_historical_records.py --task all > /tmp/historical-integrit
 
 This read-only command pins the committed AlloyHardness, Calorimeter-v2,
 RANS-v2, DemographicSFS, DiffractionGrating, ElectrolyteConductivity,
-ForceFieldHypothesis, ProteinStability, and PhotovoltaicTandem analysis documents at revision
+ForceFieldHypothesis, ProteinStability, PhotovoltaicTandem, and ProspectiveMetaAnalysis
+analysis documents at revision
 `f9c05b65b100e0b7d6acabbf16e64602fb73eea9`. Each document's existing digests bind
 its calibration and batch reports, raw trajectories, run manifests, and retained
 best/terminal sources. The command also reconstructs the original scalar
@@ -33,9 +34,8 @@ claimed as verified evidence.
 
 ## Current compatibility and replay
 
-The existing `analyze_*_calibrations.py` entry points continue to enforce their
-unchanged source migration checks. With the present source tree, all nine
-analyses reject current compatibility: the task/runtime changes exceed the old
+The first nine analysis entry points continue to enforce their source migration
+checks. With the present source tree, they reject current compatibility: the task/runtime changes exceed the old
 audited scope, and current file hashes differ. Intact old migration reports or
 a successful direct oracle replay do not override that refusal. New current
 evidence requires a separately reviewed migration or new experiments with their
@@ -47,6 +47,9 @@ It now checks the whole runtime package (a conservative superset of the former
 Python-only scope), retains that historical comparison, and independently gates
 the model-to-current comparison. Its public tests use pinned archived records as
 fixtures; the raw files must still pass the separate audit on a data host.
+ProspectiveMetaAnalysis separately validates its historical task contract at the
+recorded revision. Its archived files are included in the same integrity audit;
+that audit makes no claim about compatibility with the current runtime.
 
 The raw-data integration tests now assert both original integrity and current
 refusal. They do not skip on a migration failure. Existing missing-raw-data skips
@@ -62,6 +65,7 @@ python -m pytest tests/test_historical_records.py \
   tests/test_diffraction_grating_analysis.py tests/test_electrolyte_conductivity_analysis.py \
   tests/test_force_field_hypothesis_analysis.py tests/test_protein_stability_analysis.py \
   tests/test_photovoltaic_analysis.py \
+  tests/test_prospective_meta_analysis_analysis.py \
   -q -p no:cacheprovider
 ```
 

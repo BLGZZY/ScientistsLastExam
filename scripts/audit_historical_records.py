@@ -58,6 +58,10 @@ ARCHIVES = {
         "experiments/photovoltaic_tandem_v1_calibration_analysis_2026-07-25.json",
         "e938f0bc635ec1569a2276a9041995ee957eeb89248db008dc5a48a5e8658607",
     ),
+    "prospective_meta_analysis": (
+        "experiments/prospective_meta_analysis_calibration_analysis_2026-07-25.json",
+        "d288ad58e4fbf88ebe6d8e89f1c5875a7a07b209b69094de74ee6334f7397c43",
+    ),
 }
 RECORD_LABELS = {"budget_one", "normal_budget_three", "blind_budget_three"}
 
