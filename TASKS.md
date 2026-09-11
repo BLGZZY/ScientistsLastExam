@@ -9,7 +9,7 @@
 | discovery | 44 |
 | certified | 5 |
 | candidate | 81 |
-| 学科 | 7(Biology 10,Chemistry 13,ComputerScience 7,EarthScience 7,Engineering 13,Mathematics 19,Physics 17) |
+| 学科 | 7(Biology 9,Chemistry 13,ComputerScience 8,EarthScience 7,Engineering 13,Mathematics 19,Physics 17) |
 
 认证描述的是证据质量,不是难度。标 on-ramp 的任务首个前沿模型提案已够到参考解,不用于配对 Δ 测量。
 
@@ -90,24 +90,24 @@
 | [`SequenceLawRecovery`](benchmarks/Mathematics/SequenceLawRecovery/)<br>整数序列递推恢复 | Mathematics | Mathematics | clipped | community_symbolic_sympy | candidate | Given the first terms of an integer sequence, state the linear recurrence that produced it. | 给出整数序列前若干项,说出产生它的线性递推;项数不足以定唯一最小规则时拒答 | 延续准确率;误发现率与不定性拒答分开报告 |
 | [`ComplexBoseLaw`](benchmarks/Physics/ComplexBoseLaw/)<br>复玻色占据律 | Physics | Physics | clipped | physical_sim | candidate | a mixed cavity occupancy is not textbook Planck | 在模式混合下恢复玻色占据律的移位指数;费米型世界须拒答 | 指数恢复 + 费米拒答;不是教科书普朗克曲线的直接拟合 |
 
-### 结构(structure) — 7
+### 结构(structure) — 6
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
 | [`GeneNetworkIntervention`](benchmarks/Biology/GeneNetworkIntervention/)<br>基因网络干预设计 | Biology | SystemsBiology | clipped | physical_sim | candidate | discover a dynamic regulatory network and design a phenotype intervention | 用扰动实验恢复带符号的动态调控网络,并设计达成表型的干预 | 网络恢复 + 预测 + 表型干预迁移 + 拒答 |
-| [`NeuralReportAttribution`](benchmarks/Biology/NeuralReportAttribution/)<br>神经反馈与报告通路归因 | Biology | Neuroscience | clipped | physical_sim | candidate | separate intrinsic feedback, report feedback and measured readout | 联合干预频响与测量校准，区分内在反馈、报告通路和隐藏状态 | 模型及反馈强度恢复；无回路、族外拒答和假发现分列 |
 | [`GraphFromDistances`](benchmarks/ComputerScience/GraphFromDistances/)<br>距离查询重建图 | ComputerScience | Algorithm | clipped | community_graph_algorithms_networkx | candidate | A weighted network exists but you cannot see it. | 在有限次距离查询下重建加权网络的边:短距离不等于相邻,可能是两条短边的两跳路径 | 边恢复 F1;误发现率与不可辨识拒答分开报告 |
 | [`InterventionalSCM`](benchmarks/ComputerScience/InterventionalSCM/)<br>干预式结构因果模型 | ComputerScience | CausalDiscovery | clipped | physical_sim | candidate | recover hidden causal mechanisms by experimentation | 用干预实验打破马尔可夫等价,恢复隐藏线性无环结构因果模型的有向图与系数 | 有向图与结构系数恢复;观测关联不足以定向 |
 | [`SurvivorshipConfoundedDesign`](benchmarks/ComputerScience/SurvivorshipConfoundedDesign/)<br>幸存者偏差下的效应估计 | ComputerScience | CausalDiscovery | clipped | physical_sim | candidate | association among survivors is not a treatment effect | 每一行数据都已被结果相关的筛选选中,在幸存者表里估计真实处理效应 | 处理效应恢复;混杂开启的伪关联须识别,无 T→Y 边时不得宣称效应 |
 | [`BlackBoxGroupIdentification`](benchmarks/Mathematics/BlackBoxGroupIdentification/)<br>黑盒群同构辨识 | Mathematics | Mathematics | clipped | analytical | candidate | A finite set of `order` labelled elements and a black-box product: `mul(a, b)` returns the label | 只给黑盒乘法与随机标号,在查询预算内从公开构造目录里辨识群的同构类 | 目录 id 精确门控;非群与目录外两种拒答理由分开计分,阶数分布不足以辨识 |
 | [`HiddenCouplingNetwork`](benchmarks/Physics/HiddenCouplingNetwork/)<br>隐藏耦合网络重建 | Physics | Physics | clipped | physical_sim | candidate | A network of `units` observed units relaxes to a steady state under constant drive. | 实验次数少于单元数,从多单元驱动的稳态里恢复带符号的直接耦合图;存在未观测单元时拒答 | 带符号边 F1;间接路径、tanh 非线性与隐藏单元造成的稠密低秩耦合分别记误发现 |
 
-### 证据(evidence) — 9
+### 证据(evidence) — 10
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
 | [`OccupancyDetectionDesign`](benchmarks/Biology/OccupancyDetectionDesign/)<br>生态占域与探测设计 | Biology | Ecology | clipped | statistical_sim | candidate | A nondetection does not prove absence. | 在漏检条件下分配站点复访与调查方法,恢复栖息地占域效应或拒绝不充分模型 | 效应方向、效应量与平均占域率;误发现、拒答、覆盖率和留出迁移分列 |
 | [`ProspectiveMetaAnalysis`](benchmarks/Biology/ProspectiveMetaAnalysis/)<br>前瞻荟萃分析 | Biology | EvidenceSynthesis | clipped | prospective_evidence_synthesis | candidate | synthesize registered evidence and design confirmation | 在注册表加文献语料里筛研究、识别同一人群血缘的重复报告与换端点,做异质性荟萃回归 | 筛选、证据血缘完整性、荟萃回归、校准拒答、下一步研究信息量与前瞻确认分列 |
+| [`SparseVectorAudit`](benchmarks/ComputerScience/SparseVectorAudit/)<br>稀疏向量技术的差分隐私审计 | ComputerScience | DataPrivacy | clipped | analytical | candidate | does this deployed sparse vector technique keep the privacy it claims? | 对一个声称满足 (ε, δ) 差分隐私的稀疏向量技术部署实现做黑盒审计:在运行次数预算内选择相邻查询向量与输出事件,给出违反见证或判定没有违反;实现可能偏离公开规范,且并非每处偏离都构成违反 | 见证的精确隐私损失对照构造者锚点评分;损失不超过 ε 的见证记误发现并扣一个世界,分数标尺锚在全拒答为零 |
 | [`ForcedSignalAttribution`](benchmarks/EarthScience/ForcedSignalAttribution/)<br>强迫信号检测归因 | EarthScience | ClimateScience | clipped | statistical_sim | candidate | A regional field is observed for `years` years over `regions` regions. | 在控制年预算下判断区域记录里是否含强迫响应、估其幅度与区间;模型指纹或变率不可信时拒答 | 检测率、幅度分、区间覆盖分列;红噪声假趋势与安静模型均记误发现 |
 | [`UPbConcordiaInference`](benchmarks/EarthScience/UPbConcordiaInference/)<br>铀铅谐和图事件归因 | EarthScience | Geophysics | clipped | physical_sim | candidate | infer a zircon event history | 在分析预算内选择锆石域,由两套铀铅衰变比判断单一结晶或一次铅丢失历史;可分辨的多事件历史须拒答 | 事件类型 + 结晶与铅丢失年龄 + 证据血缘;误发现、拒答、覆盖率和留出迁移分列 |
 | [`ModalDamageAttribution`](benchmarks/Engineering/ModalDamageAttribution/)<br>模态损伤归因 | Engineering | StructuralEngineering | clipped | physical_sim | candidate | is the modal shift damage, or the weather? | 在受预算约束的测量日里判断模态频率的偏移是不是某个内部元件的刚度损伤、是哪一个、损失多少;支座变化导致的偏移须拒答 | 定位精确门控 + 严重度容差评分;温度对频率比精确抵消,健康结构误报与支座变化误判分别记误发现,分数标尺锚在全弃权为零 |
