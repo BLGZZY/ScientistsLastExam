@@ -76,7 +76,9 @@ lineage:
     fit. PR 73 review triggered removal of the noise fingerprint, development-only
     public validity, wrapper filtering and stronger shortcut/budget evidence. The 2026-09-11 revision adds algebraic initialization, exact derivatives,
     active-parameter fits, a dimension-aware residual check, fixed executable
-    shortcuts and a predeclared replay. Old results describe reference_legacy.py.
+    shortcuts and a predeclared 24-call Linux replay. Every method was valid on
+    both splits and all complete metric pairs matched. The stronger declared
+    20% shortcut separation is not met; no D16 or hard-difficulty pass is claimed. Old results describe reference_legacy.py.
     No independent frontier draw yet; incomplete_legacy explicitly records incomplete calibration history.
   reused_designs:
   - StructuralEngineering/ModalDamageAttribution discovery axes and refusal-offset normalization
@@ -112,16 +114,16 @@ shortcut_probe:
   metric: combined_score
   reference:
     candidate: verification/reference_fit.py
-    expected_score: null
+    expected_score: 0.8593526193
   probes:
     - id: calibrated_default
       candidate: verification/algebraic_probe.py
-      expected_score: null
+      expected_score: 0.7449182513
     - id: published_grid_winner
       candidate: verification/shortcut_grid_winner.py
-      expected_score: null
+      expected_score: 0.7540713032
     - id: null_or_refusal
       candidate: verification/shortcut_null_refusal.py
-      expected_score: null
+      expected_score: 0.25
   relative_margin: 0.2
   score_tolerance: 0.000001

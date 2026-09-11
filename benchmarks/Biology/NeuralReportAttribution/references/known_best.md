@@ -1,7 +1,7 @@
 > 2026-09-11 revision: the tables below are historical measurements of the retained
 > `reference_legacy.py`, unless explicitly labelled as the revised reference.
 > The new reference and all replay methods are fixed in `revision_replay.json`.
-> Its scores and ablation outcomes remain unmeasured until source-bound Linux replay.
+> Current source-bound replay is recorded in the final subsection below; prior tables remain historical.
 > Neither this implementation change nor the old eight-run review establishes D16.
 
 # NeuralReportAttribution: witness and construction record
@@ -188,3 +188,29 @@ The omitted slow state is only one misspecification case. Improved continuous fi
 uncertainty handling and broader misspecification checks remain possible, but neither
 a reference gap nor weak raw-response probes establish frontier difficulty. Independent
 neuroscience review and actual model calibration remain admission requirements.
+
+
+## Revised reference: fixed Linux replay, 2026-09-11
+
+Frozen source `045eb449aa8f19bf4ebc35f6c30f283db8765324`; Python 3.12 / NumPy 1.26.4 / SciPy 1.13.1, numerical libraries limited to one thread. Each of the twelve predeclared methods ran twice through the real Linux candidate sandbox, with all 20 worlds valid and identical complete metrics in each pair. Full records are private; scalar/hash receipts are in `experiments/neural_report_admission_methods_2026-09-11.json`.
+
+| Method | Development | Heldout | Units/world |
+|---|---:|---:|---:|
+| reference | 0.8593526193 | 0.7433485399 | 14 |
+| legacy_reference | 0.8594885223 | 0.7433017461 | 14 |
+| algebraic_default | 0.7449182513 | 0.6079550292 | 8 |
+| algebraic_grid | 0.7540713032 | 0.5456852969 | 8 |
+| null_refusal | 0.2500000000 | 0.2500000000 | 3 |
+| ignore_instruments | 0.0000000000 | 0.0000000000 | 14 |
+| fixed_calibration | 0.0864724469 | 0.1314585052 | 14 |
+| no_model_selection | 0.2752674776 | 0.2204951936 | 14 |
+| never_abstain | 0.6093526193 | 0.4933485399 | 14 |
+| one_unit | 0.8292816144 | 0.7038765984 | 10 |
+| six_units | 0.8275903894 | 0.6266396418 | 6 |
+| midpoint_only | 0.8593532059 | 0.7433485399 | 14 |
+
+The new reference is numerically close to the old witness; it does not establish higher scientific difficulty. Approximate observed reference times were 19.7/19.7 seconds versus 89.2/89.3 for the retained old reference. Other validation jobs shared the host, so these are not controlled performance benchmarks.
+
+All four declared scientific ability removals lose development score. The midpoint-only convergence diagnostic differs by less than 1e-6 and has no meaningful loss: algebraic initialization is a robustness measure, not evidence of a necessary scientific skill. The 10- and 6-unit diagnostics still show small development losses; acquisition difficulty remains unestablished.
+
+The published grid winner remains 87.75% of the revised reference on development and does not meet the proposed, predeclared 20% relative separation. This proposed guard is stricter than the template default and remains subject to maintainer scientific review; it was not weakened after replay. The probe is legal and still solves all discrete decisions. Fixed probe replay is not independent model calibration. D16, domain review, fresh server-held instances and long-horizon headroom remain pending.

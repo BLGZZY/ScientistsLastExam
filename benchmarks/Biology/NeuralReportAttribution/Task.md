@@ -209,3 +209,10 @@ Independent frontier-model calibration has not been performed.
 Review-only construction and ablation results are in `references/known_best.md`.
 Only edit `solution.py`; NumPy/SciPy and standard-library CPU computation, no network,
 process creation, or hidden-file access. `sle.contract_lint` is a free shape utility.
+
+Current revised-reference replay (Linux NumPy 1.26.4 / SciPy 1.13.1): development
+0.859353, heldout 0.743349. Removing instrument handling, calibration-uncertainty
+fitting, model selection, or refusal lowers development score by approximately
+0.859, 0.773, 0.584, or 0.250 respectively. Fixed algebraic probes still achieve
+about 87–88% of the reference development score and solve all discrete decisions.
+These checks do not establish hard difficulty or independent calibration.

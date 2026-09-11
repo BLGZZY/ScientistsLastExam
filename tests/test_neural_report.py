@@ -178,6 +178,39 @@ def test_correct_law_wrong_parameter_not_reclassified_as_false_discovery():
     row = MODULE.score_world(w, {'model': 'recurrent', 'feedback': 1.2, 'report_feedback': 1.2})
     assert row['mechanism'] == 0 and row['false_claim'] is False
 
+
+@pytest.mark.parametrize('answer', [{'abstain': True}, {'model': 'none'},
+                                  {'model': 'recurrent', 'feedback': 1., 'report_feedback': 1.}, {}])
+def test_diagnostic_rates_recompute_from_published_counts(answer):
+    metrics = MODULE.evaluate(lambda *_: answer)
+    for split in ('development', 'heldout'):
+        rows = [r for r in metrics['per_instance'] if r['split'] == split]
+        counts = {
+            'false_discovery_count': sum(r['false_claim'] for r in rows),
+            'claim_count': sum(r['claim'] for r in rows),
+            'correct_refusal_count': sum(r['correct_refusal'] for r in rows),
+            'refusal_world_count': sum(r['kind'] == 'unsupported' for r in rows),
+            'supported_claim_count': sum(r['claim'] for r in rows if r['kind'] in ('recurrent', 'report_only')),
+            'supported_world_count': sum(r['kind'] in ('recurrent', 'report_only') for r in rows),
+            'none_correct_count': sum(r['model'] == 'none' for r in rows if r['kind'] == 'none'),
+            'none_world_count': sum(r['kind'] == 'none' for r in rows),
+            'valid_world_count': sum(r['valid'] for r in rows),
+            'world_count': len(rows), 'experiment_units_sum': sum(r['units'] for r in rows),
+        }
+        for name, value in counts.items():
+            assert metrics[split+'_'+name] == value
+        for rate, numerator, denominator in (
+            ('false_discovery_rate', 'false_discovery_count', 'claim_count'),
+            ('correct_refusal_rate', 'correct_refusal_count', 'refusal_world_count'),
+            ('discovery_coverage', 'supported_claim_count', 'supported_world_count'),
+            ('none_correct_rate', 'none_correct_count', 'none_world_count'),
+            ('valid_rate', 'valid_world_count', 'world_count'),
+            ('mean_units', 'experiment_units_sum', 'world_count'),
+        ):
+            want = counts[numerator]/counts[denominator] if counts[denominator] else 0
+            assert metrics[split+'_'+rate] == pytest.approx(want, abs=1e-10)
+        assert not any(split+'_'+name in search_visible_metrics(metrics) for name in counts)
+
 def test_oracle_ceiling_recomputable_without_reference_score_literal():
     for (module, kinds) in ((MODULE, ['recurrent', 'report_only', 'none', 'unsupported']),):
         for kind in kinds:
