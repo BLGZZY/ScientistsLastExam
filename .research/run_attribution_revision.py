@@ -70,9 +70,11 @@ def main():
             raise ValueError('candidate outside task')
         source = source_path.read_bytes()
         if 'ablation' in method:
-            if source.count(b'ablation=None') != 1:
-                raise ValueError('ablation derivation must replace exactly one default')
-            source = source.replace(b'ablation=None', ('ablation=%r' % method['ablation']).encode())
+            signature = ('def %s(problem, experiment, *, ablation=None):' % spec.entrypoint).encode()
+            if source.count(signature) != 1:
+                raise ValueError('ablation derivation must locate exactly one candidate entrypoint')
+            replacement = signature.replace(b'ablation=None', ('ablation=%r' % method['ablation']).encode())
+            source = source.replace(signature, replacement, 1)
         target = private/(method['id']+'.py')
         target.write_bytes(source)
         target.chmod(0o600)
