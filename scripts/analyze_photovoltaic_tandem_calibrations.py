@@ -113,7 +113,7 @@ def _shortcut_scan(path: Path) -> dict[str, Any]:
     tree = ast.parse(source)
     strings = {
         node.value for node in ast.walk(tree)
-        if isinstance(node, ast.Str)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
     }
     forbidden_literals = {
         "5101", "5102", "5103", "5104", "5105",
