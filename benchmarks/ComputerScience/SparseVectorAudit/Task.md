@@ -136,6 +136,14 @@ the calibration axis. It cannot turn a false discovery into anything else.
 
 Reported separately, never averaged into one number:
 
+FDR is false valid violation claims divided by all valid violation claims, with explicit count
+and denominator metrics. With zero claims the stored numeric placeholder is 0 and the
+denominator is 0; reports must mark FDR unavailable. `all_world_false_claim_fraction` preserves
+the distinct fraction of worlds receiving a false claim. Mechanism strength and refusal also
+have explicit denominators. Every world in both splits must execute validly for task-level
+`valid=1`; a partial candidate failure makes the combined score zero.
+
+
 `development_witness_strength` · `development_false_discovery_rate` ·
 `development_correct_refusal_rate` · `development_discovery_coverage` ·
 `development_confidence_calibration` · `development_mean_samples_used` ·
@@ -145,9 +153,19 @@ A sealed held-out set of six further worlds, two where the claim holds and four 
 is scored too, under the same keys with the `heldout_` prefix, and is not visible to a searcher.
 `per_instance` carries one row per world.
 
-## Where the scale sits
+## Historical construction measurements
 
-The reference audit scores 0.570 on the development split and 0.480 held out. It makes no false
+The following numbers are the contributor's in-process measurements at PR head
+`4bb95061846a28a3025f4eb05cdd52210e12b11a`, not independent Linux qualification. The old
+first-query-only method is retained as an ablation. The current method candidate is
+`verification/reference_positional.py`, a standalone packaging of the existing all-position
+method (historical 0.819 development / 0.730 held out); it leaves finite sampling and event
+selection headroom, without intentionally excluding query positions. Current fixed sandbox
+reference/probe/ablation measurements and actual frontier first proposals remain pending.
+
+## Where the original first-query scale sat
+
+The original first-query audit scores 0.570 on the development split and 0.480 held out. It makes no false
 discovery and declines every world where the claim holds. It names a violation in five of the
 seven development worlds where the claim fails and in two of the four held out. Re-drawn with
 eight other seeds for the runs, it averages 0.446 and 0.440 and never makes a false discovery.

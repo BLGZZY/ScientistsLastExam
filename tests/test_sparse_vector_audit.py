@@ -297,5 +297,75 @@ class SparseVectorAuditTests(unittest.TestCase):
             self.assertNotIn("witness", key)
 
 
+
+
+class SparseVectorAdmissionControls(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.ev = _load(TASK / "verification/evaluator.py", "sva_admission_oracle")
+        cls.proof = _load(TASK / "verification/reference_compliance.py", "sva_independent_compliance")
+
+    def test_infinite_geometric_tail_and_uniform_branch_bound(self):
+        ev, proof = self.ev, self.proof
+        for scale in (1.0, 2.0, 4.0, 8.0, 12.0):
+            points = np.arange(-80, 81)
+            expected = np.array([proof.dlap_tail(scale, int(x)) for x in points])
+            np.testing.assert_allclose(ev._tail_ge(scale, points), expected, rtol=0, atol=2e-14)
+        for spec in ev.DEVELOPMENT_WORLDS + ev.HELDOUT_WORLDS:
+            mechanism = ev._Mechanism(spec)
+            self.assertLess(proof.distribution_truncation_bound(mechanism.b_rho, mechanism.b_nu, mechanism.k), 1e-40)
+            if spec['kind'] == 'compliant_branch':
+                offset, side, positions = mechanism.branch
+                bound = proof.coupling_delta_bound(mechanism.b_rho, mechanism.b_nu, offset, side, len(positions), mechanism.c)
+                self.assertLess(bound, ev.DELTA / 2, spec['name'])
+
+    def test_every_output_distribution_is_normalized(self):
+        for spec in self.ev.DEVELOPMENT_WORLDS + self.ev.HELDOUT_WORLDS:
+            mechanism = self.ev._Mechanism(spec)
+            for vector in ([0]*mechanism.k, [50]*mechanism.k, [100]*mechanism.k):
+                distribution = mechanism.distribution(vector)
+                self.assertTrue(np.all(distribution >= 0))
+                self.assertAlmostEqual(float(distribution.sum()), 1.0, places=13)
+
+    def test_fdr_counts_claims_and_zero_denominator_is_unavailable(self):
+        import yaml
+        from scripts.report_discovery_triple import extract
+        rows=[]
+        for kind,claimed,false in [('noise_scale',True,True),('branch',True,False),('compliant',False,False),('compliant',False,False)]:
+            rows.append({'kind':kind,'valid':True,'abstained':not claimed,'false_discovery':false,
+                         'mechanism_score':0.0,'witness_strength':0.0,'correct_refusal':not claimed,
+                         'confidence_calibration_score':0.0,'samples_used':0})
+        result=self.ev._split_summary(rows)
+        self.assertEqual(result['false_discovery_count'],1)
+        self.assertEqual(result['false_discovery_denominator'],2)
+        self.assertEqual(result['false_discovery_rate'],0.5)
+        self.assertEqual(result['all_world_false_claim_fraction'],0.25)
+        refusal=self.ev.evaluate(lambda p,s:{'abstain':True})
+        contract=yaml.safe_load((TASK/'TASK_CARD.yaml').read_text())['metric_contract']
+        axis=extract(refusal,'heldout',contract)['fdr']
+        self.assertEqual(axis['status'],'zero_denominator')
+        self.assertIsNone(axis['value'])
+
+    def test_partial_validity_does_not_make_the_task_valid(self):
+        # A public-input condition invalidates only the k=11 held-out world.
+        def candidate(problem,sample):
+            return None if problem['n_queries']==11 else {'abstain':True}
+        result=self.ev.evaluate(candidate)
+        self.assertEqual(result['development_valid_count'],12)
+        self.assertEqual(result['heldout_valid_count'],5)
+        self.assertEqual(result['valid'],0.0)
+        self.assertEqual(result['combined_score'],0.0)
+
+    def test_positional_adaptation_keeps_original_helpers_and_body(self):
+        legacy=(TASK/'verification/reference_library_scan.py').read_text()
+        positional=(ROOT/'.research/sparse_vector_audit/headroom_positional.py').read_text()
+        standalone=(TASK/'verification/reference_positional.py').read_text()
+        helpers=legacy[legacy.index('import math'):legacy.index('def audit(problem, sample):')]
+        body=positional[positional.index('LATER_STEP ='):].replace('ref.','')
+        self.assertIn(helpers,standalone)
+        self.assertTrue(standalone.endswith(body))
+        self.assertNotIn('importlib',standalone.split('from __future__')[1])
+
+
 if __name__ == "__main__":
     unittest.main()

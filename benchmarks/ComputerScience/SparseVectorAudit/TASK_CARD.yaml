@@ -1,23 +1,46 @@
 schema_version: 2
-scientific_question: Decide whether a deployed implementation of the sparse vector technique, AboveThreshold with a cutoff, keeps the (epsilon, delta)-differential privacy its curator claims for it, by running it on query vectors of one's choice under a budget of charged runs, and either name two neighbouring query vectors and a set of outputs whose exact probabilities break the claim or decline.
-artifact: A verdict, and for a violation two neighbouring query vectors and a list of output strings, with a confidence and an optional refusal.
+scientific_question: Decide whether a deployed implementation of the sparse vector technique, AboveThreshold
+  with a cutoff, keeps the (epsilon, delta)-differential privacy its curator claims for it, by running it on
+  query vectors of one's choice under a budget of charged runs, and either name two neighbouring query vectors
+  and a set of outputs whose exact probabilities break the claim or decline.
+artifact: A verdict, and for a violation two neighbouring query vectors and a list of output strings, with
+  a confidence and an optional refusal.
 oracle:
-  model: the specification is AboveThreshold with a cutoff c over 8 to 12 counting queries in 0..100, threshold 50, threshold noise DLap(2/epsilon) drawn once, query noise DLap(4c/epsilon), epsilon 1 and delta 0.001; each world deploys an implementation that is the specification, or scales one noise wrongly (query noise at one half, one third or 0.6 of its scale, threshold noise at one half), or skips the query noise for queries beyond an unpublished offset from the threshold at an unpublished set of positions; the compliant-branch deployments skip it only where a correct comparison dissents with probability small enough that the coupling bound on delta stays below 0.001; the oracle computes the probability of every output string exactly by enumerating the discrete threshold noise, and scores a witness by its exact privacy loss
-  feasibility: charged runs of the deployed implementation under a budget of 200000 per world, each run's randomness seeded by the world, the vector and how many times that vector has been run, overspend failing closed; a witness is two neighbouring vectors and a non-empty set of distinct outputs; its loss is exact, the larger over both orders of ln((P1 - delta) / P2); calibrated refusal on the worlds where the claim holds
+  model: the specification is AboveThreshold with a cutoff c over 8 to 12 counting queries in 0..100, threshold
+    50, threshold noise DLap(2/epsilon) drawn once, query noise DLap(4c/epsilon), epsilon 1 and delta 0.001;
+    each world deploys an implementation that is the specification, or scales one noise wrongly (query noise
+    at one half, one third or 0.6 of its scale, threshold noise at one half), or skips the query noise for
+    queries beyond an unpublished offset from the threshold at an unpublished set of positions; the compliant-branch
+    deployments skip it only where a correct comparison dissents with probability small enough that the coupling
+    bound on delta stays below 0.001; the oracle computes the probability of every output string exactly by
+    enumerating the discrete threshold noise, and scores a witness by its exact privacy loss
+  feasibility: charged runs of the deployed implementation under a budget of 200000 per world, each run's randomness
+    seeded by the world, the vector and how many times that vector has been run, overspend failing closed;
+    a witness is two neighbouring vectors and a non-empty set of distinct outputs; its loss is exact, the larger
+    over both orders of ln((P1 - delta) / P2); calibrated refusal on the worlds where the claim holds
   deterministic: true
 normalization:
-  baseline: the classic pair, the first query one above the threshold and every other one below against every query at the threshold, run 2000 times each, the single output with the largest smoothed count ratio claimed as a violation, never declining
-  reference: a first-query dissent scan against the specification's own dissent probability on a grid of four, on both sides, with a Clopper-Pearson confirmation of the straddling pair; a StatDP-style library of nine pairs screened at 8000 runs a vector with a plug-in ratio-prefix event and delta subtracted; the best screened pair confirmed on fresh runs with everything left of the budget, claimed only if Clopper-Pearson bounds at level 0.2 certify a loss above epsilon; it scans the first query only and confirms the event chosen on the screening counts, by design, and scores 0.570 on the development split and 0.480 held out
-  score: development mechanism recovery normalized above always-abstain; a witness in a violating world scores (min(L, 2 epsilon) - epsilon) / (min(A, 2 epsilon) - epsilon) against the builder's anchor A, a false witness scores minus one there and zero in a compliant world, declining scores zero and one; witness strength, false discovery, refusal, coverage, calibration, runs used and the held-out split stay separate
+  baseline: the classic pair, the first query one above the threshold and every other one below against every
+    query at the threshold, run 2000 times each, the single output with the largest smoothed count ratio claimed
+    as a violation, never declining
+  reference: 'verification/reference_positional.py promotes the contributor''s already fixed complete positional
+    scan: all query positions, original StatDP-style library and fresh Clopper-Pearson confirmation. It inlines
+    public helpers without changing parameters or decisions. Historical in-process scores were 0.819 development
+    / 0.730 held out; independent Linux qualification is pending. The first-query-only method is retained as
+    a capability ablation, not the admission reference.'
+  score: development mechanism recovery normalized above always-abstain; a witness in a violating world scores
+    (min(L, 2 epsilon) - epsilon) / (min(A, 2 epsilon) - epsilon) against the builder's anchor A, a false witness
+    scores minus one there and zero in a compliant world, declining scores zero and one; witness strength,
+    false discovery, refusal, coverage, calibration, runs used and the held-out split stay separate
 citations:
 - id: doi:10.14778/3055330.3055331
   title: Understanding the sparse vector technique for differential privacy
 - id: doi:10.1145/3243734.3243818
   title: Detecting Violations of Differential Privacy
 - id: doi:10.1145/3243734.3243863
-  title: "DP-Finder: Finding Differential Privacy Violations by Sampling and Optimization"
+  title: 'DP-Finder: Finding Differential Privacy Violations by Sampling and Optimization'
 - id: doi:10.1109/SP40001.2021.00081
-  title: "DP-Sniper: Black-Box Discovery of Differential Privacy Violations using Classifiers"
+  title: 'DP-Sniper: Black-Box Discovery of Differential Privacy Violations using Classifiers'
 - id: doi:10.1561/0400000042
   title: The Algorithmic Foundations of Differential Privacy
 - id: doi:10.1145/1536414.1536467
@@ -27,43 +50,81 @@ citations:
 - id: doi:10.1093/biomet/26.4.404
   title: The Use of Confidence or Fiducial Limits Illustrated in the Case of the Binomial
 - id: arxiv:2006.07709
-  title: "Auditing Differentially Private Machine Learning: How Private is Private SGD?"
+  title: 'Auditing Differentially Private Machine Learning: How Private is Private SGD?'
 - id: doi:10.1109/SP40001.2021.00069
-  title: "Adversary Instantiation: Lower Bounds for Differentially Private Machine Learning"
+  title: 'Adversary Instantiation: Lower Bounds for Differentially Private Machine Learning'
 - id: doi:10.1137/09076828X
   title: Universally Utility-maximizing Privacy Mechanisms
 - id: doi:10.1109/ALLERTON.2018.8636068
   title: Property Testing For Differential Privacy
 invariants:
-- implemented as specified the mechanism is epsilon-DP (Lyu, Su and Li 2017, Algorithm 1, with the discrete Laplace distribution in place of the continuous one); an exact-objective local search finds at most 0.904 in the compliant worlds, 0.633 at cutoff two, on events of 0.9 to 2.0 per cent against 0.4 to 0.8, so plug-in maxima over many pairs and events show a violation in a world where the claim holds; the baseline is wrong in every world
-- the three compliant-branch deployments differ from the specification only when a correct comparison would have dissented at 34 to 42 from the threshold; coupled with the specification they are (epsilon, eta (1 + e^epsilon))-DP with that bound at 2.7e-4 to 4.4e-4, below the claimed delta, and the straddling event that breaks every branch world has a mass of 2.6e-5 to 1.5e-4 there and a loss of minus infinity; a scan at a fixed run count that reads zero dissents as a branch claims them, and its rung scores 0.000
-- every violating world has a witness above epsilon, the noise-scale anchors at 1.24 to 1.49 and the branch straddles infinite on events of 1.7 to 9.7 per cent; certifying a noise-scale anchor itself with Clopper-Pearson bounds takes 4000 to 34000 runs a side at level 0.2 and 8000 to 75000 at 0.05, from a budget of 200000 shared with the search
-- three of the six branch worlds cover the first query and three begin at a later position, 4, 5 or 7; the reference scans the first query only and declines the three, which is its documented headroom, since the same audit with a positional scan scores 0.819 and 0.730 held out with no false discovery on the graded seeds
-- a false witness costs one world wherever it is made, minus one in a violating world and zero where declining scores one; without the first half the reference without its confirmation tied it at 0.570, and with it that rung scores 0.427 and 0.000 held out
-- the confirmation is load-bearing, since the no-confirmation rung, the probe's best strategy, averages 0.063 over eight re-drawn seeds with fifty false discoveries in 144 world-runs, where the reference averages 0.446 and 0.440 with none
-- declining every world scores exactly zero by construction, and so does claiming a violation everywhere; confidence feeds only the calibration axis
-- runs are charged and overspend fails closed; the candidate receives a closure and not the ledger, so it cannot raise its own budget; the same vector run twice gives fresh runs and counts do not depend on the order of calls; malformed submissions score zero and never raise out of the evaluator
+- implemented as specified the mechanism is epsilon-DP (Lyu, Su and Li 2017, Algorithm 1, with the discrete
+  Laplace distribution in place of the continuous one); an exact-objective local search finds at most 0.904
+  in the compliant worlds, 0.633 at cutoff two, on events of 0.9 to 2.0 per cent against 0.4 to 0.8, so plug-in
+  maxima over many pairs and events show a violation in a world where the claim holds; the baseline is wrong
+  in every world
+- the three compliant-branch deployments differ from the specification only when a correct comparison would
+  have dissented at 34 to 42 from the threshold; coupled with the specification they are (epsilon, eta (1 +
+  e^epsilon))-DP with that bound at 2.7e-4 to 4.4e-4, below the claimed delta, and the straddling event that
+  breaks every branch world has a mass of 2.6e-5 to 1.5e-4 there and a loss of minus infinity; a scan at a
+  fixed run count that reads zero dissents as a branch claims them, and its rung scores 0.000
+- every violating world has a witness above epsilon, the noise-scale anchors at 1.24 to 1.49 and the branch
+  straddles infinite on events of 1.7 to 9.7 per cent; certifying a noise-scale anchor itself with Clopper-Pearson
+  bounds takes 4000 to 34000 runs a side at level 0.2 and 8000 to 75000 at 0.05, from a budget of 200000 shared
+  with the search
+- three of the six branch worlds cover the first query and three begin at a later position, 4, 5 or 7; the
+  original first-query method declines these three; the existing complete positional method, now packaged as
+  the reference, historically scores 0.819 and 0.730 held out with no false discovery on the graded seeds
+- a false witness costs one world wherever it is made, minus one in a violating world and zero where declining
+  scores one; without the first half the reference without its confirmation tied it at 0.570, and with it that
+  rung scores 0.427 and 0.000 held out
+- the confirmation is load-bearing, since the no-confirmation rung, the probe's best strategy, averages 0.063
+  over eight re-drawn seeds with fifty false discoveries in 144 world-runs, where the original first-query
+  method averages 0.446 and 0.440 with none
+- declining every world scores exactly zero by construction, and so does claiming a violation everywhere; confidence
+  feeds only the calibration axis
+- runs are charged and overspend fails closed; the candidate receives a closure and not the ledger, so it cannot
+  raise its own budget; the same vector run twice gives fresh runs and counts do not depend on the order of
+  calls; malformed submissions score zero and never raise out of the evaluator
 - held-out split, per-world rows and the discovery axes remain evaluator-only
-known_shortcuts: >-
-  a 318-strategy sweep over blind straddle guesses at every offset on either side (100, all
-  scoring zero), screen-and-claim of the baseline pair or the StatDP-style library at 1000 to
-  24000 runs a vector with the single output or the ratio prefix above a threshold of 1 to 4
-  (176, best 0.248), the reference's first-query scan followed by screen-and-claim (24, best
-  0.427) and screen-then-confirm of the baseline pair at three levels (18, all zero) tops out at
-  0.427 on the development split and 0.000 held out, 75 per cent of the reference, by claiming
-  the best screened pair without confirmation; re-drawn on eight other seeds that strategy
-  averages 0.063 with fifty false discoveries; 289 of the 318 score zero
+known_shortcuts: a 318-strategy sweep over blind straddle guesses at every offset on either side (100, all
+  scoring zero), screen-and-claim of the baseline pair or the StatDP-style library at 1000 to 24000 runs a
+  vector with the single output or the ratio prefix above a threshold of 1 to 4 (176, best 0.248), the reference's
+  first-query scan followed by screen-and-claim (24, best 0.427) and screen-then-confirm of the baseline pair
+  at three levels (18, all zero) tops out at 0.427 on the development split and 0.000 held out, 75 per cent
+  of the reference, by claiming the best screened pair without confirmation; re-drawn on eight other seeds
+  that strategy averages 0.063 with fifty false discoveries; 289 of the 318 score zero These are historical
+  author in-process measurements, not independent sandbox results. A machine contract now includes the fixed
+  reported legacy best and the stronger full-positional method with confirmation removed; their current results
+  remain unmeasured.
 review:
   domain: pending_external_differential_privacy
   evaluator_security: automated_bad_candidate_crash_sweep_determinism_and_abstention_normalization_checks
 provenance:
   class: procedural
-  target_source: Repository-visible deterministic worlds with twelve development deployments (three compliant, two compliant-branch, three noise-scale, four branch) and six sealed held-out deployments (one compliant, one compliant-branch, two noise-scale, two branch), each with its own number of queries, cutoff and run seed; anchors from an exact-objective search recorded in the evaluator and recomputed on every run.
+  target_source: Repository-visible deterministic worlds with twelve development deployments (three compliant,
+    two compliant-branch, three noise-scale, four branch) and six sealed held-out deployments (one compliant,
+    one compliant-branch, two noise-scale, two branch), each with its own number of queries, cutoff and run
+    seed; anchors from an exact-objective search recorded in the evaluator and recomputed on every run.
   task_contract_public_before_evaluation: true
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Statistical auditing of differential privacy is published, from hypothesis tests on counts (Ding et al. 2018) through optimisation and classifiers over inputs and events (Bichsel et al. 2018, 2021) to lower bounds for private training (Jagielski, Ullman and Oprea 2020; Nasr et al. 2021), and the variants of the sparse vector technique that are not private are catalogued (Lyu, Su and Li 2017). A model that knows them will reach for a library of pairs and a significance test at once. What is not published is which deployments these are, that the compliant deviations live below delta, where the branches begin, and how a budget of 200000 runs has to be split between finding a pair and certifying it. The ablation shows the score turns on combining the scan, the library and the confirmation rather than on any one of them, and the shortcut probe bounds what a searcher gets at 75 per cent of the reference on the graded seeds and far less on any other. The reference's own headroom is deliberate and documented, since it scans the first query only. Task.md names no deviation family. No frontier draw has been run yet, so the difficulty at the frontier is not measured.
+  rationale: Statistical auditing of differential privacy is published, from hypothesis tests on counts (Ding
+    et al. 2018) through optimisation and classifiers over inputs and events (Bichsel et al. 2018, 2021) to
+    lower bounds for private training (Jagielski, Ullman and Oprea 2020; Nasr et al. 2021), and the variants
+    of the sparse vector technique that are not private are catalogued (Lyu, Su and Li 2017). A model that
+    knows them will reach for a library of pairs and a significance test at once. What is not published is
+    which deployments these are, that the compliant deviations live below delta, where the branches begin,
+    and how a budget of 200000 runs has to be split between finding a pair and certifying it. The ablation
+    shows the score turns on combining the scan, the library and the confirmation rather than on any one of
+    them, and the shortcut probe bounds what a searcher gets at 75 per cent of the reference on the graded
+    seeds and far less on any other. The reference's own headroom is deliberate and documented, since it scans
+    the first query only. Task.md names no deviation family. No frontier draw has been run yet, so the difficulty
+    at the frontier is not measured. These descriptions refer to the original author construction. The current
+    reference includes the previously omitted positional scan; it is not acceptable to omit that capability
+    merely to lower the admission line. Independent current qualification and a real model first draw remain
+    required.
 lineage:
   status: complete
   builder_model_ids:
@@ -73,25 +134,24 @@ lineage:
   calibrator_model_ids: []
   calibration_runs: []
   calibration_evidence_status: missing
-  template_source: >-
-    frontier_eval/run_eval.py is generated by scripts/gen_task.py; the evaluator's per-world
-    scoring, split summary and evaluate skeleton follow Phylogenomics/AnomalyZoneSpeciesTree and
-    through it StructuralEngineering/ModalDamageAttribution, the repository's exemplar task; the mechanism,
-    the exact loss, the deployments, the sampler, the metrics, the reference and the baseline are
-    this task's own.
-  edits_triggered_by_model: >-
-    No model has seen the task. Six edits came from the construction checkpoints. A compliant
-    world that skipped the threshold noise redraw had a pure-DP loss of 0.974 and was cut. A halved
-    threshold noise has no compliance proof above cutoff one and is used only as a violating world.
-    The first reference confirmed two screened pairs at 0.05 after 4000 runs a vector and scored
-    0.400 and 0.250, since the winner's curse chose events far below their plug-in value and 40000
-    runs a side cannot certify an anchor of 1.24; it now screens at 8000 and confirms one pair with
-    the rest of the budget at level 0.2. With a false witness scoring zero in a violating world the
-    reference without its confirmation tied the reference, so a false witness now costs one world
-    wherever it is made. The headroom's positional scan missed an offset of nine and then raised a
-    false alarm sized for the first position only; its down vector is now sized by the last
-    position's reach. And the baseline's docstring, which the candidate reads, named the family of
-    noise-skipping branches; it no longer does, and Task.md names no deviation family.
+  template_source: frontier_eval/run_eval.py is generated by scripts/gen_task.py; the evaluator's per-world
+    scoring, split summary and evaluate skeleton follow Phylogenomics/AnomalyZoneSpeciesTree and through it
+    StructuralEngineering/ModalDamageAttribution, the repository's exemplar task; the mechanism, the exact
+    loss, the deployments, the sampler, the metrics, the reference and the baseline are this task's own.
+  edits_triggered_by_model: No model has seen the task. Six edits came from the construction checkpoints. A
+    compliant world that skipped the threshold noise redraw had a pure-DP loss of 0.974 and was cut. A halved
+    threshold noise has no compliance proof above cutoff one and is used only as a violating world. The first
+    reference confirmed two screened pairs at 0.05 after 4000 runs a vector and scored 0.400 and 0.250, since
+    the winner's curse chose events far below their plug-in value and 40000 runs a side cannot certify an anchor
+    of 1.24; it now screens at 8000 and confirms one pair with the rest of the budget at level 0.2. With a
+    false witness scoring zero in a violating world the reference without its confirmation tied the reference,
+    so a false witness now costs one world wherever it is made. The headroom's positional scan missed an offset
+    of nine and then raised a false alarm sized for the first position only; its down vector is now sized by
+    the last position's reach. And the baseline's docstring, which the candidate reads, named the family of
+    noise-skipping branches; it no longer does, and Task.md names no deviation family. In the 2026-09-11 admission
+    repair, the contributor's positional method was promoted without parameter changes, aggregate FDR received
+    its correct claim denominator, all-world validity became fail-closed, and the wrapper was replaced with
+    the shared launcher. No new model draw informed these repairs.
   shortcut_discoverer: builder_self_audit_with_a_low_dimensional_strategy_probe
   frozen_before_eval: false
   freeze_timestamp: null
@@ -107,4 +167,58 @@ construction_audit:
   expert_hours: null
   red_team_rounds: 6
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the twelve-rung ablation ladder, the 318-strategy shortcut probe, the per-world construction statistics, the eight-seed robustness check and the construction checks from the scripts in .research/sparse_vector_audit; the twenty-seven bad-candidate shapes are in tests/test_sparse_vector_audit.py; the sandbox evaluation of scripts/check_task_contribution.py has not been run because the task was built on a machine without Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
+  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the
+    twelve-rung ablation ladder, the 318-strategy shortcut probe, the per-world construction statistics, the
+    eight-seed robustness check and the construction checks from the scripts in .research/sparse_vector_audit;
+    the twenty-seven bad-candidate shapes are in tests/test_sparse_vector_audit.py; the sandbox evaluation
+    of scripts/check_task_contribution.py has not been run because the task was built on a machine without
+    Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
+metric_contract:
+  mechanism:
+    metric: witness_strength
+    estimand: normalized_valid_witness_strength
+    numerator: summed anchor-normalized exact witness strength on violating worlds
+    denominator: violating worlds
+    denominator_metric: witness_strength_denominator
+    direction: higher
+  fdr:
+    metric: false_discovery_rate
+    estimand: false_discovery_rate
+    numerator: false valid non-abstaining violation claims
+    denominator: all valid non-abstaining violation claims
+    denominator_metric: false_discovery_denominator
+    direction: lower
+  refusal:
+    metric: correct_refusal_rate
+    estimand: compliant_world_refusal_rate
+    numerator: correct refusals on compliant and compliant-branch worlds
+    denominator: compliant and compliant-branch worlds
+    denominator_metric: correct_refusal_denominator
+    direction: higher
+  coverage:
+    metric: discovery_coverage
+    estimand: violating_world_claim_coverage
+    numerator: valid non-abstaining claims on violating worlds
+    denominator: violating worlds
+    denominator_metric: discovery_denominator
+    direction: higher
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_positional.py
+    expected_score: null
+  probes:
+  - id: legacy_best_without_library_confirmation
+    candidate: verification/probe_legacy_no_confirmation.py
+    expected_score: null
+  - id: positional_without_confirmation
+    candidate: verification/probe_positional_no_confirmation.py
+    expected_score: null
+  relative_margin: 0.1
+  score_tolerance: 1.0e-06
+evaluation_budget:
+  timeout_seconds: 300
+  sample_runs_per_world: 200000
+  scope: each callback charges its requested run count; overspend is sticky and invalidates; wrapper timeout
+    is explicit

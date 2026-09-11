@@ -1,5 +1,15 @@
 # SparseVectorAudit: known best
 
+## Admission repair status (2026-09-11)
+
+The tables below retain the contributor's historical in-process measurements at PR head `4bb95061846a28a3025f4eb05cdd52210e12b11a`. They are not current Linux sandbox measurements. In particular, the original columns labelled false discovery used false claims / all worlds; that is a world-level fraction, not FDR. The repaired oracle publishes false claims / valid claims with explicit counts; zero claims remain unavailable under the metric contract. This correction does not change the mechanism score, worlds, seeds or anchors.
+
+The previous first-query reference deliberately omitted later positions and is inadequate as an admission reference. `verification/reference_positional.py` now packages the existing positional method with original helper source inlined and no parameter changes. Source hashes and the exact adaptation are recorded in `.research/pr80_source_adaptation_2026-09-11.json`. The original method remains a no-later-position control. Fixed source-matched no-scan, no-library and no-confirmation programs are standalone, and the machine shortcut contract includes the historical strongest no-confirmation alternative as well as the full positional method without confirmation. All new expected scores are null until independent measurements are reviewed.
+
+The discrete compliance derivation, branch-coupling delta argument and truncation limits are in `references/compliance_argument.md`. Complete novelty comparison and real first-proposal model evidence remain outstanding. No new model call or global evidence refresh is included in this repair.
+
+The following historical narrative is retained for provenance; it does not override this current admission status.
+
 ## Reference (truth-blind): a first-query dissent scan, a screened library, one confirmed pair
 
 `verification/reference_library_scan.py`. It reads only the public problem and the counts that
