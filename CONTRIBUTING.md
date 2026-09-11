@@ -118,6 +118,12 @@ oracle 须定义 `evaluate(candidate_callable)`,返回的字典**至少**包含:
 
 可选字段:`feasibility_rate`、`constraint_violations`、`raw_score`、`per_instance` 等。
 
+多世界或多实例 oracle 必须在每个独立世界开始时调用候选代理的 `reset_session()`
+（直接传入普通测试函数时用 `hasattr` 判断）。重置要覆盖 development → heldout 边界，
+使模块全局变量、已导入库的属性和私有 `/tmp` 都重新初始化。同一世界的测量回调、控制器步进
+及返回的远程 callable 要继续使用该世界的会话。请用真实 `CandidateProxy` 验证这些边界；
+只检查基线分数确定，无法发现程序按世界顺序积累状态的问题。
+
 **发现类任务另有要求。** 三个轴必须**分开**报出、永不平均:机制恢复、假发现率、校准拒答。
 再加一列"是否尝试过发现"——没有它,"每个提案都拒绝了每个世界"与"科学太难做不出来"在报表上一样,
 而这两种情况需要相反的处置。归一化要让**全面弃权恰好得零**:
@@ -180,7 +186,8 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 **A 科学与新颖性**
 1. 填补 `sle/conf/exam_taxonomy.yaml` 的学科 × 形式空格(`python scripts/report_exam_taxonomy.py`)。
 2. `Task.md` 有「关系与区别」小节,点名仓库内最近邻并说明差在哪(产物形式、可判错世界、拒答轴、实例集)。
-3. 与 Frontier-Eng 的两份目录(论文附录 47 题、仓库 `TASK_DETAILS` 95 条)逐条对照,同一问题类不立题。
+3. 与 Frontier-Eng 的两份目录(论文附录 47 题、仓库 `TASK_DETAILS` 的全部条目)逐条对照,
+   记录目录修订与实际条目数,同一问题类不立题。仓库目录会变化,不要照抄历史的 95 条计数。
 4. 引用支撑 oracle 里的模型本身,不是只支撑领域。
 
 **B Oracle 合约**
@@ -272,8 +279,9 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 `secure_baseline_determinism_*.json`)里,因为这两份文档只能由维护者在带沙箱的 Linux 主机上用
 `scripts/refresh_global_evidence.py` 重新生成。**这不是你的 PR 的缺陷,你也修不了。**
 
-因此该断言在 PR 上只检查"已冻结任务的证据有没有漂",新任务归入 `awaiting_freeze` 不判红;
-在 `main` 上(`SLE_REQUIRE_FROZEN_INVENTORY=1`)则一并要求,合并后由维护者跑一次 refresh 并推送。
+因此该断言在 fork PR 上只检查"已冻结任务的证据有没有漂",新任务归入 `awaiting_freeze` 不判红;
+本仓库内的维护者集成 PR 与 `main` 都设置 `SLE_REQUIRE_FROZEN_INVENTORY=1`,
+要求完整冻结清单。维护者须在集成分支上先完成 Linux refresh 与全量 CI,再合并。
 你的 PR 里**不要**提交重新生成的证据文档 —— 它们会记录你本机的 revision,反而把绑定弄脏。
 
 CI 其余部分对 PR 一视同仁:审计、卡片校验、沙箱测试全部要绿。
