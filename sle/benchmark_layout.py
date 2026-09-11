@@ -12,6 +12,7 @@ from pathlib import Path
 DISCIPLINE_DOMAINS: dict[str, tuple[str, ...]] = {
     "Biology": (
         "Electrophysiology",
+        "Microbiology",
         "Biomechanics",
         "Ecology",
         "EvidenceSynthesis",
@@ -38,6 +39,7 @@ DISCIPLINE_DOMAINS: dict[str, tuple[str, ...]] = {
     "ComputerScience": (
         "Algorithm",
         "CausalDiscovery",
+        "DataPrivacy",
         "InformationTheory",
         "ScientificComputing",
         "SignalProcessing",
