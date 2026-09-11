@@ -57,7 +57,8 @@ def main():
     original = read_plan(args.original_plan)
     review = read(args.original_review)
     if (review["criterion_D16"] != "passed_comparison_only" or review["plan_sha256"] != original["plan_sha256"]
-            or review["valid_complete_first_proposals"] != 3 or len(original["cells"]) != 3):
+            or review["valid_complete_first_proposals"] != 3 or len(original["cells"]) != 3
+            or review["bindings"] != original["bindings"]):
         raise ValueError("complete reviewed three-draw comparison required")
     task = original["bindings"]["task_id"]
     spec = find_task(task, include_uncertified=True)
@@ -76,6 +77,10 @@ def main():
         if len(events) != 2 or events[1]["valid"] is not True:
             raise ValueError("unexpected first proposal")
         first = events[1]
+        reviewed = next(row for row in review["cells"] if row["seed_label"] == cell["seed"])["events"][1]
+        if (reviewed["candidate_sha256"] != first["candidate_sha256"]
+                or reviewed["full_metrics_sha256"] != digest(first["metrics"])):
+            raise ValueError("original first proposal differs from the completed admission review")
         archive = [row for row in read(directory / "checkpoint.json")["evaluated_candidates"] if row["step"] == 1]
         if len(archive) != 1:
             raise ValueError("missing retained candidate")
@@ -83,7 +88,10 @@ def main():
         if hashlib.sha256(code).hexdigest() != first["candidate_sha256"]:
             raise ValueError("retained candidate source differs")
         request_id = first["algorithm_metadata"]["evaluation_request_id"]
-        receipt = read(directory / "evaluation_ledger/receipts" / (request_id + ".json"))
+        receipt_path = directory / "evaluation_ledger/receipts" / (request_id + ".json")
+        receipt = read(receipt_path)
+        if hashlib.sha256(receipt_path.read_bytes()).hexdigest() != reviewed["receipt_file_sha256"]:
+            raise ValueError("original receipt changed since admission review")
         if receipt["metrics_sha256"] != digest(first["metrics"]) or receipt["metrics"] != first["metrics"]:
             raise ValueError("original metrics differ from receipt")
         sources.append((cell["seed"], code, first["candidate_sha256"], receipt["metrics"]))
