@@ -175,7 +175,9 @@ python scripts/report_discipline_scores.py --input experiments/<name>.json \
 python -m pytest tests/ -q                                   # 笔记本:沙箱测试自动 skip
 python scripts/audit_tasks.py --output /tmp/certification.json
 python scripts/audit_benchmark_standards.py --output /tmp/standards.json
-python scripts/refresh_global_evidence.py --commit           # 仅限 Linux 主机、干净树
+mkdir -m 700 /tmp/sle-private-evidence                      # 使用新的仓库外私有目录
+python scripts/refresh_global_evidence.py --commit --private-output /tmp/sle-private-evidence/baseline.json
+# 上述刷新仅限 Linux 主机、干净树；私有完整原件不可覆盖，公开报告只含选择指标和哈希。
 ```
 
 ## 任务汇总

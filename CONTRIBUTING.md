@@ -306,6 +306,23 @@ CI 其余部分对 PR 一视同仁:审计、卡片校验、沙箱测试全部要
 再 commit 证据**。改动任何任务包内文件之后,除了 `refresh_global_evidence.py`,还要跑
 `pytest tests/test_measurement_health_preflight.py tests/test_scientific_materiality.py tests/test_batch_runner.py`。
 
+安全基线与七题预检必须显式指定仓库外的私有原件路径：目录权限为 `0700`，新文件以
+`0600` 创建，已有原件不能覆盖。完整隐藏指标仅保留在私有文件；公开 JSON 是选择指标与哈希的
+导出，确定性和各门判定仍使用完整结果。`fail_closed_count` 只检查本轮基线结果，不能当作
+畸形候选测试覆盖。预检的逐字段数值跨度也只公开选择指标；完整跨度映射仅公开哈希，
+整体最大跨度与稳定性判定仍来自完整私有结果。它不公开隐藏指标的单次取值或逐世界记录。
+下面路径需换成维护者的新持久私有目录，命令须在干净的 Linux 树上执行：
+
+```bash
+mkdir -m 700 /path/outside/git/private-evidence
+python scripts/refresh_global_evidence.py --commit --private-output /path/outside/git/private-evidence/baseline.json
+python scripts/run_measurement_health_preflight.py --private-output /path/outside/git/private-evidence/preflight.json --output experiments/preflight-new.json
+```
+
+原始基线已测量且评测器、任务与依赖源码未改变时，可用
+`python scripts/run_secure_baseline.py --export-private /path/outside/git/private-evidence/baseline.json --output experiments/baseline-export-new.json`
+只生成公开导出。该模式保留原评测修订与原件哈希，另外记录导出修订；它不会重新评测或把漂移的旧运行重签为当前证据。
+
 团队内部的主机名、可用模型端点与密钥获取方式不在仓库里,向维护者索取内部 runbook。
 
 ---
