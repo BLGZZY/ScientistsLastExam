@@ -16,7 +16,7 @@
 | #82 CacheReplacementPolicyID | 修复独立世界会话、sticky budget、共享 wrapper 与 claim-denominator FDR；28 项 Linux fixture 回归通过。完整 permutation 参考已提供，但 `expected_score: null`，贡献门明确 incomplete | 完整参考、捷径和首提案标定未完成；修复分支 `codex/pr82-admission-fixes` |
 | #47 F6SpinGlassGroundState | 148 项 Linux 回归通过，5 个程序各双跑；参考 0.986111，去 replica exchange 为 0.984568，去 quench 与参考同分 | 捷径分离和有效消融未通过；修复分支 `codex/pr47-admission-fixes` |
 | #56 / #57 | Football 的完整参考/首提案证据不足；SortingNetwork 独立构造 0.016667 明显低于查表 0.496667，能力消融未建立 | 保持 open，不以查表成绩证明算法难度 |
-| #83 ClockSyncInversion | 已复现负物理时延、沙箱 LP 后端失败；数值等价修复单列，完整多世界参考仍需验收 | 完整参考及 C/D 未通过前保持 open，失败不作为低科学分数 |
+| #83 ClockSyncInversion | 修复负物理时延和世界会话；三个冻结计划合计 24 次完整调用，仅 6 次基线有效，18 次运行失败。完整 oracle 测试 900 秒超时且出现失败；新的精确凸包行裁剪仅有 6 项本地轻量回归，尚未完整任务验收 | HOLD；修复分支 `codex/pr83-admission-fixes`，最终 head `e9c4682d8934cc9a5f03cf898e4e60432bf295e6`；失败不能作为低科学分数或难度通过证据 |
 
 三个任务共 9 个预定首提案，全部保留：8 个完整有效、1 个部分无效。
 #80 / #72 / #79 的 provider-reported returned-proposal token 分别为 52,280 / 44,696 / 52,200。
@@ -46,7 +46,13 @@ CI 固定要求执行 #80 的 18 项检查及旧任务隔离的 20 项检查，�
 
 新的 GitHub 快照记录 34 个 open PR、15 个 draft，原始 head 未按本地修复分支改写。
 #74 固定策略分离仍不满足；#73 付费代数策略较强；#60 缺少历史更强策略的精确源码；#30 LP 失败不能被当作数学方案无效。
-#17 的运行时修复与 family/lifetime-credit 提案保持独立；本批没有启用其语义。
+#17 的运行时修复与 family/lifetime-credit 提案保持独立；本批没有启用其语义。独立修复分支
+`codex/pr17-runtime-verifier-fixes` 的最终 head 为 `d97e2a09a7b3460ed52dff05bd2e42b055559cda`。
+其中依赖检查改为验证沙箱实际挂载的 distribution metadata，防止宿主的临时 PYTHONPATH 掩盖版本不符；
+固定候选的基础 NumPy/SciPy RPC 通过，qutip 配置因真实版本不匹配在启动前拒绝，不能记作 qutip 功能通过。
+最终源码 `e2ecdb2fcb4c3dec4ce547a17fb0fd47ea97ae10` 的关键 Linux lane 为 144 passed、0 skipped；
+较早的完整组合仍有 3 项环境/profile 失败，未安装缺失依赖，也未宣称完整组合在最终源码全部通过。
+保留精确依赖缺口及历史失败，完整 PR 继续 open。
 其他未复验投稿保留 `unreviewed` 或既有 blocker，不因旧 CI 绿色而自动合入。
 
 
