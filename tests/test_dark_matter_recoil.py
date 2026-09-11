@@ -24,6 +24,26 @@ def test_public_detector_design_is_identical_across_worlds_and_splits():
     assert all(problem == problems[0] for problem in problems)
 
 
+@pytest.mark.parametrize('failing_split', ['development', 'heldout'])
+def test_public_validity_does_not_reveal_heldout_validation(monkeypatch, failing_split):
+    original = MODULE.score_world
+    affected = {w['seed'] for w in MODULE.split_worlds(failing_split)}
+    baseline = search_visible_metrics(MODULE.evaluate(lambda *_: {'abstain': True}))
+
+    def reject_selected(world, answer):
+        # Trusted fault injection; no split identifier is given to the candidate.
+        return original(world, {} if world['seed'] in affected else answer)
+
+    monkeypatch.setattr(MODULE, 'score_world', reject_selected)
+    result = MODULE.evaluate(lambda *_: {'abstain': True})
+    assert result[failing_split+'_valid_rate'] == 0
+    assert result[failing_split+'_correct_refusal_count'] == 0
+    if failing_split == 'heldout':
+        assert search_visible_metrics(result) == baseline
+    else:
+        assert result['valid'] == result['feasibility_rate'] == 0
+
+
 def test_recoil_kernel_matches_independent_speed_integral():
     (mass, ratio, t, energy) = (43.0, 0.83, 1, MODULE.ENERGIES)
     (_, a, z) = MODULE.TARGETS[t]

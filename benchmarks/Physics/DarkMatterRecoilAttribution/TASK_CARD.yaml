@@ -26,6 +26,8 @@ invariants:
   the same counter-indexed observations.
 - All public problem values, including the detector energy grid, are identical
   across worlds and splits; no free continuous world identifier is exposed.
+- Public validity and feasibility depend only on development, including malformed
+  return values; heldout validation cannot change search feedback.
 - Global random state does not affect the frozen generator.
 - Malformed or overspent candidates fail closed without exposing exception text.
 - An omitted mechanism is not the same scientific decision as a valid null mechanism.
@@ -107,21 +109,21 @@ long_horizon:
   material_headroom_after_2h: false
   evidence: []
 
-# Same fixed candidate algorithms; shared-grid scores require a new Linux replay.
-# Historical variable-grid evidence and failed D16 remain in known_best §4.
+# Shared-grid fixed-candidate pairs measured at 8561acb with NumPy 1.26.4 /
+# SciPy 1.13.1. Historical variable-grid evidence and failed D16 remain retained.
 shortcut_probe:
   schema_version: 1
   metric: combined_score
   reference:
     candidate: verification/reference_profile.py
-    expected_score: null
+    expected_score: 0.5368049832
   probes:
     - id: fixed_mass_57_8
       candidate: verification/shortcut_fixed_mass.py
-      expected_score: null
+      expected_score: 0.2903389817
     - id: published_four_way
       candidate: verification/shortcut_four_way.py
-      expected_score: null
+      expected_score: 0.2796988413
   relative_margin: 0.3
   score_tolerance: 0.000001
 evaluation_budget:

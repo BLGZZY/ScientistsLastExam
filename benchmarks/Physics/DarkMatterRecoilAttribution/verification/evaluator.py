@@ -240,6 +240,6 @@ def evaluate(candidate):
         results.update({split + "_" + k: round(float(v), 10) for k, v in values.items()})
         all_rows.extend(rows)
     results.update(combined_score=results["development_mechanism_score"],
-                   valid=float(all(r["valid"] for r in all_rows)),
+                   valid=float(all(r["valid"] for r in all_rows if r["split"] == "development")),
                    feasibility_rate=results["development_valid_rate"], per_instance=all_rows)
     return results
