@@ -154,8 +154,8 @@ def problem_statement(world):
         "cross_check_cost": CROSS_CHECK_COST,
         "budget_units": BUDGET_UNITS,
         "network_note": (
-            "enthalpies close under Hess's law over eight species; only the pendant "
-            "forward/reverse pair R12/R13 observes iso8 and shares one instrument class; "
+            "enthalpies close under Hess's law over eight species; rank-deficient "
+            "substructures can make two fault attributions observationally equivalent; "
             "a determination-specific systematic offset persists in same-instrument replicates"
         ),
     }
@@ -397,6 +397,9 @@ def _summary(rows, specs):
     refusing = [r for r in potentially_refusing if not r["resolved"]]
     clean = [r for r, s in zip(rows, specs) if s[1] == "clean"]
     scored_for_fdr = clean + refusing
+    attributable = [r for r, s in zip(rows, specs)
+                    if s[1] in ("drift", "transcription", "reference_state")
+                    or (s[1] == "underdetermined" and r["resolved"])]
     # Either constant null strategy can earn at most one per relevant world.
     # This makes all-refusal and all-consistent submissions score exactly zero,
     # even when they also return a useful least-squares correction.
@@ -409,6 +412,7 @@ def _summary(rows, specs):
         "correction_gain": float(np.mean([r["correction_gain"] for r in rows])),
         "verdict_score": float(np.mean([r["verdict_score"] for r in rows])),
         "diagnosis_score": float(np.mean([r["diagnosis_score"] for r in rows])),
+        "confidence_score": float(np.mean([r["confidence_score"] for r in rows])),
         "false_count": sum(r["false_discovery"] for r in scored_for_fdr),
         "fdr_denominator": len(scored_for_fdr),
         "clean_count": len(clean),
@@ -416,6 +420,8 @@ def _summary(rows, specs):
         "refusing_count": len(refusing),
         "resolved_count": len(potentially_refusing) - len(refusing),
         "attempt_count": sum(r["attempted"] for r in rows if r["valid"]),
+        "attribution_attempt_count": sum(r["attempted"] for r in attributable if r["valid"]),
+        "attribution_count": len(attributable),
     }
 
 
@@ -437,12 +443,17 @@ def evaluate(audit_thermochemical_cycle):
         "development_correction_gain": dev["correction_gain"],
         "development_verdict_score": dev["verdict_score"],
         "development_diagnosis_score": dev["diagnosis_score"],
+        "development_confidence_score": dev["confidence_score"],
         "development_false_discovery_rate": dev["false_count"] / dev["fdr_denominator"],
-        "development_correct_refusal_rate": dev["refusal_count"] / max(dev["refusing_count"], 1),
-        "development_discovery_coverage": dev["attempt_count"] / len(development),
+        "development_correct_refusal_rate": (dev["refusal_count"] / dev["refusing_count"]
+                                               if dev["refusing_count"] else None),
+        "development_discovery_coverage": (dev["attribution_attempt_count"]
+                                             / dev["attribution_count"]
+                                             if dev["attribution_count"] else None),
         "clean_world_count": dev["clean_count"],
         "false_discovery_world_count": dev["fdr_denominator"],
         "discovery_attempt_count": dev["attempt_count"],
+        "attribution_world_count": dev["attribution_count"],
         "development_world_count": len(development),
         "refusing_world_count": dev["refusing_count"],
         "resolved_world_count": dev["resolved_count"],
@@ -452,8 +463,14 @@ def evaluate(audit_thermochemical_cycle):
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_verdict_score": hold["verdict_score"],
         "heldout_correction_gain": hold["correction_gain"],
+        "heldout_confidence_score": hold["confidence_score"],
         "heldout_false_discovery_rate": hold["false_count"] / hold["fdr_denominator"],
-        "heldout_correct_refusal_rate": hold["refusal_count"] / max(hold["refusing_count"], 1),
+        "heldout_correct_refusal_rate": (hold["refusal_count"] / hold["refusing_count"]
+                                          if hold["refusing_count"] else None),
+        "heldout_discovery_coverage": (hold["attribution_attempt_count"]
+                                        / hold["attribution_count"]
+                                        if hold["attribution_count"] else None),
+        "heldout_attribution_world_count": hold["attribution_count"],
         "heldout_false_discovery_world_count": hold["fdr_denominator"],
         "heldout_refusing_world_count": hold["refusing_count"],
         "heldout_resolved_world_count": hold["resolved_count"],

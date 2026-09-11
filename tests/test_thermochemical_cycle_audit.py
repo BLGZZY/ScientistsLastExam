@@ -83,7 +83,7 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         first = self.ev.evaluate(self.sol.audit_thermochemical_cycle)
         second = self.ev.evaluate(self.sol.audit_thermochemical_cycle)
         self.assertEqual(first["valid"], 1.0)
-        self.assertLessEqual(abs(first["combined_score"]), 0.01)
+        self.assertEqual(first["combined_score"], 0.0)
         self.assertEqual(json.dumps(first, sort_keys=True, default=str),
                          json.dumps(second, sort_keys=True, default=str))
         result = self.ev.evaluate(self.ref.audit_thermochemical_cycle)
@@ -93,8 +93,11 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         self.assertEqual(result["development_false_discovery_rate"], 0.0)
         self.assertEqual(result["resolved_world_count"], 2)
         self.assertEqual(result["refusing_world_count"], 0)
+        self.assertIsNone(result["development_correct_refusal_rate"])
         self.assertEqual(result["clean_world_count"], 2)
         self.assertEqual(result["false_discovery_world_count"], 2)
+        self.assertEqual(result["attribution_world_count"], 6)
+        self.assertEqual(result["development_discovery_coverage"], 1.0)
 
     def test_replicates_shrink_random_error_but_not_systematics(self):
         world = self.ev._world((71023, "drift"))

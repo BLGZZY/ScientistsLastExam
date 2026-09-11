@@ -25,11 +25,11 @@ fault attributions producing exactly the same observations without a cross-check
 
 Both all-consistent and all-underdetermined strategies now normalize to zero, even
 with better corrections. Oracle-direct debugging after correction gives baseline 0,
-reference development 0.535168 and heldout 0.233600. Both development pendant worlds
-are resolved by cross-checks, so `resolved_world_count = 2` and the eligible refusal
-denominator is zero; this is reported separately from refusal performance.
-These are local debugging results. The previous results below, all old ablations,
-and all old shortcut comparisons are **superseded** and require new Linux measurement.
+reference development 0.535168 and heldout 0.233600. Both development rank-deficient
+worlds are resolved by cross-checks, so `resolved_world_count = 2` and the eligible
+refusal denominator is zero; `development_correct_refusal_rate` is therefore `null`.
+Coverage is divided by the six worlds in which an attribution is warranted after the
+reference's queries. These are local debugging results.
 
 
 The shipped `solution.py` trusts every reported value and calls the batch consistent.
@@ -38,30 +38,33 @@ Measured on 2026-09-05 the baseline scores exactly `0.000000` development and
 truth-informed auditor (correct verdict, full flags, truth-corrected values) scores
 `1.000000` mean mechanism on development worlds.
 
-## 3. Historical capability comparisons and ablations (superseded)
+## 3. Capability comparisons and ablations
 
-Local oracle-direct ablations of the reference, measured 2026-09-05:
+Local oracle-direct ablations of the current reference, measured 2026-09-12:
 
 | variant | development | robustness | FDR | refusal |
 |---|---:|---:|---:|---:|
-| full reference | 0.5565 | 0.6555 | 0.00 | 1.00 |
-| no laboratory calls | 0.4633 | 0.5046 | 0.00 | 1.00 |
-| no corrected values (report raw) | 0.4783 | — | 0.00 | 1.00 |
-| never refuse the pendant pair | 0.4261 | — | 0.50 | 0.00 |
-| no dominant-outlier pre-test | 0.3747 | — | 0.00 | 1.00 |
+| full reference | 0.535168 | 0.233600 | 0.00 | null¹ |
+| no dominant-outlier triage | 0.333474 | 0.233600 | 0.00 | null¹ |
+| no rank-deficient-branch resolution | 0.509228 | 0.222221 | 0.00 | 1.00 |
+| no drift diagnosis | 0.314229 | 0.250911 | 0.00 | null¹ |
 
-Every capability contributes. These are local debugging numbers, not frozen benchmark
-evidence.
+¹ The reference resolves every eligible development refusal world; a rate with a zero
+denominator is intentionally null. Every capability changes a target axis. These are
+local debugging numbers, not frozen benchmark evidence.
 
-## 4. Historical shortcut probes (superseded)
+## 4. Shortcut probes
 
-- Naive single-outlier flagging (largest studentized residual of a plain weighted fit,
-  drop-and-refit corrections): **0.202**.
-- Always-underdetermined auditor with least-squares corrections: **0.117**.
-- Constant instrument-drift claims (each instrument name): **0.000** each.
+- Always-underdetermined and always-consistent auditors: **0.000000** each under the
+  current two-null normalization.
+- Naive single-outlier flagging on the repaired network: **0.015436** (reviewer replay).
+- A 264-setting three-parameter rule (chi-square gate × dominant-residual gate ×
+  rank-deficient-branch policy): **0.448770/0.250966** development/robustness. This is
+  below the reference on development but exceeds its robustness, so it remains an
+  explicit admission risk rather than being described as safely dominated.
 
-All sit far below the 0.556 reference. All remaining untested families are admission
-risks; passing these probes does not prove the absence of shortcuts.
+The task remains candidate until the development/robustness tradeoff and stronger robust
+adjustment are independently calibrated.
 
 ## 5. Frontier-model calibration
 
@@ -90,6 +93,12 @@ and separated actual clean-world counts from false-discovery eligibility counts.
 The public citation for doi:10.1021/acs.jpca.6c03567 is Bross, Thorpe & Ruscic (2026),
 not the previously stated 2024 date; the DOI supports network auditing, not the
 original synthetic network's unidentifiability claim.
+
+The 2026-09-12 hardening removes the rank-deficient measurements' ids, instrument class
+and scoring branch predicates from candidate-facing prose. Candidates must recover the
+ambiguous branch from the published stoichiometric rank. Refusal rates now return null
+when no world remains unresolved, and discovery coverage uses only post-query worlds in
+which attribution is warranted.
 
 ## 7. Robustness and reproducibility
 

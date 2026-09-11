@@ -10,7 +10,7 @@ oracle:
     bounded parameters, Gaussian trace noise, plus A-type and rectifying
     extra-current worlds
   feasibility: bounded finite parameters, charged protocols within an
-    eight-unit budget
+    four-unit budget
   deterministic: true
   external_tooling: none beyond NumPy/SciPy
 difficulty_ladder:
@@ -36,10 +36,11 @@ invariants:
 - a full abstention scores exactly zero after normalization
 known_shortcuts: Mid-range guesses remain zero after the 2026-09-08 voltage-convention
   correction. Oracle-direct debugging gives reference 0.640364 development and
-  0.828679 heldout, with development false-discovery rate zero. Earlier 0.718/0.594
-  scores and shortcut/ablation conclusions used inconsistent voltage coordinates
-  and are superseded. New shortcut sweeps, clean Linux calibration and independent
-  review remain pending.
+  0.828679 heldout at the complete four-step budget, with development false-discovery
+  rate zero. One/two-step ablations score 0.000000/0.000000 and
+  0.066144/0.157297; removing refusal drops the full method to 0.240364/0.162013.
+  A 325-strategy reviewer sweep topped out at 0.053671/0.000000. Clean Linux
+  calibration and independent review remain pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -60,9 +61,11 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Hodgkin-Huxley fitting is classical; the activation-shift
-    parameterization, budgeted protocol choice and extra-current refusal are
-    original to this package.
+  rationale: Hodgkin-Huxley fitting is classical. ForceFieldCalibration is the closest
+    in-repository neighbour because it also combines active hypothesis discrimination
+    with out-of-family refusal; HamiltonianLearning and ActiveLawDiscovery share active
+    identification, but neither returns this task's eight channel parameters from
+    voltage-clamp traces.
 lineage:
   status: complete
   builder_model_ids:

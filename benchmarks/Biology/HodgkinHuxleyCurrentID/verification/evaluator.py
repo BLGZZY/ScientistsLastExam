@@ -32,7 +32,7 @@ DURATIONS = (5.0, 10.0, 20.0, 30.0)
 SAMPLE_DT = 0.25
 HOLDING = -80.0
 PROTOCOL_COST = 1
-BUDGET_UNITS = 8
+BUDGET_UNITS = 4
 
 _BASE_DEVELOPMENT_SPECS = (
     (27011, "supported"), (27017, "supported"), (27023, "supported"),
@@ -310,6 +310,7 @@ def _summary(rows, specs):
         "valid_count": sum(r["valid"] for r in rows),
         "parameter_score": float(np.mean([r["parameter_score"] for r in supported])) if supported else 0.0,
         "prediction_score": float(np.mean([r["prediction_score"] for r in supported])) if supported else 0.0,
+        "confidence_score": float(np.mean([r["confidence_score"] for r in rows])),
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
         "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
@@ -332,6 +333,7 @@ def evaluate(recover_channel_parameters):
         "mechanism_score": dev["raw"],
         "development_parameter_score": dev["parameter_score"],
         "development_prediction_score": dev["prediction_score"],
+        "development_confidence_score": dev["confidence_score"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
@@ -344,10 +346,12 @@ def evaluate(recover_channel_parameters):
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_confidence_score": hold["confidence_score"],
         "heldout_supported_world_count": hold["supported_count"],
         "heldout_unsupported_world_count": hold["unsupported_count"],
         "heldout_false_discovery_count": hold["false_count"],
         "heldout_correct_refusal_count": hold["refusal_count"],
         "heldout_discovery_attempt_count": hold["attempt_count"],
+        "heldout_discovery_coverage": hold["attempt_count"] / hold["supported_count"],
         "per_world": development + heldout,
     }

@@ -21,29 +21,31 @@ convention in the [NEURON Book, Chapter 9](https://www.neuron.yale.edu/ftp/ted/b
 Oracle-direct debugging after correction gives baseline 0, reference development
 0.640364, heldout 0.828679, development FDR zero and refusal one. These are local
 debugging observations, not clean Linux calibration or independent certification.
-The old numbers below and their ablation/shortcut conclusions are **superseded**.
+The public budget is now four units, exactly the tier used by the reference.
 
 The shipped `solution.py` charges one protocol and guesses mid-range parameters:
 `0.000000`. Submitting the true parameter row scores one (sealed prediction exact).
-Measured on 2026-09-05 the reference reaches `0.7176` development and `0.5940`
-robustness with zero false discoveries and full refusal.
 
-## 3. Historical capability comparisons and ablations (superseded)
+## 3. Capability comparisons and ablations
 
-| variant | development | refusal |
-|---|---:|---:|
-| full reference | 0.7176 | 1.00 |
-| single classic start | ≈0.55 | 1.00 |
-| no misfit gate | ≈0.55 | 0.00 |
+Measured on the 2026-09-12 hardened head:
 
-Multistart rescues local minima; the misfit gate carries the refusal axis. Local
-debugging numbers, not frozen benchmark evidence.
+| variant | development | robustness | refusal |
+|---|---:|---:|---:|
+| full four-step reference | 0.640364 | 0.828679 | 1.00 |
+| first two steps only | 0.066144 | 0.157297 | 0.00 |
+| first step only | 0.000000 | 0.000000 | 0.00 |
+| no misfit refusal | 0.240364 | 0.162013 | 0.00 |
 
-## 4. Historical shortcut probes (superseded)
+The complete budget and misfit gate are both load-bearing. Local debugging numbers,
+not frozen benchmark evidence.
 
-Mid-range guesses score zero; the parameter axis (0.565) resists lazy fits because
-conductances, reversals and shifts trade off. No low-dimensional family reaches the
-reference.
+## 4. Shortcut probes
+
+Mid-range guesses score zero. A reviewer-reported sweep of 325 low-dimensional
+strategies on the voltage-corrected worlds topped out at `0.053671/0.000000`, far below
+the four-step reference. Reducing the public budget from eight to four can only remove
+strategies from that family; it cannot improve their score.
 
 ## 5. Frontier-model calibration
 
@@ -71,6 +73,9 @@ the very transient it was intended to model. It now starts from holding-state
 availability and relaxes over 20 ms, with a regression test for the resulting
 transient. These are explicitly synthetic A-type-like currents; renewed
 experimental-design and model-mismatch sensitivity measurements remain necessary.
+The 2026-09-12 review additionally found that the reference could silently double its
+own four-step acquisition while candidates were offered eight steps. The public budget
+is now four, so the normalization reference is the best measured method at its own tier.
 
 ## 7. Robustness and reproducibility
 

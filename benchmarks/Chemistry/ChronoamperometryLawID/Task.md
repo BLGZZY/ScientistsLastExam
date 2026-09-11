@@ -7,7 +7,7 @@ shape encodes the transport and reaction mechanism: semi-infinite diffusion
 (Cottrell), bounded diffusion, catalytic regeneration, kinetic limitation, adsorption
 desorption, or mixed surface-plus-diffusion control. Two measurement failures make a
 confident family claim a false discovery: fractional-diffusion transport (anomalous
-t^-1/3 decay) and a superposed linear baseline drift, neither expressible in the
+t^-1/4 decay) and a superposed linear baseline drift, neither expressible in the
 family.
 
 ## Your task
@@ -33,7 +33,7 @@ parameter_bounds    [a, b, c] bounds for active slots
 potential_bounds    [0.1, 1.0] volts
 time_grid_s         the fixed 28-point log grid (0.002..8 s) every step reports
 step_cost           1
-budget_units        6
+budget_units        3
 noise_note          Gaussian noise scales with the largest current of each step
 refusal_note        anomalous transport and baseline drift must be refused
 ```
@@ -47,20 +47,17 @@ noise level. Overspending or malformed calls invalidate the world even when caug
 - `combined_score` is development mechanism recovery above the always-abstain
   baseline: geometric mean of the true family probability, active-parameter recovery
   (normalized by public bounds) and a sealed extrapolation of the transient to
-  t = 12 and 20 s at a sealed potential, multiplied by an evidence-efficiency factor
-  `1 - 0.50 * budget_used / 6` on supported discoveries. Accurate identification
-  with fewer potential steps therefore retains more score.
+  t = 12 and 20 s at a sealed potential. Parameter RMS error of 1.73% of the public
+  span and sealed maximum relative error of 2.89% each receive half credit on their
+  axis; this leaves measurable room above the reference without making 1.0 unreachable.
 - Anomalous and drift worlds score refusal only; abstaining scores one and claiming a
-  family scores zero. Refusal credit is not multiplied by evidence efficiency, preventing
-  evidence-backed refusal from scoring below blind abstention.
-- Intrinsic and efficiency-adjusted mechanism recovery, evidence efficiency, false discovery rate, correct refusal rate and discovery
-  coverage are reported separately; a full abstention scores exactly zero.
+  family scores zero.
+- Mechanism recovery, confidence calibration, false discovery rate, correct refusal
+  rate and discovery coverage are reported separately; a full abstention scores exactly zero.
 - `robustness_score` repeats the audit on held-out families, parameters and failures.
 
-The aggregate efficiency diagnostics are `development_evidence_efficiency_score` and
-`heldout_evidence_efficiency_score`; per-world rows also retain
-`intrinsic_mechanism_score`, `mechanism_score`, `evidence_efficiency_score` and
-`budget_used`. Split membership and hidden truth are never candidate inputs.
+Per-world rows retain `mechanism_score` and `budget_used`. Split membership and hidden
+truth are never candidate inputs.
 
 This is a deterministic reduced-order electroanalytical simulation, not evidence
 about any particular cell.
@@ -85,11 +82,11 @@ public closed forms stated above.
 
 ## 关系与区别 / Relationship to nearby tasks
 
-EnzymeKineticsLaw identifies rate laws from scalar initial rates in a biochemical
-setting; ActiveLawDiscovery recovers ODE right-hand sides from trajectories. This
-task identifies which published current-law family generated multi-potential
-functional transients, with two structurally unmodellable refusal worlds and a
-sealed time extrapolation that separates diffusion tails from kinetic saturation.
+EnzymeKineticsLaw is the closest in-repository neighbour (and is marked
+`on_ramp_do_not_pair`): it identifies rate laws from scalar biochemical initial rates.
+ReactionMechanismFitting estimates reaction-network parameters from concentration
+traces. This task instead identifies an electrochemical transient family from charged
+potential steps and must distinguish two different out-of-family failure statistics.
 
 ## Admission and reference scope
 

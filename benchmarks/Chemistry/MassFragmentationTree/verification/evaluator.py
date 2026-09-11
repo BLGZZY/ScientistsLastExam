@@ -17,9 +17,9 @@ from scipy.optimize import linear_sum_assignment
 DIFFICULTY = 1
 
 _DIFFICULTY_LADDER = {
-    1: {"mass_noise_da": 0.004, "intensity_noise": 0.06, "decoy_range": (1, 3)},
-    2: {"mass_noise_da": 0.007, "intensity_noise": 0.09, "decoy_range": (2, 5)},
-    3: {"mass_noise_da": 0.012, "intensity_noise": 0.12, "decoy_range": (3, 6)},
+    1: {"mass_noise_da": 0.004, "intensity_noise": 0.06, "decoy_range": (8, 13)},
+    2: {"mass_noise_da": 0.007, "intensity_noise": 0.09, "decoy_range": (10, 16)},
+    3: {"mass_noise_da": 0.012, "intensity_noise": 0.12, "decoy_range": (12, 20)},
 }
 
 ELEMENT_MASSES = {
@@ -100,8 +100,9 @@ def problem_statement(precursor_mz):
         "budget_units": BUDGET_UNITS,
         "min_relative_intensity": MIN_RELATIVE_INTENSITY,
         "background_note": (
-            "spectra may contain a few low-intensity background peaks that do not belong "
-            "to the analyte; background peaks keep a nearly flat intensity across energies"
+            "spectra contain low-intensity background tracks that do not belong to the "
+            "analyte; some form public-library mass gaps by chance, but all keep a nearly "
+            "flat intensity across energies"
         ),
         "zoom_note": (
             "a zoom reports monoisotopic peaks inside the window with their M+1/M isotope "
@@ -248,12 +249,8 @@ def _world(spec):
             nodes, edges = _build_tree(rng)
             contaminant = _contaminant_formula(rng, nodes[0])
     decoy_count = int(rng.integers(*profile["decoy_range"]))
-    decoys = []
     precursor_mz = _formula_mass(nodes[0]) + PROTON_MASS
-    for _ in range(decoy_count):
-        decoy_mz = float(rng.uniform(70.0, precursor_mz * 1.05))
-        decoy_intensity = float(rng.uniform(0.4, 2.2))
-        decoys.append((decoy_mz, decoy_intensity))
+    decoys = _structured_decoys(rng, nodes, precursor_mz, decoy_count)
     world = {
         "seed": int(seed), "kind": kind, "nodes": nodes, "edges": edges,
         "contaminant": contaminant, "decoys": decoys,
@@ -265,6 +262,41 @@ def _world(spec):
     else:
         world["contaminant_tree"] = None
     return world
+
+
+def _structured_decoys(rng, nodes, precursor_mz, count):
+    """Flat background peaks that are locally compatible with public losses.
+
+    Random background made the natural "all peaks + every matching mass gap" shortcut
+    almost as good as an actual fragmentation-tree reconstruction. These decoys keep
+    the intended energy-contrast signal while ensuring local mass compatibility alone
+    is not enough: a candidate must reject flat tracks and choose a coherent parent.
+    """
+    truth_mz = [_formula_mass(formula) + PROTON_MASS for formula in nodes]
+    losses = [_formula_mass(formula) for formula in LOSS_LIBRARY.values()]
+    decoys = []
+    attempts = 0
+    while len(decoys) < count and attempts < 1000:
+        attempts += 1
+        anchor = truth_mz[int(rng.integers(0, len(truth_mz)))]
+        loss = losses[int(rng.integers(0, len(losses)))]
+        candidate = anchor + float(rng.choice((-1.0, 1.0))) * loss
+        if not 70.0 <= candidate <= precursor_mz * 1.03:
+            continue
+        if abs(candidate - precursor_mz) <= 3.0:
+            continue
+        occupied = truth_mz + [row[0] for row in decoys]
+        if any(abs(candidate - mz) <= 4.0 * MASS_TOLERANCE_DA for mz in occupied):
+            continue
+        decoys.append((candidate, float(rng.uniform(0.4, 2.2))))
+    while len(decoys) < count:
+        candidate = float(rng.uniform(70.0, precursor_mz * 1.03))
+        occupied = truth_mz + [row[0] for row in decoys]
+        if (abs(candidate - precursor_mz) > 3.0
+                and all(abs(candidate - mz) > 4.0 * MASS_TOLERANCE_DA
+                        for mz in occupied)):
+            decoys.append((candidate, float(rng.uniform(0.4, 2.2))))
+    return decoys
 
 
 def _build_contaminant_tree(rng, root_formula):
@@ -445,6 +477,7 @@ def _validate(submission):
         raise ValueError("edges must be a bounded list")
     edges = []
     seen_edges = set()
+    incoming = set()
     for row in edges_raw:
         parent_mz, child_mz, loss_name = row
         if loss_name not in LOSS_LIBRARY:
@@ -454,6 +487,14 @@ def _validate(submission):
         nearest_c = _nearest(nodes, child_mz)
         if nearest_p is None or nearest_c is None or nearest_p == nearest_c:
             raise ValueError("edge endpoints must reference distinct submitted nodes")
+        if nearest_p <= nearest_c:
+            raise ValueError("fragmentation edges must point from heavier parent to child")
+        expected_loss = _formula_mass(LOSS_LIBRARY[loss_name])
+        if abs((nearest_p - nearest_c) - expected_loss) > 3.0 * MASS_TOLERANCE_DA:
+            raise ValueError("edge mass gap is inconsistent with its loss label")
+        if nearest_c in incoming:
+            raise ValueError("a fragment node may have at most one parent")
+        incoming.add(nearest_c)
         edge = (nearest_p, nearest_c, loss_name)
         if edge in seen_edges:
             raise ValueError("edges must be unique after endpoint matching")
@@ -571,6 +612,7 @@ def _summary(rows, specs):
         "valid_count": sum(r["valid"] for r in rows),
         "node_f1": float(np.mean([r["node_f1"] for r in supported])) if supported else 0.0,
         "edge_f1": float(np.mean([r["edge_f1"] for r in supported])) if supported else 0.0,
+        "confidence_score": float(np.mean([r["confidence_score"] for r in rows])),
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
         "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
@@ -593,6 +635,7 @@ def evaluate(recover_fragmentation_tree):
         "mechanism_score": dev["raw"],
         "development_node_f1": dev["node_f1"],
         "development_edge_f1": dev["edge_f1"],
+        "development_confidence_score": dev["confidence_score"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
@@ -605,6 +648,7 @@ def evaluate(recover_fragmentation_tree):
         "heldout_feasibility_rate": hold["valid_count"] / len(heldout),
         "heldout_false_discovery_rate": hold["false_count"] / hold["unsupported_count"],
         "heldout_correct_refusal_rate": hold["refusal_count"] / hold["unsupported_count"],
+        "heldout_confidence_score": hold["confidence_score"],
         "heldout_supported_world_count": hold["supported_count"],
         "heldout_unsupported_world_count": hold["unsupported_count"],
         "heldout_false_discovery_count": hold["false_count"],

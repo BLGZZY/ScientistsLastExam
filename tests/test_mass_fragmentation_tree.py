@@ -44,6 +44,44 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
                     "confidence": 0.9}
         return candidate
 
+    @staticmethod
+    def _single_parent_mass_gap_probe(problem, acquire, zoom, budget):
+        del zoom, budget
+        tolerance = float(problem["mass_tolerance_da"])
+        precursor = float(problem["precursor_mz"])
+        spectra = [acquire(energy) for energy in (18.0, 35.0, 52.0)]
+        raw = sorted(float(peak["mz"])
+                     for spectrum in spectra for peak in spectrum["peaks"])
+        groups = []
+        for mz in raw:
+            if groups and mz - groups[-1][-1] <= 2.0 * tolerance:
+                groups[-1].append(mz)
+            else:
+                groups.append([mz])
+        nodes = [sum(group) / len(group) for group in groups]
+        root_seen = any(abs(node - precursor) <= 2.0 * tolerance for node in nodes)
+        nearby_root = any(2.0 * tolerance < abs(node - precursor) <= 1.5
+                          for node in nodes)
+        if not root_seen or nearby_root:
+            return {"nodes": [], "edges": [], "abstain": True, "confidence": 0.7}
+        losses = {name: float(spec["neutral_mass"])
+                  for name, spec in problem["loss_library"].items()}
+        edges = []
+        for child in sorted(nodes, reverse=True):
+            options = []
+            for parent in nodes:
+                if parent <= child:
+                    continue
+                for name, loss in losses.items():
+                    error = abs((parent - child) - loss)
+                    if error <= 3.0 * tolerance:
+                        options.append((error, parent, name))
+            if options:
+                _, parent, name = min(options)
+                edges.append([parent, child, name])
+        return {"nodes": nodes, "edges": edges, "abstain": False,
+                "confidence": 0.6}
+
     def test_truth_tree_scores_one_on_supported_worlds(self):
         for spec in self.ev._BASE_DEVELOPMENT_SPECS:
             world = self.ev._world(spec)
@@ -57,7 +95,7 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
         first = self.ev.evaluate(self.sol.recover_fragmentation_tree)
         second = self.ev.evaluate(self.sol.recover_fragmentation_tree)
         self.assertEqual(first["valid"], 1.0)
-        self.assertLessEqual(abs(first["combined_score"]), 0.01)
+        self.assertEqual(first["combined_score"], 0.0)
         self.assertEqual(json.dumps(first, sort_keys=True, default=str),
                          json.dumps(second, sort_keys=True, default=str))
 
@@ -103,6 +141,40 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
                       "abstain": False, "confidence": 0.5}
         with self.assertRaises(ValueError):
             self.ev._validate(submission)
+
+    def test_edges_are_mass_consistent_and_single_parent(self):
+        child = 100.0
+        water_parent = child + self.ev._formula_mass(self.ev.LOSS_LIBRARY["H2O"])
+        carbonyl_parent = child + self.ev._formula_mass(self.ev.LOSS_LIBRARY["CO"])
+        base = {"nodes": [child, water_parent, carbonyl_parent], "abstain": False,
+                "confidence": 0.5}
+        with self.assertRaises(ValueError):
+            self.ev._validate({**base, "edges": [[water_parent, child, "CO"]]})
+        with self.assertRaises(ValueError):
+            self.ev._validate({**base, "edges": [[child, water_parent, "H2O"]]})
+        with self.assertRaises(ValueError):
+            self.ev._validate({**base, "edges": [
+                [water_parent, child, "H2O"], [carbonyl_parent, child, "CO"]]})
+
+    def test_backgrounds_include_loss_compatible_decoys(self):
+        world = self.ev._world(self.ev._BASE_DEVELOPMENT_SPECS[0])
+        truth = [self.ev._formula_mass(formula) + self.ev.PROTON_MASS
+                 for formula in world["nodes"]]
+        losses = [self.ev._formula_mass(formula)
+                  for formula in self.ev.LOSS_LIBRARY.values()]
+        self.assertGreaterEqual(len(world["decoys"]), 8)
+        compatible = sum(
+            any(abs(abs(decoy_mz - node_mz) - loss) <= 1e-6
+                for node_mz in truth for loss in losses)
+            for decoy_mz, _ in world["decoys"])
+        self.assertGreaterEqual(compatible, len(world["decoys"]) // 2)
+
+    def test_single_parent_mass_gap_shortcut_stays_below_reference(self):
+        shortcut = self.ev.evaluate(self._single_parent_mass_gap_probe)
+        reference = self.ev.evaluate(self.ref.recover_fragmentation_tree)
+        self.assertEqual(shortcut["valid"], 1.0)
+        self.assertLess(shortcut["combined_score"], reference["combined_score"])
+        self.assertLess(shortcut["robustness_score"], reference["robustness_score"])
 
     def test_instrument_repetitions_draw_fresh_but_replayable_noise(self):
         world = self.ev._world(self.ev._BASE_DEVELOPMENT_SPECS[0])

@@ -28,10 +28,7 @@ def audit_thermochemical_cycle(problem, replicate, cross_check, budget_units):
 ```text
 species                           eight isomer names
 measurements                      list of {id, reaction, stoichiometry, value_kj_per_mol,
-                                  sigma_kj_per_mol, instrument} — thirteen determinations;
-                                  R12/R13 are the forward/reverse pendant pair for iso8,
-                                  the only observations involving iso8, sharing one
-                                  instrument class
+                                  sigma_kj_per_mol, instrument} — thirteen determinations
 instrument_sigma_kj_per_mol       precision class of each instrument
 reference_state_offsets_kj_per_mol  published phase-convention offsets a single
                                   determination may silently carry
@@ -42,7 +39,7 @@ network_note                      closure statement
 
 `replicate(measurement_id)` charges 1 and returns `{id, value_kj_per_mol,
 sigma_kj_per_mol, instrument, budget_cost}` — an independent repetition by the same
-instrument: the random error shrinks, instrument drift and a pendant determination-specific
+instrument: the random error shrinks, instrument drift and a determination-specific
 systematic offset persist. Repeating an original transcription or reference-state
 record instead produces a fresh determination.
 
@@ -65,18 +62,18 @@ Overspending or malformed calls invalidate the world even when caught.
 - Verdict targets: clean worlds → `consistent`; a drifting instrument →
   `instrument_drift` naming the instrument; a localized faulty determination →
   `single_fault`.
-- The pendant pair world is an information decision: with no resolving query spent,
-  the honest verdict is `underdetermined` (flagging nothing or the whole pair is
-  blameless, naming one member is half credit); once a pendant cross-check has been
-  spent the tension is resolved and the honest verdict becomes `single_fault`.
-- False discovery: flagging innocents in clean worlds, or naming a pendant member
-  without resolving information. Correct refusal: `underdetermined` before any pendant
-  cross-check. `false_discovery_world_count` is the number of clean plus still
-  unresolved worlds; `refusing_world_count` counts only still-unresolved worlds.
-  `resolved_world_count` separately counts informative cross-check resolutions.
-  A refusal rate with zero eligible worlds is reported as zero with denominator zero.
+- Some rank-deficient network branches do not identify a unique faulty determination
+  without an informative cross-check. The candidate must infer those branches from the
+  published stoichiometric design and decide when the available evidence warrants a
+  localized claim.
+- False discovery includes unsupported attribution in clean or still-unresolved worlds.
+  `false_discovery_world_count` is the corresponding denominator;
+  `refusing_world_count` counts worlds that remain unidentifiable after the submitted
+  query sequence, and `resolved_world_count` counts informative resolutions. A refusal
+  rate with no eligible world is reported as `null`.
   Declining to attribute a fault does not itself count as a discovery attempt or a
-  false discovery; `discovery_attempt_count` counts valid fault/drift claims.
+  false discovery; `development_discovery_coverage` is divided only by worlds in which
+  a fault/drift attribution is warranted after the submitted query sequence.
 - `robustness_score` repeats the audit on held-out networks, corruptions and noise.
 
 This is a synthetic procedural network, not a claim about real isomer thermochemistry.
@@ -84,7 +81,7 @@ This is a synthetic procedural network, not a claim about real isomer thermochem
 ## Oracle and difficulty
 
 Species enthalpies are seeded; instrument assignment is balanced across three
-precision classes; the pendant pair shares one class. Difficulty levels 1–3 scale all
+precision classes. Difficulty levels 1–3 scale all
 uncertainties (1.0 → 1.55) and drift magnitudes; level 1 is the shipped default.
 
 ## Rules
@@ -105,7 +102,7 @@ DiscrepantMeasurements reconciles eight groups measuring one particle-physics co
 with no budget and no closure structure; ProspectiveMetaAnalysis screens literature
 evidence. This task audits a Hess-closure network where the constraints themselves
 localize faults, spends a replicate/cross-check budget against systematic-versus-random
-error, and its refusal world is an information decision about a pendant duplicate pair.
+error, and its refusal world is an information decision on a rank-deficient branch.
 
 ## Admission and reference scope
 

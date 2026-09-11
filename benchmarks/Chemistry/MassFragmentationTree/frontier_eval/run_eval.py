@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 INVALID = -1e18
+EVAL_TIMEOUT_S = 300
 TASK_ID = "Spectroscopy/MassFragmentationTree"
 ROOT = Path(__file__).resolve().parents[4]
 
@@ -16,7 +17,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
-    parser.add_argument("--timeout", type=float, default=300.0)
+    parser.add_argument("--timeout", type=float, default=EVAL_TIMEOUT_S)
     args = parser.parse_args()
     metrics = {"combined_score": INVALID, "valid": 0.0}
     try:

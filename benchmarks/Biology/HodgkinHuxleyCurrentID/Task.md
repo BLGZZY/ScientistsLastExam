@@ -28,7 +28,7 @@ holding_potential_mV            -80
 step_bounds_mV                  [-70, 60]
 durations_ms                    [5, 10, 20, 30]
 sample_dt_ms                    0.25
-protocol_cost / budget_units    1 / 8
+protocol_cost / budget_units    1 / 4
 noise_note                      Gaussian noise scales with each trace's peak current
 refusal_note                    extra-current membranes must be refused
 ```
@@ -69,11 +69,11 @@ Reference: Hodgkin & Huxley (1952), J. Physiol., doi:`10.1113/jphysiol.1952.sp00
 
 ## 关系与区别 / Relationship to nearby tasks
 
-RANSCalibration fits an algebraic closure to channel-flow data; ChronoamperometryLawID
-identifies electrochemical law families from potential steps. This task recovers a
-bounded eight-parameter row of a nonlinear kinetic model from self-designed
-voltage-clamp protocols, with extra-current refusal worlds and a sealed held-out
-protocol prediction.
+ForceFieldCalibration is the closest formal neighbour: both use active queries to
+discriminate a bounded mechanistic hypothesis and must refuse an out-of-family system.
+HamiltonianLearning and ActiveLawDiscovery are related active-inference tasks, but this
+task fits a nonlinear conductance model from voltage-clamp traces, returns eight physical
+parameters and checks prediction at a sealed protocol.
 
 ## Admission and reference scope
 

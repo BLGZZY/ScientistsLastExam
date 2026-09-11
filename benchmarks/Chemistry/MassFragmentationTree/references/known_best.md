@@ -37,13 +37,21 @@ local debugging numbers, not frozen benchmark evidence.
 
 ## 4. Shortcut probes
 
+- The review's three-scan strategy that submits all observed peaks and every
+  loss-compatible peak pair is now invalid: several fragments receive multiple parents,
+  so the output is not a fragmentation tree. A repaired single-parent version measured
+  on 2026-09-12 reaches **0.389747/0.456859** development/robustness, versus the unchanged
+  **0.564467/0.524831** reference. Its node F1 is 0.588 and edge F1 is 0.192. The hardened
+  worlds include 8–12 flat background tracks deliberately placed at public-library loss
+  gaps, so local mass compatibility no longer substitutes for energy-contrast filtering.
 - Top-k peaks at one fixed energy, all attached to the precursor through the best
   library loss: best of 57 grid points (k in 4..40 step 2, energies 20/35/50) is
   **0.049** (k=8, E=50).
 - Two-energy (E1 in 12..30, E2 in 40..60) root-attachment family: best of 16 points is
   **0.104** (24, 48).
 
-Both sit far below the 0.565 reference; no tested low-dimensional family approaches it.
+The earlier probes also sit far below the reference; no tested low-dimensional family
+exceeds it after hardening.
 All remaining untested families are admission risks; passing these probes does not prove
 the absence of shortcuts.
 
@@ -73,6 +81,13 @@ reference remains 0.564467 development; this retest is local debugging only.
 The public query contract now correctly says that repeated calls draw fresh noise,
 while replaying the same ordered calls is deterministic. Invalid outputs are no
 longer reported as scientific discovery attempts.
+
+A 2026-09-12 review then found that an unconstrained all-pairs graph over raw peaks
+exceeded the reference. Validation now enforces heavier-to-lighter, loss-consistent edges
+and at most one parent per fragment. The oracle also emits structured flat decoys whose
+mass gaps match public losses; the intended multi-energy background filter removes them,
+while the repaired low-dimensional tree shortcut remains below the reference on both
+splits. These invariants are pinned in `tests/test_mass_fragmentation_tree.py`.
 
 ## 7. Robustness and reproducibility
 

@@ -21,7 +21,8 @@ def recover_fragmentation_tree(problem, acquire, zoom, budget_units):
       edges: at most 4096 unique [parent_mz, child_mz, loss_name] rows, also unique
              after endpoint matching; each endpoint must reference a
              distinct submitted node within mass_tolerance_da; loss_name must come from
-             the public loss library
+             the public loss library; edges point from heavier parent to child, their
+             mass gaps match the named loss, and each child has at most one parent
       abstain: bool
       confidence: finite scalar in [0,1]
     """
@@ -40,7 +41,8 @@ energy_bounds              [10.0, 60.0]
 acquire_cost / zoom_cost   1 / 2 budget units
 budget_units               8 total
 min_relative_intensity     fragments below 0.5% of the base peak are not reported
-background_note            low flat background peaks may be present
+background_note            flat background tracks may be locally compatible with public
+                           neutral-loss masses, so mass gaps alone do not identify the tree
 zoom_note                  a zoom reports monoisotopic peaks with M+1/M isotope ratios
 ```
 
@@ -86,7 +88,8 @@ particular laboratory instrument.
 
 The molecule is a hidden CHNO formula; the fragmentation cascade is a hidden tree over
 the public loss library with per-edge labilities; peak positions carry Gaussian mass
-error and log-normal intensity error, plus one to three flat background peaks. Difficulty
+error and log-normal intensity error, plus eight to twelve flat background peaks chosen
+to include locally loss-compatible decoys. Difficulty
 levels 1–3 raise mass error (0.004 → 0.012 Da), intensity noise and background count;
 level 1 is the shipped default.
 

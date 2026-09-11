@@ -16,7 +16,9 @@ import numpy as np
 from scipy.optimize import least_squares
 
 STEPS = (0.15, 0.45, 0.85)
-SLOPE_TOLERANCE = 0.12
+CHI_SQUARE_PER_DOF_GATE = 3.5
+DRIFT_Z_GATE = 4.5
+DRIFT_ABSOLUTE_GATE = 0.002
 
 FAMILY_PARAMETER_COUNT = {"cottrell": 1, "bounded": 2, "catalytic": 2,
                           "kinetic": 2, "adsorption": 2, "surface": 3}
@@ -96,27 +98,30 @@ def identify_current_law(problem, step, budget_units):
     # degree of freedom. Fractional-diffusion transport and superposed baseline drift
     # both leave structural misfit no family can absorb.
     dof = max(len(STEPS) * len(time) - FAMILY_PARAMETER_COUNT[best_family], 1)
-    if chi_square / dof > 2.2:
+    if chi_square / dof > CHI_SQUARE_PER_DOF_GATE:
         return {"family_probabilities": {name: 1.0 / len(problem["families"])
                                          for name in problem["families"]},
                 "parameters": None, "abstain": True, "confidence": 0.8}
 
-    # Drift test by variable projection: a linear baseline d*t is shared across all
-    # potentials, while every family scales with phi(E) -- a significant shared
-    # linear term is therefore unmodellable drift, not family curvature.
-    merged_time = np.concatenate([time for _ in measurements])
-    merged_current = np.concatenate([np.asarray(row["current"])
-                                     for row in measurements])
-    merged_sigma = np.concatenate([np.full(len(time), row["noise_std"])
-                                   for row in measurements])
-    design = merged_time / merged_sigma
-    predicted = merged_current - residual(best_family, parameters) * merged_sigma
-    drift_numerator = float(np.sum(design * (merged_current - predicted) / merged_sigma))
+    # Drift test from cross-potential cancellation. Dividing by phi(E) makes every
+    # supported family, and fractional transport, identical across potentials; a
+    # shared additive d*t baseline does not cancel. This statistic is intentionally
+    # orthogonal to the global lack-of-fit gate above.
+    phi = [1.0 - math.exp(-3.0 * row["potential"]) for row in measurements]
+    low, high = measurements[0], measurements[-1]
+    low_current = np.asarray(low["current"]) / phi[0]
+    high_current = np.asarray(high["current"]) / phi[-1]
+    sigma = math.sqrt((low["noise_std"] / phi[0]) ** 2
+                      + (high["noise_std"] / phi[-1]) ** 2)
+    design = time * (1.0 / phi[-1] - 1.0 / phi[0]) / sigma
+    response = (high_current - low_current) / sigma
+    drift_numerator = float(np.sum(design * response))
     drift_precision = float(np.sum(design ** 2))
     if drift_precision > 0:
         drift_hat = drift_numerator / drift_precision
         drift_sigma = 1.0 / math.sqrt(drift_precision)
-        if abs(drift_hat) > 3.0 * drift_sigma and abs(drift_hat) > 0.02:
+        if (abs(drift_hat) > DRIFT_Z_GATE * drift_sigma
+                and abs(drift_hat) > DRIFT_ABSOLUTE_GATE):
             return {"family_probabilities": {name: 1.0 / len(problem["families"])
                                              for name in problem["families"]},
                     "parameters": None, "abstain": True, "confidence": 0.8}

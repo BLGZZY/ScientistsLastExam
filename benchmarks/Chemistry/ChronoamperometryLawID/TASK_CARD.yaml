@@ -2,8 +2,8 @@ schema_version: 2
 scientific_question: Can a budgeted set of potential steps identify which published current-law family generated the transients, while refusing fractional transport and baseline drift that no family can express?
 artifact: Six-family probabilities, active bounded parameters, optional abstention and a confidence scalar.
 oracle:
-  model: deterministic seeded parameters in the six public closed forms, potential response through the public amplitude factor, Gaussian noise scaling with each step's peak current, plus t^-1/3 anomalous worlds and family-plus-linear-drift worlds
-  feasibility: probabilities over exactly the six families summing to one, bounded active parameter slots, charged steps within a six-unit budget
+  model: deterministic seeded parameters in the six public closed forms, potential response through the public amplitude factor, Gaussian noise scaling with each step's peak current, plus t^-1/4 anomalous worlds and family-plus-linear-drift worlds
+  feasibility: probabilities over exactly the six families summing to one, bounded active parameter slots, charged steps within a three-unit budget
   deterministic: true
   external_tooling: none beyond NumPy/SciPy
 difficulty_ladder:
@@ -15,18 +15,24 @@ difficulty_ladder:
 normalization:
   baseline: one step, uniform family probabilities and mid-range parameters
   reference: three steps, per-family bounded least squares with Akaike-style penalty, chi-square gate and variable-projection drift test
-  score: geometric mean of family probability, active-parameter recovery and sealed extrapolation,
-    multiplied by 1 - 0.50 * budget_used / 6 on supported discoveries and normalized above always
-    abstaining; refusal credit remains unweighted on its separate axis
+  score: geometric mean of family probability, strict active-parameter recovery and
+    sealed extrapolation, normalized above always abstaining; 1.73 percent normalized
+    parameter RMS error and 2.89 percent sealed relative error each receive half credit
 citations:
 - id: isbn:9780471057528
   title: "Electrochemical Methods: Fundamentals and Applications"
 invariants:
 - every family current scales with the public amplitude factor, so a shared linear term across potentials is unmodellable drift
-- anomalous worlds decay as t^-1/3 and fit no family within the chi-square gate
+- anomalous worlds decay as t^-1/4 and fit no family within the chi-square gate
+- cross-potential amplitude cancellation isolates additive drift without responding to
+  the anomalous world's amplitude-scaled fractional decay
 - a full abstention scores exactly zero after normalization
 - inactive parameter slots are unconstrained; active slots respect public bounds
-known_shortcuts: Uniform probabilities with mid-range parameters score 0.000; the three-step reference reaches 0.722/0.661 development/robustness after evidence-efficiency calibration, with zero false discoveries. Removing the model-selection penalty drops development to 0.657 and disabling the chi-square gate halves robustness to 0.328. Formal clean Linux calibration and independent review remain pending.
+known_shortcuts: Uniform probabilities with mid-range parameters score 0.000. On the
+  2026-09-12 hardened head the three-step reference reaches 0.798322/0.514162; deleting
+  one step drops it to 0.788740/0.472766 and one step reaches 0.589515/0.454747. Disabling
+  either refusal statistic lowers development refusal from 1.0 to 0.5, on different
+  frozen worlds. Formal clean Linux calibration and independent review remain pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -44,7 +50,10 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Transient-family identification is textbook methodology; the fractional and drift refusal worlds with sealed extrapolation are original to this package.
+  rationale: EnzymeKineticsLaw is the closest in-repository law-identification task and
+    is already marked on_ramp_do_not_pair; ReactionMechanismFitting is the nearest
+    parameter-fitting task. Neither uses potential-step electrochemical transients with
+    separate fractional-transport and additive-drift refusal statistics.
 lineage:
   status: complete
   builder_model_ids:
@@ -74,7 +83,8 @@ long_horizon:
 difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model calibration before certification
-  remaining_risk: The reference nearly saturates development; the headroom concentrates in held-out robustness and faster fits.
+  remaining_risk: The reference now sits below 0.8 on intrinsic development recovery,
+    but stronger adaptive designs and clean frontier-model calibration are still needed.
 
 frontier_eng_overlap_review:
   date: '2026-09-06'
