@@ -56,3 +56,5 @@ calibrate_task.py --plan <cell>/plan.json --output <cell>/replay.json --replay -
 ```
 
 The second command reads retained files without another model call. Re-execution or additional sampling would be a new experiment and is outside this pilot.
+
+A durable operator copy is retained at `/home/azureuser/workspace-gzy/zyf/sle-operator-evidence/2026-09-11/tool-pilot`, outside the repository with directory mode 0700. All 66 non-credential files were copied byte-for-byte and checked against the originals; the adjacent `tool-pilot-copy-integrity.json` records their hashes. The `private/` configuration directory was excluded. Original plans, paths and hashes were not rewritten; this copy does not change the experiment's bindings or grant current-runtime compatibility.
