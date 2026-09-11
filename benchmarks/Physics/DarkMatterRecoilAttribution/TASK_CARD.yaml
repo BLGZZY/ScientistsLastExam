@@ -1,0 +1,91 @@
+schema_version: 2
+scientific_question: Joint multi-target recoil law and mass inference with profiled
+  speed mixture and controls
+artifact: An explicit model or abstention, finite parameter estimates for a supported
+  mechanism, and calibrated decision confidence.
+oracle:
+  model: Poisson counts from coherent momentum-dependent elastic recoil spectra; Gaussian
+    nuclear form factor, three isotropic speed components, independent background
+    and gain controls
+  feasibility: strict typed query and submission validation; per-unit counter-keyed
+    sampling; budget overspend permanently invalidates the instance
+  deterministic: true
+normalization:
+  baseline: overconfident legal baseline scores zero; blanket none and blanket abstention
+    also score exactly zero
+  reference: runnable public-input-only likelihood fit, calibration uncertainty included,
+    finite experiment allocation
+  score: mean mechanism utility minus the 1/7 blanket refusal utility, divided by
+    6/7; false discovery rate, refusal, coverage, confidence and heldout diagnostics
+    remain separate
+citations:
+- id: arxiv:1405.1420
+  title: Halo-Independent Direct Detection of Momentum-Dependent Dark Matter
+invariants:
+- Repeated observation units are independent and charged; splitting a batch preserves
+  the same counter-indexed observations.
+- The public problem contains no class, split, seed or latent parameter.
+- Global random state does not affect the frozen generator.
+- Malformed or overspent candidates fail closed without exposing exception text.
+- An omitted mechanism is not the same scientific decision as a valid null mechanism.
+known_shortcuts: >-
+  Revised four-way single-target probe includes null/contact/q2/abstain, all three
+  targets, 1/3/12 observation units and 233280 configurations: best development
+  0.249535, selected heldout 0.130670, against reference 0.548485/0.499983. Exact
+  continuous constant-mass bounds with perfect class decisions are 0.296772/0.294044
+  (54.1%/58.8% of reference). Details are in references/known_best.md section 4 and
+  experiments/dark_matter_recoil_revision_2026-09-10.json. Regression gates require even perfect-class constant masses to
+  stay at most 0.6 times reference on both splits, and the development-selected
+  four-way probe below 0.7 times reference with more than 0.15 absolute separation.
+  This finite builder probe is not exhaustive; repository-visible seeds permit
+  memorization outside the sandbox, and difficulty is not certified. Fixed-halo ablation improves heldout by 0.040096;
+  free halo fitting is not claimed to be uniformly necessary.
+review:
+  domain: pending_external
+  evaluator_security: automated_checks_passed_pending_external_review
+provenance:
+  class: procedural
+  target_source: Original bounded simulator with counter-seeded development and heldout
+    instances; no human data or reported particle discoveries.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_completed
+novelty_risk:
+  level: medium
+  rationale: Known scientific inference methods in a new budgeted coupling of controls,
+    mechanism alternatives, and misspecification. Closest is Gravitation/PTAHellingsDowns
+    (paid mechanism decisions and refusal); this task adds continuous mass recovery
+    from nuclear-target energy spectra instead of pulsar-pair angular correlations.
+    The simulator is an abstraction, not a validated model of the unresolved fundamental
+    question.
+lineage:
+  status: complete
+  builder_model_ids:
+  - gpt-6-astra
+  builder_scaffolds:
+  - codex-desktop
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: Builder checks separated incorrect mechanism claims from
+    continuous parameter error and incorporated calibration uncertainty into the reference
+    fit. PR 72 external review exposed clustered masses and an omitted refusal branch
+    in shortcut probes. The revision uses paired log-mass strata, locally supported
+    but jointly inconsistent target spectra, and complete four-way probes with exact
+    constant-mass bounds. No independent frontier draw yet.
+  shortcut_discoverer: builder_invariant_and_low_dimensional_probes
+  frozen_before_eval: false
+  freeze_timestamp: null
+construction_audit:
+  status: builder_checked_pending_external
+  author_domain: gpt-6-astra
+  reviewer_domain: pending_external
+  expert_hours: null
+  red_team_rounds: 2
+  oracle_disagreement_status: pending_independent_domain_review
+  independent_recomputation_status: runnable equation and likelihood checks in tests
+    and verification witness
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
