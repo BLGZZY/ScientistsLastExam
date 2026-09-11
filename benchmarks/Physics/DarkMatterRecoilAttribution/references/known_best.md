@@ -11,8 +11,8 @@
 
 ## 1. Reference and sources
 
-`verification/reference_profile.py` is an unchanged, truth-blind Poisson-deviance
-witness. It reads only `problem` and charged observations. Three mass starts jointly
+`verification/reference_profile.py` is the revised, truth-blind Poisson-deviance
+witness described in the shared-grid revision below. It reads only `problem` and charged observations. Three mass starts jointly
 profile the speed weights, coupling ratio, target backgrounds and calibration gains;
 null, residual and law-separation checks allow refusal. It is not a published record.
 Score 1 follows from exact parameters and correct decisions, not a reference literal.
@@ -268,3 +268,34 @@ All four declared ability removals lose on both splits. The equal-allocation dev
 The exact constant-mass bounds, determined by unchanged latent masses, are still 0.296772 / 0.294044, about 55.28% / 53.66% of the revised reference. Existing 60% constant-mass and 70% four-way regression requirements were preserved. Both splits have participated in construction; neither is fresh confirmation.
 
 The subsequent development-only public-validity repair affects heldout-only malformed returns. It does not change any all-valid method result; its final-package contribution replay is recorded separately. The original failed first-draw campaign remains bound to its historical source and is not compared against this new reference as if it had been rerun. New independent, predeclared model calibration and external domain review remain necessary.
+
+### Candidate-prompt boundary correction, 2026-09-12
+
+The prior revision accidentally appended reference implementation instructions and
+quantitative ablation results to `Task.md`, reintroducing the prompt disclosure
+identified in the September 10 review. They are moved here verbatim. The forward
+model, public keys, query protocol, score, constraints and executable candidates
+are unchanged. Existing evaluation receipts retain their original source hashes;
+a model draw must bind the corrected prompt and cannot reuse the old prompt hash.
+
+
+The current review-only reference buys a one-unit pilot on each target, fits
+both recoil laws and all detector/background/halo nuisances, then allocates the
+remaining nine units using estimated Fisher information for log mass after
+profiling nuisance directions. Both pilot law fits enter the design, weighted
+by their relative likelihood. Final inference reuses all paid observations.
+The equal-allocation method is retained for direct comparison. This local
+approximation is not a globally optimal design or calibrated posterior.
+
+A public-input audit replaced the continuously world-varying energy grid with
+a shared detector grid. Prior numerical evidence describes the earlier grid.
+New methods and ability removals are fixed in `references/revision_replay.json`;
+source-bound validation and a new independent model calibration are required.
+The previously failed first proposal remains recorded.
+
+Shared-grid Linux replay (NumPy 1.26.4 / SciPy 1.13.1): reference development
+0.536805 / heldout 0.548009. Removing pilot-based allocation, extra exposure,
+gain handling or free halo weights lowers development score by approximately
+0.0126, 0.2394, 0.2589 or 0.1794. Fixed single-target and constant-mass probes
+remain separated under the existing guards. These constructor measurements
+do not resolve the historical D16 failure or establish independent difficulty.

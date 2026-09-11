@@ -148,25 +148,9 @@ The construction/ablation and shortcut results are summarized in
 Only edit `solution.py`; deterministic CPU NumPy/SciPy, no network, processes or hidden
 file reads. `sle.contract_lint` is a free optional shape utility, not a scoring oracle.
 
-## Review reference and current revision
+## Validation status
 
-The current review-only reference buys a one-unit pilot on each target, fits
-both recoil laws and all detector/background/halo nuisances, then allocates the
-remaining nine units using estimated Fisher information for log mass after
-profiling nuisance directions. Both pilot law fits enter the design, weighted
-by their relative likelihood. Final inference reuses all paid observations.
-The equal-allocation method is retained for direct comparison. This local
-approximation is not a globally optimal design or calibrated posterior.
-
-A public-input audit replaced the continuously world-varying energy grid with
-a shared detector grid. Prior numerical evidence describes the earlier grid.
-New methods and ability removals are fixed in `references/revision_replay.json`;
-source-bound validation and a new independent model calibration are required.
-The previously failed first proposal remains recorded.
-
-Shared-grid Linux replay (NumPy 1.26.4 / SciPy 1.13.1): reference development
-0.536805 / heldout 0.548009. Removing pilot-based allocation, extra exposure,
-gain handling or free halo weights lowers development score by approximately
-0.0126, 0.2394, 0.2589 or 0.1794. Fixed single-target and constant-mass probes
-remain separated under the existing guards. These constructor measurements
-do not resolve the historical D16 failure or establish independent difficulty.
+The public detector grid is shared across worlds. Source-bound construction checks
+and their limitations are recorded in the review-only `references/known_best.md`.
+Independent first-proposal calibration remains pending; the historical failed
+calibration is retained. This task has not established frontier-model difficulty.
