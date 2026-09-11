@@ -18,6 +18,7 @@ import hashlib
 import functools
 import json
 import math
+import os
 import platform
 import subprocess
 import sys
@@ -39,6 +40,9 @@ from sle.evaluate import evaluate_candidate  # noqa: E402
 from sle.provenance import finalize_report_trust, source_provenance  # noqa: E402
 from sle.registry import find_task  # noqa: E402
 from sle.spec import load_task_spec  # noqa: E402
+from scripts.run_secure_baseline import (  # noqa: E402
+    _digest, _open_private, _public_metrics, _validate_new_outputs,
+)
 
 
 SCHEMA_VERSION = 1
@@ -1513,20 +1517,59 @@ def render_markdown(report: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def public_projection(report: dict[str, Any], private_sha256: str) -> dict[str, Any]:
+    """Keep decisions computed from complete results, publishing only their selection view."""
+    public = copy.deepcopy(report)
+    public["schema_version"] = 2
+    public["private_evidence"] = {"sha256": private_sha256,
+                                  "schema_version": report.get("schema_version"),
+                                  "access": "operator_private_original; not published"}
+    source = public.get("source_provenance", {})
+    public["evaluation_source_provenance_sha256"] = _digest(source)
+    source.pop("command", None)
+    for row in public.get("tasks", []):
+        noise = row.get("checks", {}).get("fixed_artifact_noise", {})
+        if "results" not in noise:
+            continue
+        results = noise["results"]
+        noise["nested_payload_sha256"] = [
+            {key: _digest(value) for key, value in result.items()
+             if isinstance(value, (dict, list))} for result in results
+        ]
+        noise["results"] = [_public_metrics(result) for result in results]
+        noise["published_results_scope"] = (
+            "search-visible scalars only; all spans, full payload hashes and decisions "
+            "were computed from the private complete results")
+    return public
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--spec", type=Path, default=DEFAULT_SPEC)
     parser.add_argument("--output", type=Path)
+    parser.add_argument("--private-output", type=Path, required=True,
+                        help="new complete-result file outside Git, in a 0700 directory (file mode 0600)")
     parser.add_argument("--markdown-output", type=Path)
     args = parser.parse_args()
-    report = build_report(args.manifest, args.spec)
+    _validate_new_outputs(args.output, args.private_output, args.markdown_output)
+    if source_provenance(ROOT).get("source_tree_dirty") is not False:
+        raise SystemExit("preflight requires a clean source revision")
+    with _open_private(args.private_output) as handle:
+        private_report = build_report(args.manifest, args.spec)
+        payload = json.dumps(private_report, indent=2, allow_nan=False) + "\n"
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    report = public_projection(private_report, hashlib.sha256(payload.encode("utf-8")).hexdigest())
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, indent=2, allow_nan=False) + "\n", encoding="utf-8")
+        with args.output.open("x", encoding="utf-8") as handle:
+            handle.write(json.dumps(report, indent=2, allow_nan=False) + "\n")
     if args.markdown_output:
         args.markdown_output.parent.mkdir(parents=True, exist_ok=True)
-        args.markdown_output.write_text(render_markdown(report), encoding="utf-8")
+        with args.markdown_output.open("x", encoding="utf-8") as handle:
+            handle.write(render_markdown(report))
     print(json.dumps({
         "task_count": report["task_count"],
         "preflight_passed_count": report["preflight_passed_count"],
