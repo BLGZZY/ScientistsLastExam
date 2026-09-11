@@ -410,6 +410,53 @@ class ProtocolMetricTests(unittest.TestCase):
 
 
 class GreedyRewriteTests(unittest.TestCase):
+    def test_completed_run_budget_extension_preserves_and_verifies_old_receipts(self):
+        spec = find_task("LennardJonesCluster")
+        for reply in ("```python\ndef optimize_cluster(n_atoms):\n    return []\n```", "no code"):
+            with self.subTest(reply=reply), tempfile.TemporaryDirectory() as temporary:
+                work = Path(temporary)
+                with patch("sle.algorithms.evolve.evaluate_candidate", side_effect=runtime_bound_evaluator([
+                    {"combined_score": 0.1, "valid": 1.0},
+                    {"combined_score": 0.2, "valid": 1.0},
+                ])):
+                    greedy_rewrite(spec, FakeLLM([]), budget=0, timeout_s=20,
+                                   workdir=work, log_fn=lambda _: None)
+                    self.assertTrue(verify_run(work, expected_budget=0)["verified"])
+                    old_files = {
+                        path: path.read_bytes()
+                        for directory in ("requests", "receipts")
+                        for path in (work / "evaluation_ledger" / directory).glob("*.json")
+                    }
+                    greedy_rewrite(spec, FakeLLM([reply]), budget=1, timeout_s=20,
+                                   workdir=work, resume=True, log_fn=lambda _: None)
+                self.assertTrue(verify_run(work, expected_budget=1)["verified"])
+                for path, contents in old_files.items():
+                    self.assertEqual(path.read_bytes(), contents)
+                with self.assertRaisesRegex(ValueError, "externally expected budget"):
+                    verify_run(work, expected_budget=0)
+
+    def test_uncommitted_baseline_must_recover_original_budget_before_extension(self):
+        spec = find_task("LennardJonesCluster")
+        with tempfile.TemporaryDirectory() as temporary:
+            work = Path(temporary)
+            with patch("sle.algorithms.evolve.evaluate_candidate", return_value={
+                "combined_score": 0.1, "valid": 1.0,
+            }) as evaluator, patch("sle.algorithms.evolve.append_event", side_effect=RuntimeError("crash")):
+                with self.assertRaisesRegex(RuntimeError, "crash"):
+                    greedy_rewrite(spec, FakeLLM([]), budget=0, timeout_s=20,
+                                   workdir=work, log_fn=lambda _: None)
+            self.assertEqual(evaluator.call_count, 1)
+            snapshot = EvaluationLedger(work).snapshot()
+            with patch("sle.algorithms.evolve.evaluate_candidate") as evaluator:
+                with self.assertRaisesRegex(ValueError, "original proposal_budget"):
+                    greedy_rewrite(spec, FakeLLM([]), budget=1, timeout_s=20,
+                                   workdir=work, resume=True, log_fn=lambda _: None)
+                self.assertEqual(EvaluationLedger(work).snapshot(), snapshot)
+                greedy_rewrite(spec, FakeLLM([]), budget=0, timeout_s=20,
+                               workdir=work, resume=True, log_fn=lambda _: None)
+                evaluator.assert_not_called()
+            self.assertTrue(verify_run(work, expected_budget=0)["verified"])
+
     def test_mismatched_bound_runtime_request_cannot_be_consumed(self):
         spec = find_task("LennardJonesCluster")
         original = EvaluationLedger.evaluate_once

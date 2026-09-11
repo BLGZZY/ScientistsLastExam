@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .evaluation_ledger import EvaluationLedger, RunLease
+from .evaluation_ledger import EvaluationLedger, RunLease, validate_proposal_budget
 from .metric_visibility import (
     score_only_metrics,
     search_visible_metrics,
@@ -210,6 +210,7 @@ def _verify_run_unlocked(
         verified_request_ids = []
         verified_receipts = {}
         expected_oracle_calls = 0
+        previous_proposal_budget = 0
         incumbent_hash = None
         incumbent_step = None
         incumbent_score = INVALID_SCORE
@@ -311,7 +312,10 @@ def _verify_run_unlocked(
                     for key in IDENTITY_FIELDS
                     if identity.get(key) is not None
                 }
-                expected_request_identity["proposal_budget"] = budget
+                previous_proposal_budget = validate_proposal_budget(
+                    request, current_budget=budget,
+                    previous_budget=previous_proposal_budget,
+                )
                 for key, value in expected_request_identity.items():
                     if request.get(key) != value:
                         raise ValueError("evaluation receipt %s differs from manifest" % key)

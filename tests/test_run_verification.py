@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from sle.algorithms.common import atomic_write_text
-from sle.evaluation_ledger import EvaluationLedger
+from sle.evaluation_ledger import EvaluationLedger, validate_proposal_budget
 from sle.protocol import (
     TrajectoryEvent,
     append_event,
@@ -605,6 +605,25 @@ class RunVerificationTests(unittest.TestCase):
             atomic_write_text(root / "summary.json", json.dumps(summary) + "\n")
             with self.assertRaisesRegex(ValueError, "early termination|completed budget"):
                 verify_run(root)
+
+    def test_completed_receipt_cannot_claim_a_larger_original_allocation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._run(root, proposal_budget=1)
+            with self.assertRaisesRegex(ValueError, "proposal_budget"):
+                verify_run(root)
+
+    def test_budget_extension_rejects_invalid_or_shrinking_allocations(self):
+        for allocation, step, previous in (
+            (True, 0, 0), (None, 0, 0), (1.0, 0, 0),
+            (-1, 0, 0), (1, 2, 0), (2, 2, 3), (5, 2, 0),
+        ):
+            with self.subTest(allocation=allocation, step=step, previous=previous):
+                with self.assertRaisesRegex(ValueError, "proposal_budget"):
+                    validate_proposal_budget(
+                        {"proposal_budget": allocation, "step": step},
+                        current_budget=4, previous_budget=previous,
+                    )
 
     def test_release_verification_binds_external_budget(self):
         with tempfile.TemporaryDirectory() as temporary:
