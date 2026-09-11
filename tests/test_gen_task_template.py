@@ -63,7 +63,7 @@ class GeneratedRunEvalTests(unittest.TestCase):
         # Candidate diagnostics and metric filtering belong to the trusted helper.
         # Launch/import failures are infrastructure errors and must not invent a score.
         helper = (REPO / "sle/frontier_eval_entrypoint.py").read_text()
-        self.assertIn("error_message", helper)
+        self.assertIn("search_visible_metrics", helper)
 
     def test_root_depth_matches_the_benchmarks_layout(self):
         """`parents[4]` must land on the repository root from the wrapper's own location."""
@@ -129,12 +129,12 @@ class GeneratedRunEvalTests(unittest.TestCase):
         frozen baseline document, all 82 tasks return at least one key outside the whitelist and
         1200 in total, 444 of them `heldout_*`. This repository's own loop never sees them, but a
         harness that feeds this file back into its own loop would be selecting on the sealed
-        split. New tasks are generated correct; the 84 wrappers already in the tree are a
-        separate migration, because changing them moves their task package hashes.
+        split. Both generated and shipped wrappers delegate to the same trusted helper.
         """
         rendered = _render()
-        self.assertIn("from sle.metric_visibility import SEARCH_VISIBLE_KEYS", rendered)
-        self.assertIn("if key in SEARCH_VISIBLE_KEYS", rendered)
+        self.assertIn("sle/frontier_eval_entrypoint.py", rendered)
+        helper = (REPO / "sle/frontier_eval_entrypoint.py").read_text()
+        self.assertIn("search_visible_metrics(result)", helper)
         # Imported, not restated: a second copy of the list is how two paths diverge.
         self.assertNotIn('"combined_score",\n    "valid",', rendered)
 
@@ -144,6 +144,7 @@ class GeneratedRunEvalTests(unittest.TestCase):
         import subprocess
         import sys as _sys
         import tempfile
+        import shutil
 
         from sle.metric_visibility import SEARCH_VISIBLE_KEYS
 
@@ -162,8 +163,8 @@ class GeneratedRunEvalTests(unittest.TestCase):
             # out to is replaced by a stub that prints the leaky dictionary `sle eval` would.
             (root / "sle").mkdir()
             (root / "sle" / "__init__.py").write_text("", encoding="utf-8")
-            (root / "sle" / "metric_visibility.py").write_text(
-                "SEARCH_VISIBLE_KEYS = %r\n" % (tuple(SEARCH_VISIBLE_KEYS),), encoding="utf-8")
+            shutil.copy(REPO / "sle" / "metric_visibility.py", root / "sle" / "metric_visibility.py")
+            shutil.copy(REPO / "sle" / "frontier_eval_entrypoint.py", root / "sle" / "frontier_eval_entrypoint.py")
             (root / "sle" / "__main__.py").write_text(
                 "import json, sys\nprint(json.dumps(%r))\n" % (leaky,), encoding="utf-8")
             candidate = root / "candidate.py"
@@ -211,17 +212,14 @@ class GeneratedRunEvalTests(unittest.TestCase):
                 offenders.append("%s: %s" % (path.relative_to(REPO), ", ".join(markers)))
         self.assertEqual(offenders, [])
 
-    def test_every_shipped_wrapper_uses_one_of_the_two_sandboxed_shapes(self):
-        """Neither shape is optional: a wrapper with neither reaches the candidate some third way."""
+    def test_every_shipped_wrapper_uses_shared_entrypoint(self):
+        """The migration covers the entire registry, including formerly direct/proxy wrappers."""
         strays = []
         for path in sorted((REPO / "benchmarks").glob("*/*/frontier_eval/run_eval.py")):
             text = path.read_text(encoding="utf-8")
             # Match on the argv the shape needs, not on one formatting of it: several wrappers
             # spread the list across lines, so a literal '"-m", "sle", "eval"' misses them.
-            subprocess_shape = all(token in text for token in
-                                   ("subprocess", '"-m"', '"sle"', '"eval"'))
-            proxy_shape = "CandidateProxy" in text
-            if not (subprocess_shape or proxy_shape):
+            if "sle/frontier_eval_entrypoint.py" not in text or "subprocess.run" not in text:
                 strays.append(str(path.relative_to(REPO)))
         self.assertEqual(strays, [])
 

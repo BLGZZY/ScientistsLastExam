@@ -22,7 +22,7 @@ def project(tmp_path):
     shutil.copy(ROOT / "sle/metric_visibility.py", package / "metric_visibility.py")
     (package / "__main__.py").write_text('''import json, os, sys
 from pathlib import Path
-assert sys.argv[1:4] == ["eval", "--task", "Example/Task"]
+assert sys.argv[1:4] == ["eval", "--task", os.environ.get("EXPECTED_TASK_ID", "Example/Task")]
 assert sys.argv[sys.argv.index("--timeout")+1] == os.environ.get("EXPECTED_TIMEOUT", "41.0")
 assert not any(k in os.environ for k in ("DEMO_API_KEY", "OTHER_TOKEN", "AUTHORIZATION", "DB_PASSWORD"))
 if os.environ.get("FAKE_EXIT"):
@@ -62,6 +62,9 @@ def test_public_metrics_exclude_oracle_only_values_and_strip_credentials(project
 @pytest.mark.parametrize('payload', [
     '{"infrastructure_failure":1,"error_message":"/hidden/evaluator.py:9 secret-source-line"}',
     'not json', '[]', '{"valid":1}', '{"combined_score":NaN,"valid":1}',
+    '{"combined_score":0,"valid":0.5}',
+    '{"combined_score":0,"valid":1,"raw_score":"hidden source"}',
+    '{"combined_score":0,"valid":1,"heldout":{"score":NaN}}',
 ])
 def test_infrastructure_and_malformed_results_never_publish_a_score(project, payload):
     root, outside = project
@@ -92,8 +95,7 @@ def test_candidate_failure_has_safe_useful_category(project):
     public = json.loads(result.stdout)
     assert public['error_message'] == 'candidate invalid: blocked_or_missing_import'
     full = json.loads(next((root / "private").glob('*.json')).read_text())
-    assert full['trusted_error_message'].startswith('/hidden')
-    assert full['error_message'] == public['error_message']
+    assert full['error_message'].startswith('/hidden')
 
 
 def test_import_failure_is_no_score_infrastructure_failure(project):
@@ -170,3 +172,76 @@ def test_outer_timeout_does_not_become_candidate_score(project, monkeypatch):
     result = run('Example/Task', root, 41, ['--candidate', str(outside/'candidate.py'),
                  '--metrics-out', str(outside/'metrics.json')])
     assert result == 2 and not (outside/'metrics.json').exists()
+
+
+def test_no_private_sidecar_is_created_by_default(project):
+    root, outside = project
+    result = subprocess.run(
+        [sys.executable, str(HELPER), '--task', 'Example/Task', '--root', str(root),
+         '--timeout', '41', '--candidate', 'candidate.py', '--metrics-out', 'metrics.json'],
+        cwd=outside, capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert sorted(p.name for p in outside.iterdir()) == ['candidate.py', 'metrics.json']
+    assert 'heldout' not in (outside / 'metrics.json').read_text()
+
+
+@pytest.mark.parametrize('kind', ['candidate_child', 'public_child', 'symlink'])
+def test_private_sidecar_cannot_overlap_a_public_workspace(project, kind):
+    root, outside = project
+    target = outside / 'private'
+    if kind == 'public_child':
+        target = outside / 'metrics_private'
+    elif kind == 'symlink':
+        (root / 'alias').symlink_to(outside, target_is_directory=True)
+        target = root / 'alias' / 'private'
+    result = subprocess.run(
+        [sys.executable, str(HELPER), '--task', 'Example/Task', '--root', str(root),
+         '--timeout', '41', '--candidate', 'candidate.py', '--metrics-out', 'metrics.json',
+         '--full-metrics-dir', str(target)],
+        cwd=outside, capture_output=True, text=True,
+    )
+    assert result.returncode == 2 and not result.stdout
+    assert not target.exists() and not (outside / 'metrics.json').exists()
+
+
+SHIPPED_WRAPPERS = sorted((ROOT / 'benchmarks').glob('*/*/frontier_eval/run_eval.py'))
+
+
+@pytest.mark.parametrize('source', SHIPPED_WRAPPERS, ids=lambda p: p.parent.parent.name)
+def test_every_shipped_wrapper_filters_metrics_and_forwards_timeout(project, source):
+    """Exercise every real wrapper against a fake trusted CLI, without executing an oracle."""
+    import yaml
+    root, outside = project
+    wrapper = root / source.relative_to(ROOT)
+    wrapper.parent.mkdir(parents=True)
+    shutil.copy(source, wrapper)
+    shutil.copy(HELPER, root / 'sle/frontier_eval_entrypoint.py')
+    metadata = yaml.safe_load((source.parent / 'metadata.yaml').read_text())
+    task_id = metadata['domain'] + '/' + metadata['task']
+    result = subprocess.run(
+        [sys.executable, str(wrapper), '--candidate', 'candidate.py',
+         '--metrics-out', 'metrics.json', '--timeout', '17.5'], cwd=outside,
+        env={**os.environ, 'EXPECTED_TASK_ID': task_id, 'EXPECTED_TIMEOUT': '17.5'},
+        capture_output=True, text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    public = json.loads((outside / 'metrics.json').read_text())
+    assert public == {'combined_score': .6, 'valid': 1, 'raw_score': .6}
+    assert json.loads(result.stdout) == public
+    assert sorted(p.name for p in outside.iterdir()) == ['candidate.py', 'metrics.json']
+
+
+def test_generator_emits_pending_shortcut_candidates(tmp_path):
+    import yaml
+    from scripts.gen_task import create_task
+    task = create_task(dict(domain='Physics', task='ProbeExample', difficulty='hard',
+                            entrypoint='construct', task_md='Example', baseline_code='def construct(p): return {}',
+                            evaluator_code='def evaluate(solve): return {}'), repo=tmp_path)
+    contract = yaml.safe_load((task / 'TASK_CARD.yaml').read_text())['shortcut_probe']
+    assert contract['reference']['expected_score'] is None
+    assert contract['probes'][0]['expected_score'] is None
+    for item in [contract['reference'], *contract['probes']]:
+        source = (task / item['candidate']).read_text()
+        assert 'def construct(' in source and 'NotImplementedError' in source
+        assert 'evaluate(' not in source

@@ -11,7 +11,7 @@ from typing import Any, Callable, Optional
 
 from ..llm import LLMClient
 from ..evaluate import INVALID_SCORE
-from ..metric_visibility import load_full_metrics
+from ..metric_visibility import load_full_metrics, require_healthy_evaluations
 from ..protocol import sha256_text
 from ..spec import TaskSpec
 from ..upstream_evaluator import write_configured_wrapper
@@ -151,6 +151,7 @@ def openevolve(
     config.llm.api_base = llm.config.base_url
     config.llm.api_key = model.api_key
 
+    require_healthy_evaluations(workdir / "trusted_full_metrics")
     evaluator_file = write_configured_wrapper(
         workdir / "upstream_evaluator.py", spec.task_id, timeout_s,
         full_metrics_dir=workdir / "trusted_full_metrics",
@@ -183,6 +184,7 @@ def openevolve(
         best = _run_async(
             controller.run(iterations=remaining_iterations, checkpoint_path=checkpoint_arg)
         )
+    require_healthy_evaluations(workdir / "trusted_full_metrics")
     if best is None:
         raise RuntimeError("OpenEvolve returned no program")
     programs = _programs(controller)

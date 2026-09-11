@@ -213,6 +213,12 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 24. Linux 主机沙箱内实跑,分数与本地一致;`python scripts/check_task_contribution.py --task <id>` 通过。
 25. 全量测试绿;若改了任务包内文件,还要刷新全局证据。
 
+共享入口默认只写公开指标,丢弃全量诊断。维护者如需保留诊断,显式传入
+`--full-metrics-dir /private/evaluation/task-id`;目录须为 0700,并且不在候选文件或公开指标的父目录内
+(包括符号链接的目标)。外部 harness 还须保证它不被挂进智能体工作区。可信评估故障返回 2、删除旧分数,
+只在显式私有目录保留诊断;无效候选仍返回可计分结果。OpenEvolve/Shinka/AB-MCTS 若发生可信故障,该运行不可发布或
+从故障后状态继续计为同一实验;使用新运行目录。greedy 的已提交提案则按其 ledger 恢复契约复用。
+
 ---
 
 ## 提 PR 前的检查清单

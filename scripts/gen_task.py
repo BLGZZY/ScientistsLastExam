@@ -38,6 +38,7 @@ DEFAULT_EVAL_TIME_SECONDS = 100
 
 RUN_EVAL_TEMPLATE = '''"""Launch the shared trusted evaluator without importing project code."""
 import argparse
+import math
 import subprocess
 import sys
 from pathlib import Path
@@ -59,13 +60,13 @@ if TASK_ID.split("/")[-1] != _expected_task:
         " task and would score against that task's oracle" % (TASK_ID, _expected_task))
 
 
-def main():
+def main(argv=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
     parser.add_argument("--timeout", type=float, default=EVAL_TIMEOUT_S)
     parser.add_argument("--full-metrics-dir")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     command = [sys.executable, str(ROOT / "sle/frontier_eval_entrypoint.py"),
                "--task", TASK_ID, "--root", str(ROOT), "--timeout", str(args.timeout),
                "--candidate", args.candidate, "--metrics-out", args.metrics_out]
@@ -73,14 +74,22 @@ def main():
         command.extend(["--full-metrics-dir", args.full_metrics_dir])
     try:
         Path(args.metrics_out).unlink(missing_ok=True)
-        result = subprocess.run(command, capture_output=True, text=True)
+        if not math.isfinite(args.timeout) or args.timeout <= 0:
+            print("evaluation timeout must be positive and finite", file=sys.stderr)
+            return 2
+        result = subprocess.run(command, capture_output=True, text=True, timeout=args.timeout + 150)
         if result.returncode:
+            Path(args.metrics_out).unlink(missing_ok=True)
             print("evaluation entrypoint unavailable or infrastructure failure (exit %d)"
                   % result.returncode, file=sys.stderr)
             return 2
         print(result.stdout, end="")
         return 0
-    except OSError:
+    except (OSError, subprocess.TimeoutExpired):
+        try:
+            Path(args.metrics_out).unlink(missing_ok=True)
+        except OSError:
+            pass
         print("evaluation entrypoint could not be launched or report cleared", file=sys.stderr)
         return 2
 
@@ -137,6 +146,31 @@ def create_task(spec: dict, repo: Path = REPO) -> Path:
 
     # frontier_eval contract files
     entrypoint = spec.get("entrypoint", "solve")
+    # These are deliberately pending candidate programs, not trusted-oracle scripts.
+    # A task author must replace and calibrate both through the candidate sandbox.
+    if not str(entrypoint).isidentifier():
+        raise ValueError("entrypoint must be a Python identifier")
+    for name, purpose in (("reference_solver.py", "reference"), ("shortcut_probe.py", "cheap legitimate")):
+        (ver_dir / name).write_text(
+            '"""Pending %s candidate; implement the task submission contract."""\n'
+            'def %s(*args, **kwargs):\n'
+            '    raise NotImplementedError("replace with a %s candidate; calibrate before admission")\n'
+            % (purpose, entrypoint, purpose), encoding="utf-8")
+    (task_dir / "TASK_CARD.yaml").write_text(
+        "# Complete the scientific task card before admission. These unmeasured values are pending.\n"
+        "# The margin below is a review starting point, not a universal scientific threshold.\n"
+        "shortcut_probe:\n"
+        "  schema_version: 1\n"
+        "  metric: combined_score\n"
+        "  reference:\n"
+        "    candidate: verification/reference_solver.py\n"
+        "    expected_score: null\n"
+        "  probes:\n"
+        "    - id: cheap_probe\n"
+        "      candidate: verification/shortcut_probe.py\n"
+        "      expected_score: null\n"
+        "  relative_margin: 0.1\n"
+        "  score_tolerance: 0.000001\n", encoding="utf-8")
     # The wrapper timeout is a review quantity set by how hard the task is, so a spec may name
     # it outright. The fallback reproduces what the 66 existing wrappers already do (64 of them
     # exactly): three times the expected evaluation, floored at the repository's usual 300 s.
