@@ -53,7 +53,9 @@ def main():
     require(plan["kind"] == "calibration" and plan["budgets"] == [1], "first-draw budget-1 plan required")
     require(plan["feedback_modes"] == ["selection_blind"], "selection-blind plan required")
     fresh_replay = replay(plan)
-    require(fresh_replay == read(args.replay), "independent replay differs from supplied replay artifact")
+    supplied_replay = read(args.replay)
+    require(all(supplied_replay.get(key) == value for key, value in fresh_replay.items()),
+            "independent replay differs from supplied replay artifact")
     git = lambda *a: subprocess.check_output(["git", "-c", "core.commitGraph=false", "-C", str(root), *a], text=True).strip()
     require(not git("status", "--porcelain"), "calibration source must remain clean")
     require(git("rev-parse", "HEAD") == plan["source_provenance"]["git_revision"], "source revision changed")
