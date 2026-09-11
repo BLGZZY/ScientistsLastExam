@@ -14,8 +14,9 @@ name: tests
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/sle-task-admission-batch]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   sandbox:
@@ -24,6 +25,7 @@ jobs:
       OPENBLAS_NUM_THREADS: '1'
       OMP_NUM_THREADS: '1'
       MKL_NUM_THREADS: '1'
+      NUMEXPR_NUM_THREADS: '1'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,7 +54,7 @@ jobs:
       - name: Test suite
         # The exit code is the gate. Never pipe this into anything.
         #
-        # SLE_REQUIRE_FROZEN_INVENTORY is set on main and same-repository integration PRs.
+        # SLE_REQUIRE_FROZEN_INVENTORY is set on maintainer pushes/manual runs and same-repository PRs.
         # Fork contributions may arrive before the maintainer refreshes frozen evidence. The frozen
         # certification and baseline documents can only be regenerated on a Linux host with the
         # candidate sandbox, by a maintainer, so a task PR necessarily arrives with its tasks
@@ -61,12 +63,15 @@ jobs:
         # the refresh is the maintainer's own step, and skipping it is the regression. Maintainer
         # integration branches must pass that same check before they reach main.
         env:
-          SLE_REQUIRE_FROZEN_INVENTORY: ${{ (github.ref == 'refs/heads/main' || github.event.pull_request.head.repo.full_name == github.repository) && '1' || '0' }}
+          SLE_REQUIRE_FROZEN_INVENTORY: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && '1' || '0' }}
         run: /usr/bin/python3 -m pytest tests/ -q -p no:cacheprovider --junitxml=/tmp/sle-tests.xml
+      # Keep the fixed admission/isolation list separate from historical checks that need private runs.
+      # Missing or skipped required tests fail coverage even if pytest otherwise exits successfully.
       - name: Report executed and unavailable checks
         if: always()
         run: |
           /usr/bin/python3 scripts/summarize_test_coverage.py --junit /tmp/sle-tests.xml \
+            --required-tests .github/required_admission_tests.json \
             --output /tmp/sle-test-coverage.json --markdown-output /tmp/sle-test-coverage.md
       - name: Publish coverage summary
         if: always()
