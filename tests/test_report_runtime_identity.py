@@ -51,6 +51,7 @@ def write_verified_run(root: Path, *, budget: int = 10) -> None:
         "task_package_sha256": "b" * 64,
         "runtime_source_sha256": "c" * 64,
         "trusted_evaluator_runtime": runtime,
+        "protocol": {"evaluator_timeout_seconds": 20.0},
         "seed": 0,
         "feedback_mode": "normal",
         "llm_condition": {"model": "hy3"},
@@ -67,6 +68,7 @@ def write_verified_run(root: Path, *, budget: int = 10) -> None:
         )
     }
     identity["proposal_budget"] = budget
+    identity["evaluator_timeout_seconds"] = 20.0
     runtime_hash = runtime["fingerprint_sha256"]
     cumulative = 0.0
     incumbent = "VALUE = 0\n"

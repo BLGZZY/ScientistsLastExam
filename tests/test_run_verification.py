@@ -44,6 +44,7 @@ class RunVerificationTests(unittest.TestCase):
         extra_request_frontier: dict[str, str] | None = None,
         proposal_budget: int = 0,
         feedback_mode: str = "normal",
+        receipt_timeout: object = 20.0,
     ) -> str:
         program = "def solve():\n    return 1\n"
         candidate_hash = sha256_text(program)
@@ -55,6 +56,7 @@ class RunVerificationTests(unittest.TestCase):
             "task_package_sha256": "b" * 64,
             "runtime_source_sha256": "c" * 64,
             "trusted_evaluator_runtime": current_runtime_descriptor(()),
+            "protocol": {"evaluator_timeout_seconds": 20.0},
             "seed": 0,
             "feedback_mode": feedback_mode,
             "llm_condition_sha256": "d" * 64,
@@ -71,6 +73,7 @@ class RunVerificationTests(unittest.TestCase):
                     "feedback_mode", "llm_condition_sha256", "llm_condition",
                 )},
                 "proposal_budget": proposal_budget,
+                "evaluator_timeout_seconds": receipt_timeout,
                 **(frontier or {}),
                 **(extra_request_frontier or {}),
                 "trusted_evaluator_runtime_sha256": manifest[
@@ -146,6 +149,7 @@ class RunVerificationTests(unittest.TestCase):
                 "feedback_mode": feedback_mode,
                 "seed": 0,
                 "proposal_budget": 1,
+                "evaluator_timeout_seconds": 20.0,
                 "llm_condition_sha256": "d" * 64,
                 "llm_condition": {"model": "test-model"},
                 "trusted_evaluator_runtime_sha256": manifest[
@@ -605,6 +609,26 @@ class RunVerificationTests(unittest.TestCase):
             atomic_write_text(root / "summary.json", json.dumps(summary) + "\n")
             with self.assertRaisesRegex(ValueError, "early termination|completed budget"):
                 verify_run(root)
+
+    def test_manifest_timeout_must_match_immutable_receipt(self):
+        for timeout in (200, 0, -1, True, "20", None):
+            with self.subTest(timeout=timeout), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self._run(root)
+                manifest_path = root / "run_manifest.json"
+                manifest = json.loads(manifest_path.read_text())
+                manifest["protocol"]["evaluator_timeout_seconds"] = timeout
+                atomic_write_text(manifest_path, json.dumps(manifest) + "\n")
+                with self.assertRaisesRegex(ValueError, "evaluator_timeout_seconds"):
+                    verify_run(root)
+
+    def test_receipt_timeout_requires_matching_numeric_contract(self):
+        for timeout in (200, 0, -1, True, "20", None):
+            with self.subTest(timeout=timeout), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                self._run(root, receipt_timeout=timeout)
+                with self.assertRaisesRegex(ValueError, "evaluator_timeout_seconds"):
+                    verify_run(root)
 
     def test_completed_receipt_cannot_claim_a_larger_original_allocation(self):
         with tempfile.TemporaryDirectory() as temporary:

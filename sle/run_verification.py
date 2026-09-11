@@ -204,6 +204,16 @@ def _verify_run_unlocked(
     for key in ("task_id", "algorithm", "seed", "feedback_mode"):
         if summary.get(key) != manifest.get(key):
             raise ValueError("run summary %s differs from manifest" % key)
+    protocol = manifest.get("protocol")
+    evaluator_timeout = (
+        protocol.get("evaluator_timeout_seconds") if isinstance(protocol, dict) else None
+    )
+    if not (
+        isinstance(evaluator_timeout, (int, float))
+        and not isinstance(evaluator_timeout, bool)
+        and math.isfinite(evaluator_timeout) and evaluator_timeout > 0
+    ):
+        raise ValueError("run manifest evaluator_timeout_seconds must be positive and finite")
 
     if manifest.get("algorithm") == "greedy_rewrite":
         ledger = EvaluationLedger(root)
@@ -316,6 +326,13 @@ def _verify_run_unlocked(
                     request, current_budget=budget,
                     previous_budget=previous_proposal_budget,
                 )
+                request_timeout = request.get("evaluator_timeout_seconds")
+                if not (
+                    isinstance(request_timeout, (int, float))
+                    and not isinstance(request_timeout, bool)
+                    and request_timeout == evaluator_timeout
+                ):
+                    raise ValueError("evaluation receipt evaluator_timeout_seconds differs from manifest")
                 for key, value in expected_request_identity.items():
                     if request.get(key) != value:
                         raise ValueError("evaluation receipt %s differs from manifest" % key)
