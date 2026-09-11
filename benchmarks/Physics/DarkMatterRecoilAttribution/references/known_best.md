@@ -246,3 +246,25 @@ It does not attain perfect joint-family rejection on heldout; no artificial opti
 failure or hidden-answer lookup was introduced to lower its score. The expanded
 56-world campaign retains the 12-unit per-world budget and 300-second runner timeout;
 metadata allows 120 seconds for evaluation, subject to measured hardware load.
+
+
+## Shared-grid two-stage reference replay, 2026-09-11
+
+At frozen source `8561acb7d6154f3831de18d7f0fcaf71b4443733`, all eight predeclared methods ran twice in the real Linux candidate sandbox. All 56 worlds were valid and complete metrics were identical within each pair. Environment: Python 3.12 / NumPy 1.26.4 / SciPy 1.13.1, one numerical thread. Full originals are private; aggregate scalars, source bindings and hashes are in `experiments/dark_matter_recoil_shared_grid_methods_2026-09-11.json`.
+
+| Method | Development | Heldout | Units/world |
+|---|---:|---:|---:|
+| reference | 0.5368049832 | 0.5480087151 | 12 |
+| fixed_mass | 0.2903389817 | 0.2439422043 | 12 |
+| four_way | 0.2796988413 | 0.0890035523 | 1 |
+| one_unit | 0.2974342757 | 0.2830546042 | 3 |
+| ignore_gain | 0.2778624264 | 0.2578446537 | 12 |
+| fixed_halo | 0.3574036313 | 0.5080162656 | 12 |
+| equal_allocation | 0.5241998858 | 0.4243700582 | 12 |
+| legacy_equal_reference | 0.5242741474 | 0.4243840652 | 12 |
+
+All four declared ability removals lose on both splits. The equal-allocation development loss is only 0.012605, while its heldout loss is 0.123639; do not turn this finite constructed comparison into independent difficulty evidence.
+
+The exact constant-mass bounds, determined by unchanged latent masses, are still 0.296772 / 0.294044, about 55.28% / 53.66% of the revised reference. Existing 60% constant-mass and 70% four-way regression requirements were preserved. Both splits have participated in construction; neither is fresh confirmation.
+
+The subsequent development-only public-validity repair affects heldout-only malformed returns. It does not change any all-valid method result; its final-package contribution replay is recorded separately. The original failed first-draw campaign remains bound to its historical source and is not compared against this new reference as if it had been rerun. New independent, predeclared model calibration and external domain review remain necessary.

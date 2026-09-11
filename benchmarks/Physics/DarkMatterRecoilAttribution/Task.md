@@ -163,3 +163,10 @@ a shared detector grid. Prior numerical evidence describes the earlier grid.
 New methods and ability removals are fixed in `references/revision_replay.json`;
 source-bound validation and a new independent model calibration are required.
 The previously failed first proposal remains recorded.
+
+Shared-grid Linux replay (NumPy 1.26.4 / SciPy 1.13.1): reference development
+0.536805 / heldout 0.548009. Removing pilot-based allocation, extra exposure,
+gain handling or free halo weights lowers development score by approximately
+0.0126, 0.2394, 0.2589 or 0.1794. Fixed single-target and constant-mass probes
+remain separated under the existing guards. These constructor measurements
+do not resolve the historical D16 failure or establish independent difficulty.

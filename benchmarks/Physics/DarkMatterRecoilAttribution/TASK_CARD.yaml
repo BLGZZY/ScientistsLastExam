@@ -42,7 +42,12 @@ known_shortcuts: >-
   four-way probe below 0.7 times reference with more than 0.15 absolute separation.
   This finite builder probe is not exhaustive; repository-visible seeds permit
   memorization outside the sandbox, and difficulty is not certified. Fixed-halo ablation improves heldout by 0.040096;
-  free halo fitting is not claimed to be uniformly necessary.
+  free halo fitting was not uniformly necessary in that historical grid. Current
+  shared-grid two-stage reference scores 0.5368049832 / 0.5480087151, with fixed
+  four-way 0.2796988413 / 0.0890035523 and fixed-mass 0.2903389817 / 0.2439422043.
+  The fixed-halo removal now scores 0.3574036313 / 0.5080162656. All 16 planned
+  method calls are valid and full-metric pairs identical. These construction
+  measurements do not clear the historical D16 failure.
 review:
   domain: pending_external
   evaluator_security: automated_checks_passed_pending_external_review
@@ -129,4 +134,4 @@ shortcut_probe:
 evaluation_budget:
   eval_timeout_s: 300
   experiment_units_per_world: 12
-  rationale: Explicit 300-second override; the new two-stage reference requires a source-bound replay.
+  rationale: Explicit 300-second override; two-stage reference observed at about 76 seconds in the fixed single-thread Linux replay.
