@@ -176,6 +176,48 @@ class GeneratedRunEvalTests(unittest.TestCase):
             with self.subTest(key=hidden):
                 self.assertNotIn(hidden, written)
         self.assertNotIn("heldout", done.stdout)
+    def test_no_shipped_wrapper_loads_the_candidate_in_process(self):
+        """A wrapper that imports the candidate puts it in the oracle's own address space.
+
+        `frontier_eval/run_eval.py` is what external harnesses call through `eval_command.txt`,
+        and the oracle is imported into that process. A wrapper that also imports the candidate
+        there gives candidate code the oracle module: the hidden worlds, the sealed split, and
+        the scoring functions, with no sandbox and no seccomp filter in between. It can read the
+        answers or replace the scorer.
+
+        Two wrapper shapes are legitimate and must keep passing. Sixty-eight shell out to
+        `python -m sle eval`, which runs the candidate in Bubblewrap behind a typed JSON-RPC
+        boundary. Thirteen import the oracle here but reach the candidate through
+        `sle.secure_eval.CandidateProxy`, which is the same sandbox by another route. What this
+        rejects is the third shape: `importlib` against the candidate path.
+
+        `Physics/CriticalPhenomenaLab` was the last one, and it was the only wrapper in the tree
+        without a `parents[...]` root, which is how it survived the migration that moved the
+        others. A candidate run through it could reach `evaluator.DEVELOPMENT_SPECS`,
+        `evaluator.VALIDATION_SPECS` and `evaluator.SEALED_SIZES`.
+        """
+        offenders = []
+        for path in sorted((REPO / "benchmarks").glob("*/*/frontier_eval/run_eval.py")):
+            text = path.read_text(encoding="utf-8")
+            markers = [m for m in ("exec_module", "spec_from_file_location", "importlib")
+                       if m in text]
+            if markers:
+                offenders.append("%s: %s" % (path.relative_to(REPO), ", ".join(markers)))
+        self.assertEqual(offenders, [])
+
+    def test_every_shipped_wrapper_uses_one_of_the_two_sandboxed_shapes(self):
+        """Neither shape is optional: a wrapper with neither reaches the candidate some third way."""
+        strays = []
+        for path in sorted((REPO / "benchmarks").glob("*/*/frontier_eval/run_eval.py")):
+            text = path.read_text(encoding="utf-8")
+            # Match on the argv the shape needs, not on one formatting of it: several wrappers
+            # spread the list across lines, so a literal '"-m", "sle", "eval"' misses them.
+            subprocess_shape = all(token in text for token in
+                                   ("subprocess", '"-m"', '"sle"', '"eval"'))
+            proxy_shape = "CandidateProxy" in text
+            if not (subprocess_shape or proxy_shape):
+                strays.append(str(path.relative_to(REPO)))
+        self.assertEqual(strays, [])
 
     def test_no_shipped_wrapper_carries_an_unrendered_placeholder(self):
         offenders = []
