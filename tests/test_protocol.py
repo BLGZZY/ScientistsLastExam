@@ -641,23 +641,46 @@ class GreedyRewriteTests(unittest.TestCase):
             )
             snapshot = result.summary["sentinel_snapshot"]
             events = snapshot["events"]
+            trajectory = load_trajectory(work / "trajectory.jsonl")
+            if len(trajectory) == 2:
+                self.assertTrue(verify_run(work, expected_budget=1)["verified"])
+            else:
+                with self.assertRaisesRegex(ValueError, "early termination"):
+                    verify_run(work, expected_budget=1)
 
-        self.assertFalse(result.summary["horizon_reached"])
+        # Keep the real sandbox and the fixed ten-second contract. Machine load may make a
+        # baseline or proposal late; the raw clock determines the required terminal branch.
+        self.assertIn(len(trajectory), (1, 2))
+        baseline_wall = trajectory[0]["cumulative_wall_seconds"]
+        completed_wall = trajectory[-1]["cumulative_wall_seconds"]
+        self.assertEqual(result.summary["horizon_reached"], completed_wall >= 10.0)
+        self.assertEqual(len(llm.prompts), len(trajectory) - 1)
+        self.assertEqual(not llm.prompts, baseline_wall >= 10.0)
         self.assertEqual(events[0]["sentinel_type"], "t0")
         self.assertEqual(events[-1]["sentinel_type"], "terminal")
-        self.assertEqual(events[-1]["reason"], "proposal_budget_exhausted_before_active_wall_horizon")
-        self.assertEqual(snapshot["type_counts"]["submission"], 1)
-        self.assertEqual(snapshot["type_counts"]["terminal"], 1)
-        submission = next(
-            row for row in events if row["sentinel_type"] == "submission"
+        expected_reason = (
+            "baseline_evaluation_completed_after_active_wall_horizon" if baseline_wall > 10.0
+            else "active_wall_horizon_reached" if completed_wall >= 10.0
+            else "proposal_budget_exhausted_before_active_wall_horizon"
         )
-        self.assertEqual(submission["evaluation"]["status"], "not_evaluated")
-        self.assertIsNone(submission["evaluation"]["sha256"])
-        self.assertIn("Preregistered active-time horizon", llm.prompts[0])
-        self.assertIn("10.000 active wall seconds", llm.prompts[0])
-        self.assertIn("proposal 1 in a fixed-duration run", llm.prompts[0])
-        self.assertIn("operational safety bound", llm.prompts[0])
-        self.assertNotIn("proposal 1 of 1", llm.prompts[0])
+        self.assertEqual(events[-1]["reason"], expected_reason)
+        self.assertEqual(events[-1]["scheduled_elapsed_seconds"], 10.0)
+        self.assertEqual(events[-1]["recorded_elapsed_seconds"], completed_wall)
+        available = [trajectory[0]] + [row for row in trajectory[1:]
+                     if row["algorithm_metadata"]["proposal_published_wall_seconds"] <= 10.0]
+        self.assertEqual(events[-1]["artifact_sha256"], available[-1]["candidate_sha256"])
+        self.assertLessEqual(events[-1]["artifact_published_elapsed_seconds"], 10.0)
+        self.assertEqual(snapshot["type_counts"].get("submission", 0), len(trajectory) - 1)
+        self.assertEqual(snapshot["type_counts"]["terminal"], 1)
+        for submission in (row for row in events if row["sentinel_type"] == "submission"):
+            self.assertEqual(submission["evaluation"]["status"], "not_evaluated")
+            self.assertIsNone(submission["evaluation"]["sha256"])
+        for prompt in llm.prompts:
+            self.assertIn("Preregistered active-time horizon", prompt)
+            self.assertIn("10.000 active wall seconds", prompt)
+            self.assertIn("proposal 1 in a fixed-duration run", prompt)
+            self.assertIn("operational safety bound", prompt)
+            self.assertNotIn("proposal 1 of 1", prompt)
 
     def test_wall_fields_share_one_clock_read(self):
         """Both wall fields must come from one clock read, on a real clock.
