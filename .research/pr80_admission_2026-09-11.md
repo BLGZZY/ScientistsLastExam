@@ -36,3 +36,10 @@ formal real-arithmetic certificate.
 Pending: fixed Linux tests and sandbox qualification, full Frontier-Eng catalog/appendix
 novelty comparison, independent domain review and genuine first-proposal frontier calibration.
 A reference/probe separation failure or ineffective ablation will remain a visible blocker.
+
+The initial integrated source also omitted per-world candidate session resets. The repair now
+starts each development and held-out world with a fresh candidate process and private tmpfs,
+while preserving module/file state across legal callbacks inside one world. A real CandidateProxy
+regression checks all 18 boundaries, imported-module attributes and temporary files; no mock
+worker substitutes for this isolation test. The fixed scientific pilot will use the repaired
+revision; no pre-reset pilot result is reused.

@@ -506,6 +506,9 @@ def _evaluate_world(audit, spec, split, index):
     problem = _public_problem(world)
     base = {"split": split, "world_index": int(index), "kind": world["kind"], "samples_used": 0}
     try:
+        reset = getattr(audit, "reset_session", None)
+        if callable(reset):
+            reset()
         submission = audit(problem, campaign.oracle())
         witness, confidence = _validate_submission(submission, world["mechanism"])
         if campaign.violated:

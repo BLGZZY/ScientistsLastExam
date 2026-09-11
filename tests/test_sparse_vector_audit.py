@@ -367,5 +367,51 @@ class SparseVectorAdmissionControls(unittest.TestCase):
         self.assertNotIn('importlib',standalone.split('from __future__')[1])
 
 
+
+
+class SparseVectorSandboxIsolationTests(unittest.TestCase):
+    def test_real_candidate_proxy_resets_every_world_and_preserves_in_world_state(self):
+        # Use the repository's platform guard: Linux with a broken sandbox fails loudly.
+        if sys.platform != 'linux':
+            self.skipTest('real CandidateProxy world isolation requires Linux')
+        import tempfile
+        import textwrap
+        from unittest.mock import patch
+        from sle.secure_eval import CandidateProxy
+        ev = _load(TASK/'verification/evaluator.py', 'sva_session_oracle')
+        source = '''
+import os
+counter = 0
+def audit(problem, sample):
+    global counter
+    counter += 1
+    previous = getattr(os, '_sva_world', 0)
+    marker = '/tmp/sva_world_marker'
+    stale = counter != 1 or previous != 0 or os.path.exists(marker)
+    os._sva_world = previous + 1
+    with open(marker, 'w') as handle:
+        handle.write('same-world')
+    for _ in range(2):
+        counts = sample([50] * problem['n_queries'], 1)
+        if sum(counts.values()) != 1 or counter != 1 or os._sva_world != 1:
+            return None
+        with open(marker) as handle:
+            if handle.read() != 'same-world':
+                return None
+    return None if stale else {'abstain': True}
+'''
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp)/'candidate.py'
+            candidate.write_text(textwrap.dedent(source))
+            with CandidateProxy(candidate, 'audit', timeout_s=60) as proxy:
+                with patch.object(proxy, 'reset_session', wraps=proxy.reset_session) as reset:
+                    metrics = ev.evaluate(proxy)
+                    self.assertEqual(reset.call_count, 18)
+        self.assertEqual(metrics['valid'], 1.0)
+        self.assertEqual(metrics['development_valid_count'], 12)
+        self.assertEqual(metrics['heldout_valid_count'], 6)
+        self.assertTrue(all(row['samples_used']==2 and row['valid'] for row in metrics['per_instance']))
+
+
 if __name__ == "__main__":
     unittest.main()
