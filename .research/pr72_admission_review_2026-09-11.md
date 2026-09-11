@@ -139,12 +139,33 @@ to force every ablation to lose on both splits.
 
 ## D and E: remaining integration decisions
 
-Independent frontier first-proposal calibration is still required. The root task
-is preparing a clean-source, selection-blind budget-1 plan with fixed seed labels
-0/1/2; no model was called by these reviewer drivers. Invalid model candidates
-must not count as difficulty evidence. The task card currently keeps model
-calibration missing and `frozen_before_eval: false`; a real plan/result lineage
-must be separately attached after execution and review.
+**D16 fails; hold PR #72.** The root completed the clean-source, selection-blind
+budget-1 plan at `9516d4b0` with fixed seed labels 0/1/2. Model `gpt-5.6-sol`,
+reasoning high, max output 16384, evaluator timeout 300 seconds. First proposal
+0 was valid in all 56 worlds and scored 0.5855425654/0.5953141420, exceeding the
+predeclared reference on both splits. Proposal 1 timed out after 49 valid worlds;
+proposal 2 was fully valid at 0.2802699453/0.3347217998. No oracle, prompt, instance,
+reference, scoring threshold or budget changed in response. All three scheduled
+draws remain recorded; an invalid draw or its zero incumbent is not difficulty.
+
+Plan SHA-256 `ee8ef9532fd223a8a2ab653a0619985537935ef94d4ddcb1cb524673bc6a90ec`;
+model condition `967fb197a1603c8c9bd881997ba02cfde1336f0cbb2e1c3a369c3cec24d50d07`.
+The public review in `experiments/dark_matter_recoil_first_draw_review_2026-09-11.json`
+independently verifies all six requests/receipts, complete metrics, retained
+candidate source, expected-world validity, original source bindings and 44 private
+artifact hashes/permissions. It records 44696 provider-reported tokens; pricing
+was unavailable. The campaign returns incomplete because one replicate has no
+valid proposal; the raw-event review separately establishes the decisive D16
+failure. An initial read-only reviewer invocation failed on the CLI's extra replay
+metadata, before producing any review result; the comparison was corrected and
+no model/evaluator call was repeated. Original source and run files were unchanged.
+
+The card now records these outcomes as source-bound historical calibration after
+the documentation-only package update, with `frozen_before_eval: false`. Full
+metrics, candidate artifacts and the immutable plan remain under the private
+operator root `sle-operator-evidence/2026-09-11/task-admission/pr72` on g450. The
+reviewer is `.research/summarize_first_draws_2026-09-11.py` on the root integration
+branch; it makes no oracle or model calls. This task is not admitted/certified.
 
 Registration, Chinese inventory source entries, seven-section reference notes and
 task invariants are present. The integration deliberately retains main's global
@@ -220,6 +241,7 @@ world-kind ordering or candidate answers. Logs are
 `/tmp/sle-pr72-admission-contribution-20260911.log`; no completed scientific run
 was overwritten or retried.
 
-Passing these checks leaves D's real first-proposal comparison, root-wide evidence
-refresh/full-suite integration, and external domain review outstanding. No status
-was promoted, and no GitHub push or merge was performed by this review task.
+The engineering and shortcut checks pass, but the subsequent D16 comparison
+fails. Root-wide evidence refresh/full-suite integration and external domain
+review remain outstanding, and this task is held from merging. Repairs and all
+outcomes are retained for further review; no status was promoted.

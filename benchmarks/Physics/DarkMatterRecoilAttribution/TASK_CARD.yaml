@@ -63,15 +63,25 @@ lineage:
   - gpt-6-astra
   builder_scaffolds:
   - codex-desktop
-  calibrator_model_ids: []
-  calibration_runs: []
-  calibration_evidence_status: missing
+  calibrator_model_ids:
+  - gpt-5.6-sol
+  calibration_runs:
+  - experiments/dark_matter_recoil_first_draw_review_2026-09-11.json
+  calibration_evidence_status: historical_only
   edits_triggered_by_model: Builder checks separated incorrect mechanism claims from
     continuous parameter error and incorporated calibration uncertainty into the reference
     fit. PR 72 external review exposed clustered masses and an omitted refusal branch
     in shortcut probes. The revision uses paired log-mass strata, locally supported
     but jointly inconsistent target spectra, and complete four-way probes with exact
-    constant-mass bounds. No independent frontier draw yet.
+    constant-mass bounds. On 2026-09-11, a fixed selection-blind budget-1 campaign
+    at clean source 9516d4b0 ran three gpt-5.6-sol high first proposals. Seed label
+    0 was valid on all 56 worlds and scored 0.5855425654 development versus the
+    predeclared 0.5486397428 reference; it therefore fails criterion D16. Seed 1
+    completed only 49 of 56 worlds and is not difficulty evidence. Seed 2 was
+    fully valid at 0.2802699453. No oracle, instance, reference, prompt, budget or
+    threshold was changed in response. This later documentation update changes
+    the package hash; the original plan and receipts retain their source binding.
+    The package is held for further scientific review, not admitted or certified.
   shortcut_discoverer: builder_invariant_and_low_dimensional_probes
   frozen_before_eval: false
   freeze_timestamp: null

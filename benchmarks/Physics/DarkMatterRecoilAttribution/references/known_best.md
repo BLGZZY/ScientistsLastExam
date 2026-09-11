@@ -162,9 +162,37 @@ contribution checks must be recorded separately, not relabelled as the historica
 
 ## 5. Frontier draw
 
-Not run. The package remains `candidate`; `hard` is an intended tier, not measured
-admission. These builder checks are not a fresh frontier-model draw, independent
-calibration, long-horizon evidence or proof of an open cosmology discovery.
+The 2026-09-11 fixed campaign ran three independent first proposals from
+`gpt-5.6-sol`, reasoning `high`, maximum output 16384 tokens, selection-blind
+budget 1, evaluator timeout 300 seconds. Seed labels 0/1/2 identify replicates,
+not controlled provider randomness. The clean source was `9516d4b0fc9ddcb6d2853ee7a39448fc851e549b`,
+task package `07665fb4eb5481af5296db7edbcfb67dc4a0321db01ef472048f1988f1a1784d`,
+and runtime `8159a99d54894dd304e3ac48956cd05d4389f12a041f5d5d86a2c079641c2c86`.
+The source and complete method measurements were frozen before the plan/draws.
+
+| Seed label | Development | Heldout | Valid worlds | Admission interpretation |
+|---|---:|---:|---:|---|
+| 0 | 0.5855425654 | 0.5953141420 | 56/56 | Exceeds the predeclared 0.5486397428 reference: D16 fails |
+| 1 | unavailable | unavailable | 49/56 | Evaluation reached its timeout; partial results do not establish difficulty |
+| 2 | 0.2802699453 | 0.3347217998 | 56/56 | Below reference in this single complete proposal |
+
+The incomplete draw's raw development/heldout numbers were 0.5485267106 and
+0.3092163689; they remain in the operator record and are not used as a complete
+scientific score. Its incumbent stayed at the baseline, which must not be
+reported as that model's first-proposal score. Total reported usage was 44696
+tokens; price was unavailable. There were three baseline evaluations and three
+proposal evaluations, with no adaptive retries, new candidate selection or
+post-draw task changes. All three scheduled cells, including the incomplete one,
+remain in the denominator.
+
+See `experiments/dark_matter_recoil_first_draw_review_2026-09-11.json` and
+`.research/pr72_admission_review_2026-09-11.md` for source bindings, independent
+receipt/trajectory checks and private original-file hashes. That JSON is an
+operator admission review, not a frozen benchmark cohort or certification.
+These subsequent card/reference-note changes are documentation-only; no old
+manifest or source hash was rewritten. The task remains `candidate` and is held
+from merging because the first fully valid draw reaches its reference. No
+long-horizon or independent external-domain conclusion is established.
 
 ## 6. Construction errors and corrections
 
