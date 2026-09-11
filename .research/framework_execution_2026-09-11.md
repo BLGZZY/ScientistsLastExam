@@ -37,12 +37,14 @@ optimization 关注有效目标改进；discovery 还需要分别检查机制、
 - [可信基线 v68](../experiments/secure_baseline_determinism_2026-09-11_v68.json)：85/85 有效且双跑一致，85/85 fail-closed，0 基础设施故障。
 - [成熟度 v26](../experiments/task_maturity_audit_2026-09-11_v26.json)：85 题全覆盖；当前或可迁移的模型测量为 0，历史测量未自动升级。
 - [恢复审计 v8](../experiments/evaluation_recovery_fault_audit_2026-09-11_v8.json)：8 个场景均通过；这是逻辑请求/receipt 恢复证据，不是所有物理执行仅发生一次的证明。
+- [公开 wrapper 回放 v2](../experiments/public_wrapper_baseline_replay_2026-09-11_v2.json)：85/85 实际沙箱回放通过，公开 JSON 与可信基线的公开字段一致。
+- [冻结预检 v2](../experiments/measurement_health_preflight_2026-09-11_v2.json)：70 pass、0 fail、0 missing；7 道冻结任务仅获探索性运行许可，未获得正式长时准入。
 - `a286124bf7daa77ee0de932b9698286ccde558df` 上核心 Linux 回归 **178 passed**。
 - 同一源码历史通道 **67/67 必需测试执行并通过，0 skipped**；原件审计覆盖 **10 任务、30/30 runs**，测试前后字节摘要不变。
   内容完整性本身不证明当前运行时兼容；相关迁移拒绝仍被测试保留。
 
 旧集成点 `c29f7076` 的全量测试与当前源码的追加验证分别记录，不把旧提交的全量结果标成最终 HEAD 的全量结果。
-最终公开 CI、完整测试计数与全库存 wrapper 回放将在完成后补录。
+最终公开 CI 和完整测试计数将在完成后补录。
 
 ## Pilot 与投稿审查的边界
 
