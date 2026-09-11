@@ -857,10 +857,19 @@ class GreedyRewriteTests(unittest.TestCase):
                                workdir=work, seed=18, resume=True,
                                log_fn=lambda _: None)
 
-            with self.assertRaisesRegex(ValueError, "smaller than the committed checkpoint"):
-                greedy_rewrite(spec, FakeLLM([]), budget=1, timeout_s=20,
-                               workdir=work, seed=17, resume=True,
-                               log_fn=lambda _: None)
+            # Committed receipt allocations now reject a smaller budget before checkpoint
+            # restoration. This must not evaluate again or rewrite any durable evidence.
+            ledger = work / "evaluation_ledger"
+            records = {path.relative_to(ledger): path.read_bytes()
+                       for path in ledger.rglob("*.json")}
+            with patch("sle.algorithms.evolve.evaluate_candidate") as evaluator:
+                with self.assertRaisesRegex(ValueError, "proposal_budget violates monotone allocation"):
+                    greedy_rewrite(spec, FakeLLM([]), budget=1, timeout_s=20,
+                                   workdir=work, seed=17, resume=True,
+                                   log_fn=lambda _: None)
+                evaluator.assert_not_called()
+            self.assertEqual(records, {path.relative_to(ledger): path.read_bytes()
+                                       for path in ledger.rglob("*.json")})
 
     @skip_unless_sandbox("bwrap")  # exercises the candidate sandbox; skipped only where none can exist
     def test_llm_transport_failure_does_not_consume_proposal_slot(self):
