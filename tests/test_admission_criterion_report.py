@@ -46,11 +46,15 @@ def write_run(root: Path, cohort: str, dirname: str, task: str, mode: str, seed:
             "llm_condition": {"model": model},
             "llm_condition_sha256": condition or ("condition:" + model),
             "runtime_source_sha256": runtime,
+            "algorithm": "greedy_rewrite",
             **({"task_package_sha256": contract} if contract else {}),
         }), encoding="utf-8")
     lines = [json.dumps({"step": 0, "valid": True, "score": 0.0})]
+    incumbent = 0.0
     for index, score in enumerate(scores, start=1):
-        lines.append(json.dumps({"step": index, "valid": True, "score": score}))
+        lines.append(json.dumps({"step": index, "valid": True, "score": score,
+                                 "accepted": score > incumbent}))
+        incumbent = max(incumbent, score)
     (workdir / "trajectory.jsonl").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
@@ -94,7 +98,7 @@ class RunIdentityTests(unittest.TestCase):
             found = MODULE.collect(root)
             self.assertEqual(list(found),
                              [("Astro/LowThrust", "crossover", "gpt-5.5",
-                               "condition:gpt-5.5", "unknown", "runtime:default")])
+                               "condition:gpt-5.5", "unknown", "runtime:default", "greedy_rewrite")])
 
     def test_a_run_without_a_manifest_is_skipped_rather_than_guessed(self):
         with TemporaryDirectory() as tmp:
@@ -321,7 +325,7 @@ class ModelSeparationTests(unittest.TestCase):
                 json.dumps({"step": 1, "valid": True, "score": 0.4}) + "\n", encoding="utf-8")
             self.assertEqual(list(MODULE.collect(root)),
                              [("T/X", "old", "unrecorded", "unrecorded", "unknown",
-                               "unrecorded")])
+                               "unrecorded", "unrecorded")])
 
 
 class VerdictTests(unittest.TestCase):

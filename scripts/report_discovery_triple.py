@@ -20,7 +20,7 @@ sys.path.insert(0, str(ROOT))
 
 from sle.registry import list_tasks  # noqa: E402
 from sle.task_versions import version_class  # noqa: E402
-from scripts.reporting_trajectory import read_incumbents  # noqa: E402
+from scripts.reporting_trajectory import read_incumbents, read_events, trajectory_selection_evidence  # noqa: E402
 
 
 def known_conditions() -> dict[str, str]:
@@ -164,7 +164,12 @@ def main(argv: list[str] | None = None) -> int:
     wanted, contracts = discovery_task_names(), current_contracts()
     rows, represented = [], set()
     for manifest in sorted(Path(args.runs).rglob("run_manifest.json")):
-        document = json.loads(manifest.read_text(encoding="utf-8"))
+        try:
+            document = json.loads(manifest.read_text(encoding="utf-8"))
+        except (ValueError, OSError) as exc:
+            rows.append({"task": "unknown", "run_directory": str(manifest.parent.resolve()),
+                         "status": "invalid_manifest", "error": "%s: %s" % (manifest, exc)})
+            continue
         identity = run_identity(document)
         if identity is None or identity[0].split("/")[-1] not in wanted:
             continue
@@ -175,9 +180,13 @@ def main(argv: list[str] | None = None) -> int:
                "task_package_sha256": document.get("task_package_sha256"),
                "feedback_mode": document.get("feedback_mode"), "seed": document.get("seed"),
                "budget": document.get("budget"), "algorithm": document.get("algorithm"),
-               "run_directory": str(manifest.parent), "split": args.split}
+               "run_directory": str(manifest.parent.resolve()), "split": args.split,
+               "endpoint": "incumbent"}
         try:
             metrics = best_metrics(manifest.parent)
+            if metrics is not None:
+                row["selection_evidence"] = trajectory_selection_evidence(
+                    read_events(manifest.parent / "trajectory.jsonl"))
             contract = contracts.get((task, document.get("task_package_sha256")))
             axes = extract(metrics, args.split, contract) if metrics is not None else None
         except ValueError as exc:
@@ -199,7 +208,7 @@ def main(argv: list[str] | None = None) -> int:
                 )
         rows.append(row)
     rows.extend({"task": name, "status": "missing_run"} for name in sorted(wanted - represented))
-    report = {"schema_version": 2, "split": args.split,
+    report = {"schema_version": 3, "split": args.split,
               "note": "One row per run; selected incumbent; axes never averaged. Undeclared semantics are unresolved.",
               "task_count": len({r["task"].split("/")[-1] for r in rows}),
               "run_count": sum("run_directory" in r for r in rows), "rows": rows}

@@ -115,6 +115,9 @@ def _run_attachment(entry: dict, axes: dict | None, cohort=None) -> dict:
         "seed": entry.get("seed"),
         "feedback_mode": entry.get("feedback_mode"),
         "axes": axes,
+        **{field: entry[field] for field in
+           ("algorithm", "budget", "run_directory", "split", "selection_evidence", "endpoint")
+           if field in entry},
     }
     if cohort is not None:
         attached["cohort"] = cohort
@@ -149,7 +152,7 @@ def _axes_view(attached: list[dict]) -> dict | None:
 
 def index_triples(document: dict) -> tuple[dict[tuple[str, ...], dict], dict[tuple[str, ...], list[dict]]]:
     """Index ok triple rows by full run identity and by coarse admission identity."""
-    by_run: dict[tuple[str, ...], dict] = {}
+    grouped: dict[tuple[str, ...], list[dict]] = {}
     by_coarse: dict[tuple[str, ...], list[dict]] = {}
     for entry in document.get("rows") or []:
         if entry.get("status") != "ok":
@@ -158,11 +161,13 @@ def index_triples(document: dict) -> tuple[dict[tuple[str, ...], dict], dict[tup
             continue
         axes = entry.get("axes")
         run_key = _run_key(entry)
-        if run_key not in by_run:
-            by_run[run_key] = axes
+        grouped.setdefault(run_key, []).append(axes)
         by_coarse.setdefault(_coarse_key(entry), []).append(
             _run_attachment(entry, axes)
         )
+    # Seed and arm are not a unique run across cohorts, algorithms, or splits.
+    # Historical callers may use this coarse key only when it resolves once.
+    by_run = {key: entries[0] for key, entries in grouped.items() if len(entries) == 1}
     return by_run, by_coarse
 
 
@@ -182,23 +187,32 @@ def lookup_triple_axes(
     listed = row.get("runs")
     if isinstance(listed, list) and listed:
         attached = []
+        matched = 0
+        ambiguous = False
         for spec in listed:
             if not isinstance(spec, dict):
                 continue
-            exact = coarse + (
-                _identity_value(spec, "seed"),
-                _identity_value(spec, "feedback_mode"),
-            )
-            if exact not in by_run:
-                continue
-            attached.append(_run_attachment(spec, by_run[exact], spec.get("cohort")))
-        if len(attached) == len([
-            spec for spec in listed if isinstance(spec, dict)
-        ]) and attached:
+            candidates = [item for item in by_coarse.get(coarse, [])
+                          if all(_identity_value(item, field) == _identity_value(spec, field)
+                                 for field in ("seed", "feedback_mode"))]
+            for field in ("run_directory", "algorithm", "budget", "split"):
+                expected = spec.get(field, row.get(field))
+                if expected is not None and expected != "unrecorded":
+                    candidates = [item for item in candidates if item.get(field) == expected]
+            if len(candidates) == 1:
+                matched += 1
+                item = _run_attachment(candidates[0], candidates[0]["axes"], spec.get("cohort"))
+                item["axes_match_status"] = "matched"
+            else:
+                ambiguous = ambiguous or len(candidates) > 1
+                item = _run_attachment(spec, None, spec.get("cohort"))
+                item["axes_match_status"] = "ambiguous" if candidates else "missing"
+            attached.append(item)
+        if matched == len(attached) and attached:
             return _axes_view(attached), attached, "pooled_runs"
-        if attached:
+        if matched:
             return _axes_view(attached), attached, "pooled_runs_partial"
-        return None, [], "no_match"
+        return None, attached, "ambiguous_runs" if ambiguous else "no_match"
     exact = _run_key(row)
     if exact in by_run:
         attached = [_run_attachment(row, by_run[exact])]
@@ -254,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
     join_hist = dict(Counter(row.get("axes_join") for row in rows))
     discovery_join_hist = dict(Counter(row.get("axes_join") for row in discovery))
     report = {
-        "schema_version": 3,
+        "schema_version": 4,
         "source_admission": str(Path(args.admission)),
         "note": (
             "Discovery rows never inherit measures_iteration from combined_score. "

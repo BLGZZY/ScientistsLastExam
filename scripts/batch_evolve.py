@@ -716,6 +716,8 @@ def aggregate_runs(
         for name, getter in fields.items()
     } if successful else {}
     return {
+        "schema_version": 2,
+        "denominator_scope": "fixed_plan" if config is not None else "observed_runs_only_legacy",
         "attempt_count": len(runs),
         "superseded_attempts": len(runs) - len(current),
         "failed_attempts": failed_attempts,
