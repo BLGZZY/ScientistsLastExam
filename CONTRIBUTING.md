@@ -66,6 +66,7 @@ benchmarks/
         ├── TASK_CARD.yaml            # [认证必需] 证据与评审
         ├── solution.py               # [必需] 弱但合法的基线程序
         ├── frontier_eval/            # [必需] 黑盒评测契约
+        │   ├── run_eval.py          # 标准库启动器 → sle.frontier_eval_entrypoint CLI
         │   ├── metadata.yaml         # 任务元数据(见下)
         │   ├── initial_program.txt   # 指向基线文件(例如 "solution.py")
         │   ├── candidate_destination.txt  # 智能体编辑的文件
@@ -151,6 +152,7 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 
 **基线也是难度阶梯的锚。** 若任务带 `DIFFICULTY` 层级,每一级都要保证基线仍然**合法** ——
 一个连基线都无效的层级什么都测不了,因为分数以"基线 = 0"归一化,那里没有基线。
+历史任务有例外,新投稿仍须归一化到 0。
 只用候选去测会把"太难"与"坏掉"混为一谈。
 
 ---
@@ -194,7 +196,7 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 12. **捷径探针**:对提交做低维参数化的网格搜索(数百到数千次评测),报告最好分,写进卡片 `known_shortcuts`。超过参考解就必须加固。这一条是被一个两参数网格搜索能拿 0.94 的投稿逼出来的。
 13. 消融阶梯:每拿掉参考解的一项能力都要掉分,掉幅写进 `Task.md`。不掉分的能力说明那部分设计没起作用。
 14. 参考解真值盲、可独立运行、**能力完整但故意不打满**,留的空间要说清是哪一项。
-15. 基线自信地错,分数为零。
+15. 基线自信地错,分数为零。历史任务有例外,新投稿仍须归一化到 0。
 
 **D 证据与准入**
 16. 前沿模型 draw(`batch_evolve.py --run-role calibration`,干净树上跑)。准入线:首提案不得够到参考解。
@@ -208,9 +210,15 @@ normalized = (raw_mechanism - always_abstain) / (1.0 - always_abstain)
 22. `tests/test_<task>.py` 钉住关键性质。
 
 **F 集成**
-23. 黑盒 `frontier_eval/run_eval.py` 的 entrypoint 与 TASK_ID 正确,且真的跑得通。
+23. 黑盒 `frontier_eval/run_eval.py` 只用标准库启动 `sle.frontier_eval_entrypoint` CLI，保留显式 `TASK_ID` 与 `EVAL_TIMEOUT_S`；后者与卡片 `evaluation_budget` 一致；metadata 的 `eval_time_seconds` 是预计评测成本，生成器缺省预算为 `max(300, 3 * eval_time_seconds)`，可用 `eval_timeout_s` 显式覆盖。禁止同进程 import 候选。验证非 300 秒预算能传到 `sle eval`，导入/基础设施故障返回非零且不生成分数；搜索可见指标走白名单，全量 sidecar 必须放在提案智能体不可读的目录。
 24. Linux 主机沙箱内实跑,分数与本地一致;`python scripts/check_task_contribution.py --task <id>` 通过。
 25. 全量测试绿;若改了任务包内文件,还要刷新全局证据。
+
+共享入口默认只写公开指标,丢弃全量诊断。维护者如需保留诊断,显式传入
+`--full-metrics-dir /private/evaluation/task-id`;目录须为 0700,并且不在候选文件或公开指标的父目录内
+(包括符号链接的目标)。外部 harness 还须保证它不被挂进智能体工作区。可信评估故障返回 2、删除旧分数,
+只在显式私有目录保留诊断;无效候选仍返回可计分结果。OpenEvolve/Shinka/AB-MCTS 若发生可信故障,该运行不可发布或
+从故障后状态继续计为同一实验;使用新运行目录。greedy 的已提交提案则按其 ledger 恢复契约复用。
 
 ---
 

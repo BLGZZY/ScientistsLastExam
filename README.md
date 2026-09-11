@@ -40,6 +40,8 @@ Scientists' Last Exam
 
 ## 两类任务
 
+<!-- task-inventory:start -->
+
 当前 85 个任务包,横跨 7 个学科,5 个 certified、80 个 candidate。
 这一段的每个数字都由 `tests/test_readme_inventory_counts.py` 对着注册表核,改不动就是改错了。
 
@@ -54,15 +56,17 @@ discovery(43 个):从受预算约束的观测里恢复一个机制,或判断根�
 机制在候选可表达的模型族内(该找出来)、机制在族外、根本没有机制(后两种该拒答)。
 候选看不到自己面对的是哪一类。
 
+<!-- task-inventory:end -->
+
 发现类分开报告三个轴,永不平均:
 
 | 轴 | 问的是 |
 |---|---|
 | 机制恢复 | 找对了多少 |
-| 假发现率 | 在不该宣称的世界上宣称了机制 |
+| 假发现 | 分别标注 FDR(假宣称/全部宣称)或 FPR(假宣称/不支持世界),不混用分母 |
 | 校准拒答 | 在该拒的世界上拒了 |
 
-不能合成一个数:全面弃权的候选在后两个轴上都是满分,只有机制恢复是 0。
+这些轴不合成一个数。全面弃权可能获得高拒答率;零宣称时 FDR 分母为零,报告为不可用。
 另有一列"是否尝试过发现",三元组说的是做得多好,它说的是到底有没有试。
 
 ## 任务形式
@@ -80,7 +84,7 @@ discovery(43 个):从受预算约束的观测里恢复一个机制,或判断根�
     └── known_best.md             # 锚点的来源与重推导,无上限任务必需
 ```
 
-分数经过归一化:0 是出厂基线,1 是参考见证解,uncapped 任务不设上限。
+分数按各任务的归一化契约解释;基线不保证恰为 0,uncapped 任务不设上限。
 发现类的归一化让全面弃权恰好得零。evaluator 至少返回有限数值的 `combined_score` 与 `valid`。
 `python -m sle list --all` 是权威的实时清单。
 
@@ -121,11 +125,25 @@ python scripts/batch_evolve.py --tasks <Domain/Task> --all \
   --feedback-modes normal,selection_blind --seeds 0,1,2 --budget 12 \
   --llm-config sle/conf/llm/local.claude.yaml --workdir runs/<name> --output experiments/<name>.json
 python scripts/report_admission_criterion.py --runs runs/<name> --output /tmp/admission.json
+python scripts/report_discovery_triple.py --runs runs/<name> --split heldout --output /tmp/discovery.json
+python scripts/report_discipline_scores.py --input experiments/<name>.json \
+  --proposal-budget 12 --output /tmp/disciplines.json
 ```
 
 可用算法:`greedy_rewrite`(内置)、`openevolve`、`abmcts`、`shinkaevolve`。指名的后端若不可用会
 显式失败,绝不静默回退。实验报告按哈希绑定 Git 修订、命令、源码树状态与信任判定;
 无法绑定到产出它的运行时的证据会被拒绝,而不是被悄悄复用。
+
+报告使用实际被接受的 incumbent,包括保留的基线。发现轴每个 run 单列,默认只读取 held-out;
+缺轴不从 development 补齐。`TASK_CARD.yaml` 的 `metric_contract` 声明指标、估计量、分母和方向;
+报告只对 package hash 完全匹配的记录应用当前契约,旧记录保留原值并标记口径未确认。
+
+批处理先保存完整计划及任务分类。学科报告在同一批次、算法、固定 proposal 前缀内配对
+`normal`/`selection_blind`,先平均 seed 再平均任务,并分开 discipline、任务形式和 score mode。
+它输出终点、相对基线增益、包含 baseline 的预算 AUC、Δ、完成率和可用的实际成本。
+缺失、失败或不兼容的计划运行保留分母,完整队列估计为不可用;不会给基础设施失败补零分。
+旧批次没有冻结分类时不生成正式学科汇总。成本仅覆盖最新运行的指定前缀,不代表重试总费用。
+这些描述性报告不会把旧校准、smoke 或未通过科学准入的结果升级为有效模型证据。
 
 详细的测量结果、判决与开放项见 [`.research/`](.research/)。
 

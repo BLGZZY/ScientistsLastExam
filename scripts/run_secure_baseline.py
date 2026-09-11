@@ -27,6 +27,15 @@ def _canonical(metrics: dict[str, Any]) -> str:
     return json.dumps(stable, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
+def _infrastructure_failure(metrics: dict[str, Any]) -> bool:
+    # Explicit fault classification wins over legacy score/error heuristics.
+    # Infrastructure failures normally carry an error message too.
+    return bool(metrics.get("infrastructure_failure")) or bool(
+        float(metrics.get("combined_score", INVALID_SCORE)) == INVALID_SCORE
+        and not metrics.get("error_message")
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, required=True)
@@ -59,8 +68,7 @@ def main() -> int:
             })
         signatures = [_canonical(run["metrics"]) for run in runs]
         infrastructure_failure = any(
-            float(run["metrics"].get("combined_score", INVALID_SCORE)) == INVALID_SCORE
-            and not run["metrics"].get("error_message")
+            _infrastructure_failure(run["metrics"])
             for run in runs
         )
         entry = {
