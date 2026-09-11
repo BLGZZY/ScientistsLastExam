@@ -51,18 +51,25 @@ def test_validation_feedback_does_not_reveal_heldout_failures(monkeypatch, faili
         assert result['valid'] == result['feasibility_rate'] == 0
 
 
-def test_wrapper_filters_metrics_at_the_file_boundary(monkeypatch, tmp_path, capsys):
+@pytest.mark.parametrize('returncode', [0, 2])
+def test_wrapper_forwards_timeout_and_preserves_failure(monkeypatch, tmp_path, returncode):
     wrapper = load(ROOT / 'benchmarks/Biology/NeuralReportAttribution/frontier_eval/run_eval.py')
-    full = MODULE.evaluate(lambda *_: {'abstain': True})
-    full['future_private_diagnostic'] = {'truth': 'must stay sealed'}
-    monkeypatch.setattr(wrapper.subprocess, 'run', lambda *a, **kw:
-                        SimpleNamespace(returncode=0, stdout=json.dumps(full)))
     output = tmp_path / 'metrics.json'
-    monkeypatch.setattr(sys, 'argv', ['run_eval.py', '--candidate', str(tmp_path / 'candidate.py'),
-                                     '--metrics-out', str(output)])
-    assert wrapper.main() == 0
-    assert json.loads(output.read_text()) == dict(search_visible_metrics(full), raw_score=0.)
-    assert json.loads(capsys.readouterr().out) == {'combined_score': 0., 'valid': 1.}
+    output.write_text('stale')
+    seen = []
+    def launch(command, **kwargs):
+        seen.append((command, kwargs))
+        if returncode == 0:
+            output.write_text('{"combined_score": 0, "valid": 1}')
+        return SimpleNamespace(returncode=returncode, stdout='')
+    monkeypatch.setattr(wrapper.subprocess, 'run', launch)
+    assert wrapper.main(['--candidate', str(tmp_path / 'candidate.py'),
+                         '--metrics-out', str(output), '--timeout', '47']) == returncode
+    command, kwargs = seen[0]
+    assert command[1].endswith('sle/frontier_eval_entrypoint.py')
+    assert command[command.index('--timeout')+1] == '47.0'
+    assert command[command.index('--task')+1] == 'Neuroscience/NeuralReportAttribution'
+    assert output.exists() == (returncode == 0)
 
 
 def test_algebraic_probes_respect_acquisition_costs():

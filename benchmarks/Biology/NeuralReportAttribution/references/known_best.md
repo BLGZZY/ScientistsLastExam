@@ -1,3 +1,9 @@
+> 2026-09-11 revision: the tables below are historical measurements of the retained
+> `reference_legacy.py`, unless explicitly labelled as the revised reference.
+> The new reference and all replay methods are fixed in `revision_replay.json`.
+> Its scores and ablation outcomes remain unmeasured until source-bound Linux replay.
+> Neither this implementation change nor the old eight-run review establishes D16.
+
 # NeuralReportAttribution: witness and construction record
 
 ## 1. Reference and sources

@@ -13,7 +13,7 @@ oracle:
 normalization:
   baseline: overconfident legal baseline scores zero; blanket none and blanket abstention
     also score exactly zero
-  reference: runnable public-input-only likelihood fit, calibration uncertainty included,
+  reference: exact-derivative joint Gaussian fit with algebraic and midpoint starts, calibration uncertainty included,
     bounded experiment cost; allocation difficulty is not established
   score: mean mechanism utility minus the 0.2 blanket refusal utility, divided by
     0.8; false discovery rate, refusal, coverage, confidence and heldout diagnostics
@@ -74,8 +74,10 @@ lineage:
   edits_triggered_by_model: Builder checks separated incorrect mechanism claims from
     continuous parameter error and incorporated calibration uncertainty into the reference
     fit. PR 73 review triggered removal of the noise fingerprint, development-only
-    public validity, wrapper filtering and stronger shortcut/budget evidence. No independent
-    frontier draw yet; incomplete_legacy explicitly records incomplete calibration history.
+    public validity, wrapper filtering and stronger shortcut/budget evidence. The 2026-09-11 revision adds algebraic initialization, exact derivatives,
+    active-parameter fits, a dimension-aware residual check, fixed executable
+    shortcuts and a predeclared replay. Old results describe reference_legacy.py.
+    No independent frontier draw yet; incomplete_legacy explicitly records incomplete calibration history.
   reused_designs:
   - StructuralEngineering/ModalDamageAttribution discovery axes and refusal-offset normalization
   shortcut_discoverer: builder_invariant_and_low_dimensional_probes
@@ -97,7 +99,29 @@ long_horizon:
   evidence: []
 evaluation_budget:
   cpu_only: true
-  timeout_seconds: 300
+  eval_timeout_s: 300
   expected_reference_seconds: 120
   experiment_units_per_world: 14
   allocation_difficulty: not_established
+
+# A proposed 20% engineering guard is deliberately stricter than the observed
+# historical ~12% gap. It may fail; do not weaken it after seeing replay results.
+# Scientific acceptance still requires maintainer review and independent D16.
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_fit.py
+    expected_score: null
+  probes:
+    - id: calibrated_default
+      candidate: verification/algebraic_probe.py
+      expected_score: null
+    - id: published_grid_winner
+      candidate: verification/shortcut_grid_winner.py
+      expected_score: null
+    - id: null_or_refusal
+      candidate: verification/shortcut_null_refusal.py
+      expected_score: null
+  relative_margin: 0.2
+  score_tolerance: 0.000001

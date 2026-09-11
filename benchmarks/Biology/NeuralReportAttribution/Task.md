@@ -134,9 +134,28 @@ mechanisms for experience. Source-visible seeds allow prior memorization: formal
 contamination resistance requires future server-held instances. Expert difficulty,
 long-horizon improvement and independent neural-model validity are not yet certified.
 
+## Reference method and validation status
+
+The revised review-only reference uses calibrated inverse responses to initialize
+an exact-derivative joint Gaussian fit of circuit and instrument parameters. It
+also fits a fixed midpoint start, removes inactive parameters from each model,
+and uses BIC and a fixed 0.1% chi-square residual tail check with the actual
+observation and active-parameter counts. Calibration is noisy data, not exact
+instrument truth. These are approximate finite-sample model checks, not a
+calibrated probability of a scientific discovery.
+
+The oracle, worlds, score and 14-unit/300-second limits are unchanged. The old
+reference remains executable as `verification/reference_legacy.py`. Fixed
+methods, ability removals and budget diagnostics are declared before Linux
+measurement in `references/revision_replay.json`; every result, including an
+ablation that does not lose, must be retained. The new reference remains a point
+estimator with fixed acquisition; adaptive design and calibrated decision
+uncertainty are not established. Independent model calibration remains pending.
+
 ## Measured construction checks
 
-Current Linux measurements with shared noise SD 0.012:
+Historical Linux measurements of `reference_legacy.py` (before the 2026-09-11
+reference revision), with shared noise SD 0.012:
 
 | Strategy | Development | Heldout | Units |
 |---|---:|---:|---:|
