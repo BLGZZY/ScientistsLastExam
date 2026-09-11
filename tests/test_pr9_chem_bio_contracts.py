@@ -79,11 +79,12 @@ class BlackBoxRunnerTests(unittest.TestCase):
                     self.assertEqual(runner.main(), 0, task_id)
 
                 command = run.call_args.args[0]
-                self.assertEqual(command[1:4], ["-m", "sle", "eval"], task_id)
+                self.assertEqual(Path(command[1]), ROOT / "sle/frontier_eval_entrypoint.py",
+                                 task_id)
                 self.assertEqual(command[command.index("--task") + 1], task_id)
+                self.assertEqual(command[command.index("--metrics-out") + 1],
+                                 str(metrics_path))
                 self.assertEqual(json.loads(output.getvalue()), expected)
-                self.assertEqual(json.loads(metrics_path.read_text(encoding="utf-8")),
-                                 {**expected, "raw_score": 0.25})
 
 
 class RoundFourPackageTests(unittest.TestCase):
@@ -148,6 +149,16 @@ class ChronoamperometryPins(unittest.TestCase):
         self.assertEqual(no_shape_gate["development_correct_refusal_rate"], 0.5)
         self.assertEqual(no_drift_gate["development_correct_refusal_rate"], 0.5)
 
+    def test_one_step_probe_stays_below_reference(self):
+        task = ROOT / "benchmarks/Chemistry/ChronoamperometryLawID"
+        ev = _load(task / "verification/evaluator.py", "r4_chrono_probe_eval")
+        ref = _load(task / "verification/reference_solver.py", "r4_chrono_probe_ref")
+        probe = _load(task / "verification/probe_one_step.py", "r4_chrono_probe")
+        reference = ev.evaluate(ref.identify_current_law)
+        shortcut = ev.evaluate(probe.identify_current_law)
+        self.assertEqual(shortcut["valid"], 1.0)
+        self.assertLess(shortcut["combined_score"], 0.9 * reference["combined_score"])
+
     def test_padding_slots_are_free_but_active_slots_bounded(self):
         ev = _load(ROOT / "benchmarks/Chemistry/ChronoamperometryLawID"
                    "/verification/evaluator.py", "r4_chrono")
@@ -184,6 +195,16 @@ class HodgkinHuxleyPins(unittest.TestCase):
         self.assertEqual(ev.BUDGET_UNITS, len(ref.PROTOCOLS))
         self.assertTrue(all(row["budget_used"] == ev.BUDGET_UNITS
                             for row in result["per_world"]))
+
+    def test_two_protocol_probe_stays_below_reference(self):
+        task = ROOT / "benchmarks/Biology/HodgkinHuxleyCurrentID"
+        ev = _load(task / "verification/evaluator.py", "r4_hh_probe_eval")
+        ref = _load(task / "verification/reference_solver.py", "r4_hh_probe_ref")
+        probe = _load(task / "verification/probe_two_protocols.py", "r4_hh_probe")
+        reference = ev.evaluate(ref.recover_channel_parameters)
+        shortcut = ev.evaluate(probe.recover_channel_parameters)
+        self.assertEqual(shortcut["valid"], 1.0)
+        self.assertLess(shortcut["combined_score"], 0.9 * reference["combined_score"])
 
     def test_a_type_current_has_a_transient_from_holding_inactivation(self):
         ev = _load(ROOT / "benchmarks/Biology/HodgkinHuxleyCurrentID/verification/evaluator.py",

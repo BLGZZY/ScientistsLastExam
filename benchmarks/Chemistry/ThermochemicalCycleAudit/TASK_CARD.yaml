@@ -22,7 +22,7 @@ difficulty_ladder:
     3: 55 percent larger uncertainties and strongest drifts
 normalization:
   baseline: trusts every reported value and calls the batch consistent
-  reference: weighted network adjustment with dominant-outlier drop-and-refit, coherent
+  reference: weighted network adjustment with exhaustive single-row drop-and-refit, coherent
     same-direction class testing with one confirming cross-check, rank-deficiency triage
   score: correction gain, verdict correctness and flagged-set diagnosis blended per
     world, normalized above both all-consistent and all-underdetermined null strategies;
@@ -41,10 +41,12 @@ invariants:
 - malformed or overspent laboratory calls invalidate the world even when caught
 known_shortcuts: Both all-consistent and all-underdetermined strategies now score zero,
   including with improved corrections. On the current head the reference is
-  0.535168/0.233600; removing dominant-outlier triage gives 0.333474/0.233600, removing
-  rank-deficient-branch resolution gives 0.509228/0.222221, and removing drift diagnosis
-  gives 0.314229/0.250911. The review's 264-setting three-parameter rule reaches
-  0.448770/0.250966. Clean Linux calibration remains pending.
+  0.535168/0.565973. Reverting exhaustive drop-and-refit to largest-residual-only leaves
+  development unchanged but drops held-out to 0.233600; removing rank-deficient-branch
+  resolution gives 0.509228/0.554594, and removing drift diagnosis gives
+  0.314229/0.422570. The executable no-query three-gate probe reaches
+  0.509228/0.382935, leaving only a 4.85 percent development margin. Clean Linux
+  calibration remains pending.
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -123,3 +125,20 @@ frontier_eng_overlap_review:
     for yield or waste; no measurement-consistency verdict is requested.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.5351684326746017
+  probes:
+  - id: no_query_three_gate_rules
+    candidate: verification/probe_three_gate_rules.py
+    expected_score: 0.5092278544140364
+  relative_margin: 0.04
+  score_tolerance: 1.0e-06
+evaluation_budget:
+  EVAL_TIMEOUT_S: 300
+  scope: Eight development and five held-out worlds; replicates cost one and external
+    cross-checks cost three from a six-unit measurement budget.
+  override: Task wrapper --timeout or sle eval --timeout.

@@ -124,3 +124,20 @@ frontier_eng_overlap_review:
     force-field energies. Molecular context alone does not share the inverse graph problem.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.5644670617816399
+  probes:
+  - id: single_parent_mass_gap
+    candidate: verification/probe_single_parent_mass_gap.py
+    expected_score: 0.3897472390427479
+  relative_margin: 0.1
+  score_tolerance: 1.0e-06
+evaluation_budget:
+  EVAL_TIMEOUT_S: 300
+  scope: Seven development and five held-out worlds; each reference run uses four scans
+    and one two-unit zoom from an eight-unit measurement budget.
+  override: Task wrapper --timeout or sle eval --timeout.

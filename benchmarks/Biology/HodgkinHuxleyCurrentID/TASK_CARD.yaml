@@ -114,3 +114,20 @@ frontier_eng_overlap_review:
     not membrane conductance inference.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.6403640167912196
+  probes:
+  - id: two_protocol_fit
+    candidate: verification/probe_two_protocols.py
+    expected_score: 0.0661436705874325
+  relative_margin: 0.1
+  score_tolerance: 1.0e-06
+evaluation_budget:
+  EVAL_TIMEOUT_S: 300
+  scope: Seven development and five held-out worlds; four charged clamp protocols per
+    world. The reference takes about five seconds in the maintained Linux environment.
+  override: Task wrapper --timeout or sle eval --timeout.

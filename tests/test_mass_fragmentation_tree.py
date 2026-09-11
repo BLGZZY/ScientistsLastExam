@@ -31,6 +31,8 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
     def setUpClass(cls):
         cls.ev = _load(TASK / "verification" / "evaluator.py", "mft_evaluator")
         cls.ref = _load(TASK / "verification" / "reference_solver.py", "mft_reference")
+        cls.probe = _load(TASK / "verification" / "probe_single_parent_mass_gap.py",
+                          "mft_probe")
         cls.sol = _load(TASK / "solution.py", "mft_baseline")
 
     def _truth_candidate(self, world):
@@ -43,44 +45,6 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
             return {"nodes": nodes, "edges": edges, "abstain": False,
                     "confidence": 0.9}
         return candidate
-
-    @staticmethod
-    def _single_parent_mass_gap_probe(problem, acquire, zoom, budget):
-        del zoom, budget
-        tolerance = float(problem["mass_tolerance_da"])
-        precursor = float(problem["precursor_mz"])
-        spectra = [acquire(energy) for energy in (18.0, 35.0, 52.0)]
-        raw = sorted(float(peak["mz"])
-                     for spectrum in spectra for peak in spectrum["peaks"])
-        groups = []
-        for mz in raw:
-            if groups and mz - groups[-1][-1] <= 2.0 * tolerance:
-                groups[-1].append(mz)
-            else:
-                groups.append([mz])
-        nodes = [sum(group) / len(group) for group in groups]
-        root_seen = any(abs(node - precursor) <= 2.0 * tolerance for node in nodes)
-        nearby_root = any(2.0 * tolerance < abs(node - precursor) <= 1.5
-                          for node in nodes)
-        if not root_seen or nearby_root:
-            return {"nodes": [], "edges": [], "abstain": True, "confidence": 0.7}
-        losses = {name: float(spec["neutral_mass"])
-                  for name, spec in problem["loss_library"].items()}
-        edges = []
-        for child in sorted(nodes, reverse=True):
-            options = []
-            for parent in nodes:
-                if parent <= child:
-                    continue
-                for name, loss in losses.items():
-                    error = abs((parent - child) - loss)
-                    if error <= 3.0 * tolerance:
-                        options.append((error, parent, name))
-            if options:
-                _, parent, name = min(options)
-                edges.append([parent, child, name])
-        return {"nodes": nodes, "edges": edges, "abstain": False,
-                "confidence": 0.6}
 
     def test_truth_tree_scores_one_on_supported_worlds(self):
         for spec in self.ev._BASE_DEVELOPMENT_SPECS:
@@ -170,7 +134,7 @@ class MassFragmentationTreePackageTests(unittest.TestCase):
         self.assertGreaterEqual(compatible, len(world["decoys"]) // 2)
 
     def test_single_parent_mass_gap_shortcut_stays_below_reference(self):
-        shortcut = self.ev.evaluate(self._single_parent_mass_gap_probe)
+        shortcut = self.ev.evaluate(self.probe.recover_fragmentation_tree)
         reference = self.ev.evaluate(self.ref.recover_fragmentation_tree)
         self.assertEqual(shortcut["valid"], 1.0)
         self.assertLess(shortcut["combined_score"], reference["combined_score"])

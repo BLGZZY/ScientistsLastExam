@@ -4,7 +4,7 @@
 
 `verification/reference_solver.py` is standalone and uses only public measurements and
 the charged laboratory. Weighted least squares over the eight species reconciles Hess
-closure; a dominant single outlier is tested by drop-and-refit before any drift test,
+closure; every non-ambiguous row is tested by drop-and-refit before any drift test,
 because least squares otherwise smears one giant slip across the culprit's own
 instrument class and fakes a coherent calibration drift; a class with two or more
 members shifted in the same direction (individually large, or all same-signed with a
@@ -24,8 +24,8 @@ in same-instrument replicates. A noise-free algebraic test exhibits two differen
 fault attributions producing exactly the same observations without a cross-check.
 
 Both all-consistent and all-underdetermined strategies now normalize to zero, even
-with better corrections. Oracle-direct debugging after correction gives baseline 0,
-reference development 0.535168 and heldout 0.233600. Both development rank-deficient
+with better corrections. Oracle-direct debugging on the hardened head gives baseline 0,
+reference development 0.535168 and heldout 0.565973. Both development rank-deficient
 worlds are resolved by cross-checks, so `resolved_world_count = 2` and the eligible
 refusal denominator is zero; `development_correct_refusal_rate` is therefore `null`.
 Coverage is divided by the six worlds in which an attribution is warranted after the
@@ -44,10 +44,10 @@ Local oracle-direct ablations of the current reference, measured 2026-09-12:
 
 | variant | development | robustness | FDR | refusal |
 |---|---:|---:|---:|---:|
-| full reference | 0.535168 | 0.233600 | 0.00 | null¹ |
-| no dominant-outlier triage | 0.333474 | 0.233600 | 0.00 | null¹ |
-| no rank-deficient-branch resolution | 0.509228 | 0.222221 | 0.00 | 1.00 |
-| no drift diagnosis | 0.314229 | 0.250911 | 0.00 | null¹ |
+| full reference | 0.535168 | 0.565973 | 0.00 | null¹ |
+| largest-residual-only drop/refit | 0.535168 | 0.233600 | 0.00 | null¹ |
+| no rank-deficient-branch resolution | 0.509228 | 0.554594 | 0.00 | 1.00 |
+| no drift diagnosis | 0.314229 | 0.422570 | 0.00 | null¹ |
 
 ¹ The reference resolves every eligible development refusal world; a rate with a zero
 denominator is intentionally null. Every capability changes a target axis. These are
@@ -60,8 +60,12 @@ local debugging numbers, not frozen benchmark evidence.
 - Naive single-outlier flagging on the repaired network: **0.015436** (reviewer replay).
 - A 264-setting three-parameter rule (chi-square gate × dominant-residual gate ×
   rank-deficient-branch policy): **0.448770/0.250966** development/robustness. This is
-  below the reference on development but exceeds its robustness, so it remains an
-  explicit admission risk rather than being described as safely dominated.
+  retained as reviewer provenance.
+- The stronger executable `verification/probe_three_gate_rules.py` derives the
+  rank-deficient pair from antiparallel stoichiometric rows and makes no laboratory
+  calls: **0.509228/0.382935**. It is below the repaired reference on both splits, but
+  only 4.85% below on development, so the narrow margin remains an explicit admission
+  risk rather than being described as safely dominated.
 
 The task remains candidate until the development/robustness tradeoff and stronger robust
 adjustment are independently calibrated.
@@ -76,8 +80,9 @@ Server-held networks and independent thermochemistry review remain required.
 
 Four construction errors were caught locally on 2026-09-05 before any model saw the
 task. (i) Least squares smears a single giant slip across the culprit's instrument
-class, so a coherent-sign drift test fired on transcription worlds — the dominant
-single outlier is now drop-and-refit tested first. (ii) Drop-and-refit corrections
+class, so a coherent-sign drift test fired on transcription worlds — every
+non-ambiguous row is now drop-and-refit tested before drift classification; choosing
+only the largest residual fails both held-out single-fault worlds. (ii) Drop-and-refit corrections
 silently dropped one row, leaving corrected enthalpies one key short and invalidating
 otherwise-correct answers — corrected values are now evaluated for every measurement.
 (iii) An absolute chi-square gate false-alarmed a clean world whose background noise

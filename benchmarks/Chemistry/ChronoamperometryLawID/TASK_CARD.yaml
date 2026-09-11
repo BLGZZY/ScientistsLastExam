@@ -95,3 +95,20 @@ frontier_eng_overlap_review:
     or charging; it does not return a scientific family decision and calibrated refusal.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.7983221551997478
+  probes:
+  - id: one_step_family_fit
+    candidate: verification/probe_one_step.py
+    expected_score: 0.5895149717873173
+  relative_margin: 0.1
+  score_tolerance: 1.0e-06
+evaluation_budget:
+  EVAL_TIMEOUT_S: 300
+  scope: Eight development and five held-out worlds; three charged potential steps per
+    world. The reference takes about one second in process.
+  override: Task wrapper --timeout or sle eval --timeout.

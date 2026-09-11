@@ -31,6 +31,8 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
     def setUpClass(cls):
         cls.ev = _load(TASK / "verification" / "evaluator.py", "tca_evaluator")
         cls.ref = _load(TASK / "verification" / "reference_solver.py", "tca_reference")
+        cls.probe = _load(TASK / "verification" / "probe_three_gate_rules.py",
+                          "tca_probe")
         cls.sol = _load(TASK / "solution.py", "tca_baseline")
 
     def test_closure_holds_exactly_on_the_noise_free_network(self):
@@ -98,6 +100,13 @@ class ThermochemicalCycleAuditTests(unittest.TestCase):
         self.assertEqual(result["false_discovery_world_count"], 2)
         self.assertEqual(result["attribution_world_count"], 6)
         self.assertEqual(result["development_discovery_coverage"], 1.0)
+
+    def test_no_query_probe_stays_below_repaired_reference_on_both_splits(self):
+        reference = self.ev.evaluate(self.ref.audit_thermochemical_cycle)
+        shortcut = self.ev.evaluate(self.probe.audit_thermochemical_cycle)
+        self.assertEqual(shortcut["valid"], 1.0)
+        self.assertLess(shortcut["combined_score"], reference["combined_score"])
+        self.assertLess(shortcut["robustness_score"], reference["robustness_score"])
 
     def test_replicates_shrink_random_error_but_not_systematics(self):
         world = self.ev._world((71023, "drift"))

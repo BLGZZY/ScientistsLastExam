@@ -77,19 +77,26 @@ def audit_thermochemical_cycle(problem, replicate, cross_check, budget_units):
     top = order[0]
     pendant_indices = [ids.index(name) for name in PENDANT]
 
-    # Dominant single outlier: drop it and check whether closure recovers. This runs
-    # before the drift test because least squares smears one giant slip across the
-    # culprit's own instrument class, faking a coherent calibration drift. The
-    # recovery test is relative to the original tension: an unlucky but clean
-    # background chi-square must not rescue a giant slip from localization.
-    if studentized[top] >= DOMINANT_GATE and top not in pendant_indices:
+    # Single-outlier triage: scan every non-ambiguous row by drop-and-refit rather
+    # than assuming the largest residual is the culprit. Closure adjustment can smear
+    # a giant slip onto a different row; the held-out networks exercise exactly that
+    # failure. This runs before drift detection so one bad row cannot imitate a class.
+    drop_candidates = []
+    for candidate in range(len(ids)):
+        if candidate in pendant_indices:
+            continue
         keep = np.ones(len(ids), dtype=bool)
-        keep[top] = False
+        keep[candidate] = False
         reduced = _chi_square(design[keep], values[keep], sigmas[keep])
-        if reduced < max(DROP_REFIT_GATE, 0.25 * chi_square):
-            enthalpies_drop, _ = _weighted_fit(design[keep], values[keep], sigmas[keep])
-            return _result("single_fault", [ids[top]], "", ids, design,
-                           enthalpies_drop, 0.75)
+        drop_candidates.append((reduced, candidate))
+    reduced, culprit = min(drop_candidates)
+    if (studentized[culprit] >= DOMINANT_GATE
+            and reduced < max(DROP_REFIT_GATE, 0.25 * chi_square)):
+        keep = np.ones(len(ids), dtype=bool)
+        keep[culprit] = False
+        enthalpies_drop, _ = _weighted_fit(design[keep], values[keep], sigmas[keep])
+        return _result("single_fault", [ids[culprit]], "", ids, design,
+                       enthalpies_drop, 0.75)
 
     # Pendant tension: the duplicate/reverse pair carries the largest residuals. One
     # cross-check resolves it; without that spend, honest attribution is impossible.
