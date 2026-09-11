@@ -34,9 +34,6 @@ CERTIFICATION = ROOT / "sle" / "certification.yaml"
 # Chinese name per task, shown in the first column beside the English directory name. The
 # directory name is the identifier and never changes; this is what a Chinese reader scans for.
 CHINESE_NAMES = {
-    "AerospaceStructures/CompositeLaminateStacking": "复合材料层合板铺层",
-    "WindEnergy/WakeAwareFarmCoDesign": "尾流感知风场协同设计",
-
     "Acoustics/RoomImpulseResponse": "房间声学处理设计",
     "Algorithm/GraphFromDistances": "距离查询重建图",
     "Algorithm/MatrixMultiplicationRank": "矩阵乘法秩",
@@ -119,6 +116,7 @@ CHINESE_NAMES = {
     "SystemsBiology/GeneNetworkIntervention": "基因网络干预设计",
     "Thermodynamics/HeatExchangerDesign": "换热器帕累托设计",
     "Turbulence/RANSCalibration": "RANS 封闭标定",
+    "WindEnergy/WakeAwareFarmCoDesign": "尾流感知风场协同设计",
 }
 
 # One-line Chinese brief and scoring note per task. Written by hand: the English Task.md
@@ -126,13 +124,6 @@ CHINESE_NAMES = {
 # people deciding which task to look at. A task without an entry fails the inventory test,
 # so a new package cannot silently ship without one.
 CHINESE_BRIEFS = {
-    "AerospaceStructures/CompositeLaminateStacking": (
-        "排列固定组成的对称平衡复合材料铺层,提高多载荷下的屈曲与首层失效裕度",
-        "相对准各向同性基线的储备系数提升;留出板型与材料/载荷退化分列,无上限"),
-    "WindEnergy/WakeAwareFarmCoDesign": (
-        "联合设计风机平面位置与分风向偏航策略,减弱尾流损失并保持布置可制造",
-        "相对规则零偏航风场的年发电价值提升;留出风况和尾流模型偏移分列,无上限"),
-
     "Acoustics/RoomImpulseResponse": (
         "布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度",
         "清晰度/混响/均匀度综合效用;一阶反射代理与镜像源长程计算排序不同,含安装误差与老化偏移"),
@@ -409,6 +400,9 @@ CHINESE_BRIEFS = {
     "Turbulence/RANSCalibration": (
         "标定可迁移的代数通道流涡黏封闭,同时匹配平均速度与雷诺剪应力",
         "真实 DNS 拟合;密封高雷诺数迁移与壁面坐标稳健性分列,无上限"),
+    "WindEnergy/WakeAwareFarmCoDesign": (
+        "联合设计风机平面位置与分风向偏航策略,使布局增益和尾流转向增益同时成立",
+        "布局增益与偏航控制增益的几何均值;留出风况和尾流模型偏移分列,无上限"),
 }
 
 

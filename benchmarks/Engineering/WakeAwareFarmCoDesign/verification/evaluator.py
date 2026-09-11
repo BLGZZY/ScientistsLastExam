@@ -9,7 +9,17 @@ import numpy as np
 
 DIFFICULTY = "hard"
 DIRECTIONS = np.arange(0.0, 360.0, 30.0)
+ANCHOR_LAYOUT_STARTS = 600
+ANCHOR_LAYOUT_STEPS_M = (120.0, 60.0, 30.0, 160.0, 80.0, 40.0, 20.0, 10.0)
+ANCHOR_ALTERNATIONS = 3
+YAW_GRID_DEG = (-25.0, -17.5, -15.0, -10.0, -7.5, 0.0, 7.5, 10.0, 15.0, 17.5, 25.0)
+WITNESS_YAW_GRID_DEG = (-25.0, -15.0, -7.5, 0.0, 7.5, 15.0, 25.0)
+WITNESS_LAYOUT_STEPS_M = (120.0, 60.0, 30.0)
+WITNESS_ALTERNATIONS = 1
+WITNESS_LAYOUT_STARTS = 12
+LAYOUT_PASSES_PER_SCALE = 2
 _REFERENCE_CACHE = {}
+_REFERENCE_COMPONENT_CACHE = {}
 INSTANCE_SPECS = (
     ("dev_westerly", "development", 9, 1900., 1700., 3, 265., 34.),
     ("dev_bimodal", "development", 12, 2450., 1900., 7, 230., 62.),
@@ -32,7 +42,7 @@ def _problem(spec):
             "wind_directions_deg":DIRECTIONS.tolist(),"wind_speeds_m_s":speed.tolist(),
             "wind_probabilities":probability.tolist(),"yaw_limit_deg":25.0,
             "air_density_kg_m3":1.225,"power_coefficient":0.44,"thrust_coefficient":0.80,
-            "wake_expansion_public":0.055,
+            "wake_expansion_public":0.055,"yaw_power_exponent":1.88,
             "contract":"return layout_xy_m [n,2] and yaw_by_direction_deg [12,n]"}
 
 
@@ -61,33 +71,74 @@ def _validate(problem, value):
     return layout,yaw
 
 
-def _farm_value(problem, layout, yaw, expansion=None, direction_shift=0.0, turbulence_penalty=0.0):
+def _direction_value(problem, layout, yaw_row, direction_index, expansion=None, direction_shift=0.0):
     expansion=float(expansion if expansion is not None else problem["wake_expansion_public"])
     rotor=float(problem["rotor_diameter_m"]); radius=rotor/2; rho=float(problem["air_density_kg_m3"])
     cp=float(problem["power_coefficient"]); ct=float(problem["thrust_coefficient"]); induction=.5*(1-math.sqrt(1-ct))
-    total=0.0; load=0.0
-    for d,(direction,speed,probability) in enumerate(zip(problem["wind_directions_deg"],problem["wind_speeds_m_s"],problem["wind_probabilities"])):
-        theta=math.radians(float(direction)+direction_shift); down=layout[:,0]*math.cos(theta)+layout[:,1]*math.sin(theta); cross=-layout[:,0]*math.sin(theta)+layout[:,1]*math.cos(theta)
-        effective=np.full(len(layout),float(speed)); order=np.argsort(down)
-        for pos,j in enumerate(order):
-            deficits=[]
-            for i in order[:pos]:
-                dx=down[j]-down[i]
-                if dx<=0: continue
-                yi=math.radians(float(yaw[d,i])); sigma=radius+expansion*dx
-                center=cross[i]+.055*dx*math.sin(yi)
-                deficit=2*induction*math.cos(yi)**2/(1+expansion*dx/radius)**2*math.exp(-.5*((cross[j]-center)/sigma)**2)
-                deficits.append(deficit)
-            effective[j]=speed*max(.18,1-math.sqrt(sum(x*x for x in deficits)))
-        yaw_rad=np.radians(yaw[d]); power=.5*rho*math.pi*radius**2*cp*effective**3*np.cos(yaw_rad)**1.88
-        power=np.minimum(power,3.6e6); total += float(probability)*float(np.sum(power))*8760/1e9
-        load += float(probability)*float(np.mean((effective/np.maximum(speed,1e-9))**2*(1+.22*np.abs(yaw_rad))))
-    return float(total*(1-.018*turbulence_penalty)-.20*load)
+    direction=float(problem["wind_directions_deg"][direction_index]); speed=float(problem["wind_speeds_m_s"][direction_index])
+    probability=float(problem["wind_probabilities"][direction_index])
+    theta=math.radians(direction+direction_shift); down=layout[:,0]*math.cos(theta)+layout[:,1]*math.sin(theta); cross=-layout[:,0]*math.sin(theta)+layout[:,1]*math.cos(theta)
+    effective=np.full(len(layout),speed); order=np.argsort(down)
+    for pos,j in enumerate(order):
+        deficits=[]
+        for i in order[:pos]:
+            dx=down[j]-down[i]
+            if dx<=0: continue
+            yi=math.radians(float(yaw_row[i])); sigma=radius+expansion*dx
+            center=cross[i]+.5*ct*math.cos(yi)**2*math.sin(yi)*dx
+            deficit=2*induction*math.cos(yi)**2/(1+expansion*dx/radius)**2*math.exp(-.5*((cross[j]-center)/sigma)**2)
+            deficits.append(deficit)
+        effective[j]=speed*max(0.0,1-math.sqrt(sum(x*x for x in deficits)))
+    yaw_rad=np.radians(yaw_row); power=.5*rho*math.pi*radius**2*cp*effective**3*np.cos(yaw_rad)**float(problem["yaw_power_exponent"])
+    return float(probability)*float(np.sum(power))*8760/1e9
+
+
+def _farm_value(problem, layout, yaw, expansion=None, direction_shift=0.0):
+    return float(sum(_direction_value(problem, layout, yaw[d], d, expansion, direction_shift)
+                     for d in range(len(problem["wind_directions_deg"]))))
 
 
 def _baseline(problem):
-    layout=_grid(problem,False); yaw=np.zeros((len(DIRECTIONS),len(layout)))
+    layout=_grid(problem,False); yaw=np.zeros((len(problem["wind_directions_deg"]),len(layout)))
     return layout,yaw
+
+
+def _refine_yaw(problem, layout, yaw, grid=YAW_GRID_DEG):
+    """One deterministic coordinate sweep over the public yaw controls."""
+    directions = problem["wind_directions_deg"]
+    for d in range(len(directions)):
+        best = _direction_value(problem, layout, yaw[d], d)
+        for j in range(len(layout)):
+            chosen = float(yaw[d, j])
+            for value in grid:
+                yaw[d, j] = value
+                quality = _direction_value(problem, layout, yaw[d], d)
+                if quality > best + 1e-12:
+                    best, chosen = quality, value
+            yaw[d, j] = chosen
+    return yaw
+
+
+def _refine_layout(problem, layout, yaw, steps):
+    """Coordinate layout refinement with a convergence sweep at every scale."""
+    for step_size in steps:
+        for _ in range(LAYOUT_PASSES_PER_SCALE):
+            improved = False
+            best = _farm_value(problem, layout, yaw)
+            for j in range(len(layout)):
+                for axis in range(2):
+                    for sign in (-1.0, 1.0):
+                        trial = layout.copy(); trial[j, axis] += sign * step_size
+                        try:
+                            _validate(problem, {"layout_xy_m": trial, "yaw_by_direction_deg": yaw})
+                        except ValueError:
+                            continue
+                        quality = _farm_value(problem, trial, yaw)
+                        if quality > best + 1e-12:
+                            layout, best, improved = trial, quality, True
+            if not improved:
+                break
+    return layout
 
 
 def _reference(problem):
@@ -97,35 +148,54 @@ def _reference(problem):
         layout,yaw=_REFERENCE_CACHE[key]; return layout.copy(),yaw.copy()
     rng=np.random.default_rng(7201+int(problem["turbine_count"])); candidates=[_grid(problem,False),_grid(problem,True)]
     base=_grid(problem,True)
-    for _ in range(180):
+    witness_seed_best = reference_seed_best = None
+    for draw in range(ANCHOR_LAYOUT_STARTS):
         trial=base+rng.normal(0,70,base.shape); trial[:,0]=np.clip(trial[:,0],40,float(problem["boundary_width_m"])-40); trial[:,1]=np.clip(trial[:,1],40,float(problem["boundary_height_m"])-40)
-        try: _validate(problem,{"layout_xy_m":trial,"yaw_by_direction_deg":np.zeros((len(DIRECTIONS),len(trial)))})
-        except ValueError: continue
-        candidates.append(trial)
-    zero=np.zeros((len(DIRECTIONS),int(problem["turbine_count"])))
-    layout=max(candidates,key=lambda x:_farm_value(problem,x,zero)); yaw=zero.copy()
-    # Coordinate yaw refinement. Only the public model and wind rose are used.
-    for d in range(len(DIRECTIONS)):
-        best=_farm_value(problem,layout,yaw)
-        for j in range(len(layout)):
-            old=yaw[d,j]; chosen=old
-            for value in (-22.,-14.,0.,14.,22.):
-                yaw[d,j]=value; q=_farm_value(problem,layout,yaw)
-                if q>best: best,chosen=q,value
-            yaw[d,j]=chosen
-    for step_size in (80., 40., 20.):
-        best = _farm_value(problem, layout, yaw)
-        for j in range(len(layout)):
-            for axis in range(2):
-                for sign in (-1., 1.):
-                    trial = layout.copy(); trial[j,axis] += sign * step_size
-                    try:
-                        _validate(problem, {"layout_xy_m": trial, "yaw_by_direction_deg": yaw})
-                    except ValueError:
-                        continue
-                    value = _farm_value(problem, trial, yaw)
-                    if value > best:
-                        layout, best = trial, value
+        try:
+            _validate(problem,{"layout_xy_m":trial,"yaw_by_direction_deg":np.zeros((len(problem["wind_directions_deg"]),len(trial)))})
+        except ValueError:
+            pass
+        else:
+            candidates.append(trial)
+        if draw == WITNESS_LAYOUT_STARTS - 1:
+            zero = np.zeros((len(problem["wind_directions_deg"]), int(problem["turbine_count"])))
+            witness_seed_best = max(candidates, key=lambda x: _farm_value(problem, x, zero)).copy()
+        if draw == 79:
+            zero = np.zeros((len(problem["wind_directions_deg"]), int(problem["turbine_count"])))
+            reference_seed_best = max(candidates, key=lambda x: _farm_value(problem, x, zero)).copy()
+    zero=np.zeros((len(problem["wind_directions_deg"]),int(problem["turbine_count"])))
+    ranked = sorted(candidates, key=lambda x: _farm_value(problem, x, zero), reverse=True)
+    starts = [reference_seed_best] + ranked[:2]
+    optimized = []
+    # Reproduce the runnable witness path exactly inside the anchor envelope. This makes
+    # the score-one component anchors dominate the witness by construction rather than
+    # relying on a different greedy path landing in a better local basin.
+    layout, yaw = witness_seed_best.copy(), zero.copy()
+    for _ in range(WITNESS_ALTERNATIONS):
+        yaw = _refine_yaw(problem, layout, yaw, WITNESS_YAW_GRID_DEG)
+        layout = _refine_layout(problem, layout, yaw, WITNESS_LAYOUT_STEPS_M)
+    yaw = _refine_yaw(problem, layout, yaw, WITNESS_YAW_GRID_DEG)
+    optimized.append((layout, yaw))
+    for initial in starts:
+        if initial is None:
+            continue
+        layout, yaw = initial.copy(), zero.copy()
+        for _ in range(ANCHOR_ALTERNATIONS):
+            yaw = _refine_yaw(problem, layout, yaw)
+            layout = _refine_layout(problem, layout, yaw, ANCHOR_LAYOUT_STEPS_M)
+        yaw = _refine_yaw(problem, layout, yaw)
+        optimized.append((layout, yaw))
+    layout, yaw = max(optimized, key=lambda pair: _farm_value(problem, *pair))
+    component_pairs = list(optimized)
+    for stagger in (False, True):
+        component_layout = _grid(problem, stagger)
+        component_yaw = _refine_yaw(problem, component_layout, zero.copy())
+        component_pairs.append((component_layout, component_yaw))
+    _REFERENCE_COMPONENT_CACHE[key] = {
+        "layout_value": max(_farm_value(problem, pair[0], zero) for pair in component_pairs),
+        "yaw_gain": max(_farm_value(problem, *pair)-_farm_value(problem, pair[0], zero)
+                        for pair in component_pairs),
+    }
     _REFERENCE_CACHE[key]=(layout.copy(),yaw.copy())
     return layout,yaw
 
@@ -133,26 +203,38 @@ def _reference(problem):
 def _score_instance(candidate,spec):
     problem=_problem(spec); base=_baseline(problem); ref=_reference(problem)
     # Development scoring runs the PUBLIC wake expansion exactly as published in the problem
-    # mapping; the widened-expansion, rotated-direction and turbulence variants are
+    # mapping; the widened-expansion and rotated-direction variants are
     # robustness-only and never control combined_score.
     low=_farm_value(problem,*base); high=_farm_value(problem,*ref)
+    zero = np.zeros_like(base[1])
+    components = _REFERENCE_COMPONENT_CACHE[(problem["turbine_count"],problem["boundary_width_m"],problem["boundary_height_m"],
+         tuple(problem["wind_speeds_m_s"]),tuple(problem["wind_probabilities"]))]
+    anchor_layout_value = components["layout_value"]
+    anchor_yaw_gain = components["yaw_gain"]
     try:
         layout,yaw=_validate(problem,candidate(copy.deepcopy(problem)))
         value=_farm_value(problem,layout,yaw)
-        score=(value-low)/max(high-low,1e-9)
-        shifted=_farm_value(problem,layout,yaw,expansion=.074,direction_shift=7.0,turbulence_penalty=.7)
-        sb=_farm_value(problem,*base,expansion=.074,direction_shift=7.0,turbulence_penalty=.7); sr=_farm_value(problem,*ref,expansion=.074,direction_shift=7.0,turbulence_penalty=.7)
+        layout_value = _farm_value(problem, layout, zero)
+        layout_score = (layout_value-low)/max(anchor_layout_value-low,1e-9)
+        yaw_control_score = (value-layout_value)/max(anchor_yaw_gain,1e-9)
+        score = math.sqrt(max(0.0, layout_score) * max(0.0, yaw_control_score))
+        shifted=_farm_value(problem,layout,yaw,expansion=.074,direction_shift=7.0)
+        sb=_farm_value(problem,*base,expansion=.074,direction_shift=7.0)
+        sr=_farm_value(problem,*ref,expansion=.074,direction_shift=7.0)
         robust=(shifted-sb)/max(sr-sb,1e-9)
-        return {"name":spec[0],"split":spec[1],"valid":True,"score":float(score),"annual_value_gwh":value,
-                "robustness_score":float(robust),"shifted_value_gwh":shifted}
+        return {"name":spec[0],"split":spec[1],"valid":True,"score":round(float(score),6),"annual_value_gwh":value,
+                "layout_score":round(float(layout_score),6),"yaw_control_score":round(float(yaw_control_score),6),
+                "layout_value_gwh":float(layout_value),"yaw_gain_gwh":float(value-layout_value),
+                "robustness_score":round(float(robust),6),"shifted_value_gwh":shifted}
     except Exception as exc:
         return {"name":spec[0],"split":spec[1],"valid":False,"score":0.0,"annual_value_gwh":0.0,
+                "layout_score":0.0,"yaw_control_score":0.0,"layout_value_gwh":0.0,"yaw_gain_gwh":0.0,
                 "robustness_score":0.0,"shifted_value_gwh":0.0,"reason":f"{type(exc).__name__}: {exc}"}
 
 
 def evaluate(design_wind_farm):
     rows=[_score_instance(design_wind_farm,s) for s in INSTANCE_SPECS]; dev=[r for r in rows if r["split"]=="development"]; held=[r for r in rows if r["split"]=="heldout"]
-    return {"combined_score":max(0.0,float(np.mean([r["score"] for r in dev]))) if all(r["valid"] for r in dev) else 0.0,"valid":float(all(r["valid"] for r in dev)),
-            "feasibility_rate":float(np.mean([r["valid"] for r in dev])),"robustness_score":float(np.mean([r["robustness_score"] for r in dev])),
-            "heldout_policy_score":float(np.mean([r["score"] for r in held])),"heldout_robustness_score":float(np.mean([r["robustness_score"] for r in held])),
+    return {"combined_score":round(max(0.0,float(np.mean([r["score"] for r in dev]))),6) if all(r["valid"] for r in dev) else 0.0,"valid":float(all(r["valid"] for r in dev)),
+            "feasibility_rate":float(np.mean([r["valid"] for r in dev])),"robustness_score":round(float(np.mean([r["robustness_score"] for r in dev])),6),
+            "heldout_policy_score":round(float(np.mean([r["score"] for r in held])),6),"heldout_robustness_score":round(float(np.mean([r["robustness_score"] for r in held])),6),
             "heldout_feasibility_rate":float(np.mean([r["valid"] for r in held])),"per_instance":rows}

@@ -3,13 +3,14 @@
 The public model is reproduced here; independent high-fidelity validation is pending.
 """
 import math
-import copy
 import numpy as np
 
-DIRECTIONS=np.arange(0.,360.,30.)
 _REFERENCE_CACHE={}
-RANDOM_LAYOUT_STARTS = 10
-LAYOUT_REFINEMENT_STEPS_M = (80.0,)
+RANDOM_LAYOUT_STARTS = 12
+LAYOUT_REFINEMENT_STEPS_M = (120.0, 60.0, 30.0)
+ALTERNATIONS = 1
+YAW_GRID_DEG = (-25.0, -15.0, -7.5, 0.0, 7.5, 15.0, 25.0)
+LAYOUT_PASSES_PER_SCALE = 2
 
 def _grid(problem, stagger=False):
     n=int(problem["turbine_count"]); cols=int(math.ceil(math.sqrt(n*float(problem["boundary_width_m"])/float(problem["boundary_height_m"]))))
@@ -34,28 +35,56 @@ def _validate(problem, value):
     if np.max(np.abs(yaw))>float(problem["yaw_limit_deg"])+1e-12: raise ValueError("yaw limit violated")
     return layout,yaw
 
-def _farm_value(problem, layout, yaw, expansion=None, direction_shift=0.0, turbulence_penalty=0.0):
+def _direction_value(problem, layout, yaw_row, direction_index, expansion=None, direction_shift=0.0):
     expansion=float(expansion if expansion is not None else problem["wake_expansion_public"])
     rotor=float(problem["rotor_diameter_m"]); radius=rotor/2; rho=float(problem["air_density_kg_m3"])
     cp=float(problem["power_coefficient"]); ct=float(problem["thrust_coefficient"]); induction=.5*(1-math.sqrt(1-ct))
-    total=0.0; load=0.0
-    for d,(direction,speed,probability) in enumerate(zip(problem["wind_directions_deg"],problem["wind_speeds_m_s"],problem["wind_probabilities"])):
-        theta=math.radians(float(direction)+direction_shift); down=layout[:,0]*math.cos(theta)+layout[:,1]*math.sin(theta); cross=-layout[:,0]*math.sin(theta)+layout[:,1]*math.cos(theta)
-        effective=np.full(len(layout),float(speed)); order=np.argsort(down)
-        for pos,j in enumerate(order):
-            deficits=[]
-            for i in order[:pos]:
-                dx=down[j]-down[i]
-                if dx<=0: continue
-                yi=math.radians(float(yaw[d,i])); sigma=radius+expansion*dx
-                center=cross[i]+.055*dx*math.sin(yi)
-                deficit=2*induction*math.cos(yi)**2/(1+expansion*dx/radius)**2*math.exp(-.5*((cross[j]-center)/sigma)**2)
-                deficits.append(deficit)
-            effective[j]=speed*max(.18,1-math.sqrt(sum(x*x for x in deficits)))
-        yaw_rad=np.radians(yaw[d]); power=.5*rho*math.pi*radius**2*cp*effective**3*np.cos(yaw_rad)**1.88
-        power=np.minimum(power,3.6e6); total += float(probability)*float(np.sum(power))*8760/1e9
-        load += float(probability)*float(np.mean((effective/np.maximum(speed,1e-9))**2*(1+.22*np.abs(yaw_rad))))
-    return float(total*(1-.018*turbulence_penalty)-.20*load)
+    direction=float(problem["wind_directions_deg"][direction_index]); speed=float(problem["wind_speeds_m_s"][direction_index])
+    probability=float(problem["wind_probabilities"][direction_index])
+    theta=math.radians(direction+direction_shift); down=layout[:,0]*math.cos(theta)+layout[:,1]*math.sin(theta); cross=-layout[:,0]*math.sin(theta)+layout[:,1]*math.cos(theta)
+    effective=np.full(len(layout),speed); order=np.argsort(down)
+    for pos,j in enumerate(order):
+        deficits=[]
+        for i in order[:pos]:
+            dx=down[j]-down[i]
+            if dx<=0: continue
+            yi=math.radians(float(yaw_row[i])); sigma=radius+expansion*dx
+            center=cross[i]+.5*ct*math.cos(yi)**2*math.sin(yi)*dx
+            deficit=2*induction*math.cos(yi)**2/(1+expansion*dx/radius)**2*math.exp(-.5*((cross[j]-center)/sigma)**2)
+            deficits.append(deficit)
+        effective[j]=speed*max(0.0,1-math.sqrt(sum(x*x for x in deficits)))
+    yaw_rad=np.radians(yaw_row); power=.5*rho*math.pi*radius**2*cp*effective**3*np.cos(yaw_rad)**float(problem["yaw_power_exponent"])
+    return float(probability)*float(np.sum(power))*8760/1e9
+
+def _farm_value(problem, layout, yaw, expansion=None, direction_shift=0.0):
+    return float(sum(_direction_value(problem,layout,yaw[d],d,expansion,direction_shift)
+                     for d in range(len(problem["wind_directions_deg"]))))
+
+def _refine_yaw(problem, layout, yaw):
+    for d in range(len(problem["wind_directions_deg"])):
+        best=_direction_value(problem,layout,yaw[d],d)
+        for j in range(len(layout)):
+            chosen=float(yaw[d,j])
+            for value in YAW_GRID_DEG:
+                yaw[d,j]=value; quality=_direction_value(problem,layout,yaw[d],d)
+                if quality>best+1e-12: best,chosen=quality,value
+            yaw[d,j]=chosen
+    return yaw
+
+def _refine_layout(problem, layout, yaw):
+    for step_size in LAYOUT_REFINEMENT_STEPS_M:
+        for _ in range(LAYOUT_PASSES_PER_SCALE):
+            improved=False; best=_farm_value(problem,layout,yaw)
+            for j in range(len(layout)):
+                for axis in range(2):
+                    for sign in (-1.,1.):
+                        trial=layout.copy(); trial[j,axis]+=sign*step_size
+                        try: _validate(problem,{"layout_xy_m":trial,"yaw_by_direction_deg":yaw})
+                        except ValueError: continue
+                        quality=_farm_value(problem,trial,yaw)
+                        if quality>best+1e-12: layout,best,improved=trial,quality,True
+            if not improved: break
+    return layout
 
 def _reference(problem):
     key=(problem["turbine_count"],problem["boundary_width_m"],problem["boundary_height_m"],
@@ -66,35 +95,15 @@ def _reference(problem):
     base=_grid(problem,True)
     for _ in range(RANDOM_LAYOUT_STARTS):
         trial=base+rng.normal(0,70,base.shape); trial[:,0]=np.clip(trial[:,0],40,float(problem["boundary_width_m"])-40); trial[:,1]=np.clip(trial[:,1],40,float(problem["boundary_height_m"])-40)
-        try: _validate(problem,{"layout_xy_m":trial,"yaw_by_direction_deg":np.zeros((len(DIRECTIONS),len(trial)))})
+        try: _validate(problem,{"layout_xy_m":trial,"yaw_by_direction_deg":np.zeros((len(problem["wind_directions_deg"]),len(trial)))})
         except ValueError: continue
         candidates.append(trial)
-    zero=np.zeros((len(DIRECTIONS),int(problem["turbine_count"])))
+    zero=np.zeros((len(problem["wind_directions_deg"]),int(problem["turbine_count"])))
     layout=max(candidates,key=lambda x:_farm_value(problem,x,zero)); yaw=zero.copy()
-    # Coordinate yaw refinement. Only the public model and wind rose are used.
-    for d in range(len(DIRECTIONS)):
-        best=_farm_value(problem,layout,yaw)
-        for j in range(len(layout)):
-            old=yaw[d,j]; chosen=old
-            for value in (-22.,-14.,0.,14.,22.):
-                yaw[d,j]=value; q=_farm_value(problem,layout,yaw)
-                if q>best: best,chosen=q,value
-            yaw[d,j]=chosen
-    # Keep all three capabilities (screening, yaw search, layout refinement), but
-    # reserve denser starts and the 40/20 m refinement scales for better methods.
-    for step_size in LAYOUT_REFINEMENT_STEPS_M:
-        best = _farm_value(problem, layout, yaw)
-        for j in range(len(layout)):
-            for axis in range(2):
-                for sign in (-1., 1.):
-                    trial = layout.copy(); trial[j,axis] += sign * step_size
-                    try:
-                        _validate(problem, {"layout_xy_m": trial, "yaw_by_direction_deg": yaw})
-                    except ValueError:
-                        continue
-                    value = _farm_value(problem, trial, yaw)
-                    if value > best:
-                        layout, best = trial, value
+    for _ in range(ALTERNATIONS):
+        yaw=_refine_yaw(problem,layout,yaw)
+        layout=_refine_layout(problem,layout,yaw)
+    yaw=_refine_yaw(problem,layout,yaw)
     _REFERENCE_CACHE[key]=(layout.copy(),yaw.copy())
     return layout,yaw
 

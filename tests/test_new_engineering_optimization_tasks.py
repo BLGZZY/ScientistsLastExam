@@ -1,4 +1,4 @@
-"""Contract and normalization checks for the two retained engineering candidate tasks."""
+"""Contract and normalization checks for the retained engineering candidate task."""
 from __future__ import annotations
 
 import importlib.util
@@ -9,7 +9,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TASK_ROOT = ROOT / "benchmarks" / "Engineering"
 TASKS = (
-    "CompositeLaminateStacking",
     "WakeAwareFarmCoDesign",
 )
 
@@ -74,11 +73,6 @@ class EngineeringCandidateTests(unittest.TestCase):
                 self.assertTrue(all(not row["valid"] for row in result["per_instance"]))
 
     def test_task_specific_hard_constraints_reject_bad_artifacts(self):
-        laminate = self.evaluators["CompositeLaminateStacking"]
-        problem = laminate._problem(laminate.INSTANCE_SPECS[0])
-        with self.assertRaises(ValueError):
-            laminate._validate(problem, [0] * problem["ply_count"])
-
         wind = self.evaluators["WakeAwareFarmCoDesign"]
         problem = wind._problem(wind.INSTANCE_SPECS[0])
         n = problem["turbine_count"]

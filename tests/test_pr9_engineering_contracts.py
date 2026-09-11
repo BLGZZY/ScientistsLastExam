@@ -16,7 +16,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 TASK_ROOT = ROOT / "benchmarks" / "Engineering"
 TASKS = {
-    "AerospaceStructures/CompositeLaminateStacking": "design_laminate",
     "WindEnergy/WakeAwareFarmCoDesign": "design_wind_farm",
 }
 

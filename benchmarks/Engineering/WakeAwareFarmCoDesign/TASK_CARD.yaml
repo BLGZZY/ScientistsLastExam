@@ -1,54 +1,44 @@
 schema_version: 2
-scientific_question: Can one policy jointly place turbines and schedule direction-dependent yaw to improve
-  annual farm value while transferring across wind roses, boundaries and wake-model uncertainty?
+scientific_question: Can one policy jointly place turbines and schedule direction-dependent yaw so that both layout and wake-steering control add annual energy across wind roses and boundaries?
 artifact: A continuous two-dimensional turbine layout and a direction-by-turbine yaw matrix.
 oracle:
-  model: Deterministic Gaussian and Jensen hybrid wake superposition with yaw deflection, own-power loss,
-    rated-power cap and wind-rose integration.
-  feasibility: Exact shapes, finite values, rectangular boundary, pairwise minimum spacing and yaw bounds;
-    violations fail closed.
+  model: Deterministic reduced Gaussian/Jensen wake superposition with yaw deflection, own-power loss and wind-rose integration. Layout and yaw-control gains are scored as separate axes.
+  feasibility: Exact shapes, finite values, rectangular boundary, pairwise minimum spacing and yaw bounds; violations fail closed.
   deterministic: true
 normalization:
   baseline: Regular rectangular grid with zero yaw.
-  reference: Ten seeded layout starts, coordinate yaw search and one 80 m feasible layout-refinement
-    scale; it scores 0.742 development against the oracle's 180-start, three-scale anchor.
-  score: Development annual-value gain is scored under the PUBLIC wake expansion (wake_expansion_public,
-    0.055) exactly as published in Task.md, uncapped above the stronger search anchor; held-out
-    geometries and the widened-expansion/rotated-direction/turbulence tier stay separate and never
-    control combined_score.
+  reference: Twelve seeded layout starts, one bounded multiscale layout/yaw alternation and a final yaw sweep. The stronger component anchor includes this exact path plus 600 layout draws, additional multiscale alternations and zero-yaw/yaw-only controls.
+  score: The geometric mean of normalized layout-only GWh gain and incremental yaw-control GWh gain. Each axis is floored at zero and the result is uncapped; held-out geometries and the widened-expansion/rotated-direction tier stay separate.
+evaluation_budget:
+  timeout_seconds: 600
+  expected_evaluator_seconds: 35
+  measurement: A clean local macOS Python 3.12 run on 2026-09-12 took 25.92 s for the complete reference evaluation, including recomputing all six strong anchors. Linux sandbox timing remains pending.
 citations:
 - id: doi:10.1088/1742-6596/1618/2/022028
   title: Overview of FLORIS updates
-- id: url:https://nrel.sitefinity.cloud/wind/floris
-  title: NREL FLORIS wake modeling and controls software
+- id: doi:10.1017/jfm.2016.595
+  title: Experimental and theoretical study of wind turbine wakes in yawed conditions
+- id: url:https://nrel.github.io/floris/
+  title: NREL FLORIS wake modeling and controls documentation
 invariants:
 - With wake interaction removed and zero yaw, identical turbines have identical free-stream power.
-- Yaw decreases own-turbine power while potentially deflecting its downstream wake.
+- Yaw decreases own-turbine power while it can deflect an upstream wake.
+- A zero-yaw design has yaw_control_score zero and a baseline-layout design has layout_score zero, so neither can receive positive combined score alone.
 - Duplicated, too-close, out-of-bound, malformed and over-yawed layouts fail closed.
-- Held-out model-shift metrics never control combined_score.
-known_shortcuts: 'Measured 2026-09-07 against the public-expansion co-design witness (0.741503
-  development): row-staggered grids with zero yaw reach 0.137746, pure equal-arc boundary packing
-  fails closed (0.000000: the perimeter of the denser farms cannot host every turbine at minimum
-  spacing) and uniform fixed-yaw grids score 0.000000. The historical yaw-only search reached
-  0.490932 on the pre-2026-09-07 hidden-expansion scoring; no measured low-dimensional layout
-  family reaches the witness. The complete objective (wake deficit, RSS superposition, 0.18 floor,
-  cos^1.88 yaw loss, 3.6 MW cap, 0.20 structural-load penalty) is public in Task.md; the sealed
-  widened-expansion/rotated-direction/turbulence tier remains evaluator-only. The oracle omits
-  terrain, electrical balance, availability and loads; clean Linux replay, pinned FLORIS
-  comparison and server-held roses remain required.'
+- Held-out and model-shift metrics never control combined_score.
+known_shortcuts: >-
+  The 2026-09-08 review found that a repulsion/spreading layout with zero yaw scored 0.509220 under the obsolete single total-value scale, while yaw-only scored 0.003391 and a larger-budget copy of the old reference reached 1.169086. The 2026-09-12 revision does not hide those failures: it removes the unsupported structural-load penalty, gives yaw a physically motivated public deflection term, makes the runnable reference alternate both capabilities, and scores layout and yaw increments separately. Every zero-yaw layout family, including the repulsion probe, now has combined_score 0 while retaining a visible positive layout_score; every baseline-layout yaw family likewise scores 0 with a visible yaw_control_score. The complete reference measures 0.782836 development / 0.782388 heldout with development mean layout/yaw axes 0.714964/0.864917. These structural controls are not a bound on a family optimizing both axes; a fresh joint shortcut sweep and frontier-model draw remain required.
 review:
   domain: pending_external
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
 provenance:
   class: procedural
-  target_source: Repository-visible deterministic wind-rose and farm-geometry generator with sealed wake
-    and direction shifts.
+  target_source: Repository-visible deterministic wind-rose and farm-geometry generator with a sealed wake-expansion and direction shift.
   task_contract_public_before_evaluation: true
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: high
-  rationale: Wake steering and farm layout are prominent public benchmark families; only cross-geometry
-    and cross-model transfer can make this non-recall, and that evidence is not yet complete.
+  rationale: The nearest in-repository optimization tasks are StructuralEngineering/TrussWeightMinimization, which sizes truss members, Thermodynamics/HeatExchangerDesign, which returns a thermal Pareto archive, and Optics/DiffractionGratingDesign, which optimizes optical geometry. This task instead couples turbine placement to a direction-indexed yaw controller and requires positive contribution from both axes. Wake steering and layout remain prominent public families, so server-held roses and calibration are still required.
 lineage:
   status: complete
   builder_model_ids:
@@ -58,13 +48,9 @@ lineage:
   calibrator_model_ids: []
   calibration_runs: []
   calibration_evidence_status: missing
-  edits_triggered_by_model: No frontier-model draw has been run. Local code review added feasible layout
-    refinement after coordinate yaw selection, measured the historical yaw-only method and retained
-    cross-model FLORIS validation as an explicit open item. The 2026-09-07 revision moved
-    development scoring to the public wake expansion (the 0.061/0.074 variants are robustness-tier
-    only) and wrote the complete objective, including the 0.20 structural-load penalty, into the
-    public Task.md contract; pinned FLORIS cross-validation remains pending and open.
-  shortcut_discoverer: local_deterministic_probe_only
+  edits_triggered_by_model: >-
+    No frontier-model draw has been run. Maintainer review exposed that the old total-value score was dominated by layout, that the 0.20 load proxy erased yaw value, and that increasing the same search budget exceeded the old anchor. The 2026-09-12 revision removed the unsupported proxy and inactive cap/floor constants, replaced the fixed displacement coefficient with a Ct/yaw momentum-style public term, decomposed layout and yaw gains, expanded the runnable reference to bounded alternating co-design, and made the stronger anchor include the exact witness path and component controls. CompositeLaminateStacking was withdrawn after a complete pair-exchange plus ILS reference still scored 0.993447 on a recalibrated two-mode oracle, demonstrating budget-scale saturation rather than defensible headroom.
+  shortcut_discoverer: maintainer_adversarial_probe_and_local_deterministic_retest
   frozen_before_eval: false
   freeze_timestamp: null
 construction_audit:
@@ -72,9 +58,9 @@ construction_audit:
   author_domain: general_scientific_software
   reviewer_domain: pending_external_wind_energy
   expert_hours: null
-  red_team_rounds: 1
+  red_team_rounds: 2
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: standalone_public_model_references_high_fidelity_replication_pending
+  independent_recomputation_status: standalone_public_model_reference_pinned_floris_replication_pending
 long_horizon:
   status: not_tested
   measurement_health_passed: false
@@ -86,19 +72,14 @@ licensing:
   note: Original procedural code; cited papers and external simulator assets are not redistributed.
 contamination:
   status: cannot_be_ruled_out
-  rationale: Public procedural families and AI-assisted reference implementations; sealed worlds and independent
-    model calibration are pending.
+  rationale: Public wake-model and optimization families; sealed worlds and independent model calibration are pending.
 difficulty_assessment:
   status: unverified_candidate
-  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model
-    calibration before certification
-
+  requirement: Joint layout-yaw shortcut sweeps, clean frontier-model calibration, pinned FLORIS comparison and external review before certification.
 frontier_eng_overlap_review:
   date: '2026-09-06'
   classification: 无
   nearest: UAVInspectionCoverageWithWind; DawnAircraftDesignOptimization
-  distinction: Joint static turbine locations and directional yaw optimize farm value
-    with wake interactions and wind-rose transfer. FE optimizes flight coverage in wind
-    or aircraft mass/geometry, without turbine-to-turbine wakes or wind-farm yield.
+  distinction: Joint static turbine locations and directional yaw optimize two separately scored wake-interaction contributions. Frontier-Eng optimizes flight coverage or aircraft mass/geometry, without inter-turbine wakes or a direction-indexed yaw controller.
   evidence: .research/pr9_frontier_eng_overlap_2026-09-06.md
   status: source_count_discrepancy_pending_maintainer_confirmation

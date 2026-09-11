@@ -10,18 +10,13 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
-  AerospaceStructures/CompositeLaminateStacking:
-    status: candidate
-    reason: deterministic CLT stacking-sequence optimization with exact composition and manufacturing constraints, uncapped truth-blind permutation normalization, interleaved panels and sealed material/load degradation; pending independent composite-structures review, finite-element replication, server-held panels and frontier-model calibration
-    citation_ids:
-      - doi:10.2514/3.11710
-      - doi:10.1016/j.compstruct.2016.01.052
   WindEnergy/WakeAwareFarmCoDesign:
     status: candidate
-    reason: deterministic mixed continuous layout-yaw co-design with boundary and spacing hard gates, uncapped truth-blind search normalization and separate wake/direction/turbulence transfer; pending pinned FLORIS replication, independent wind-energy review, server-held wind roses and frontier-model calibration
+    reason: deterministic mixed continuous layout-yaw co-design with boundary and spacing hard gates, separate layout and yaw-control score axes, uncapped truth-blind search normalization and a separate wake/direction transfer tier; pending pinned FLORIS replication, independent wind-energy review, server-held wind roses and frontier-model calibration
     citation_ids:
       - doi:10.1088/1742-6596/1618/2/022028
-      - url:https://nrel.sitefinity.cloud/wind/floris
+      - url:https://nrel.github.io/floris/
+      - doi:10.1017/jfm.2016.595
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.

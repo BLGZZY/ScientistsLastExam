@@ -1,108 +1,121 @@
 # Reference and admission record — WakeAwareFarmCoDesign
 
-Every number in the 2026-09-07 sections below is produced by running code in this directory on
-this tree; nothing is copied from a table. Reproduce with
-
-```
-python3 - <<'EOF'
-import importlib.util
-s=importlib.util.spec_from_file_location("ev","benchmarks/Engineering/WakeAwareFarmCoDesign/verification/evaluator.py")
-m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
-s2=importlib.util.spec_from_file_location("ref","benchmarks/Engineering/WakeAwareFarmCoDesign/verification/reference.py")
-r=importlib.util.module_from_spec(s2);s2.loader.exec_module(r)
-print(m.evaluate(r.design_wind_farm))
-EOF
-```
-
 ## 1. Reference method
 
-`verification/reference.py` is standalone and uses only public inputs and charged interfaces. It
-uses ten seeded layout starts, coordinate yaw search and one 80 m feasible layout-refinement
-scale; the evaluator independently runs the stronger 180-start, three-scale anchor. It is a
-method witness, not independent high-fidelity verification. Cross-model robustness, restarts and
-independent FLORIS validation remain open.
+`verification/reference.py` is standalone and uses only the public problem mapping.
+It screens twelve deterministic feasible layout jitters, performs one bounded
+`120/60/30 m` layout/yaw alternation (at most two coordinate passes per scale),
+and finishes with a second direction-wise yaw sweep. Direction count is read from
+the problem; the old hard-coded twelve-direction constant was removed.
 
-## 2. Baseline and normalization (2026-09-07 public-expansion re-derivation)
+The score-one envelope recomputes 600 layout draws and additional multiscale
+alternations. It explicitly contains the runnable reference's exact seed, yaw grid,
+layout scales and pass limits, so a different greedy path cannot accidentally make
+the witness stronger than its anchor. Component normalization also includes regular
+and staggered layout controls with optimized yaw. The envelope is a reproducible
+search record, not a published optimum.
 
-Development scoring now evaluates the PUBLIC wake expansion (`wake_expansion_public` = 0.055)
-exactly as published in Task.md; the previous 0.061 development variant was removed because the
-score must be computable from the public contract. The widened (0.074), +7°-rotated,
-turbulence-penalized variant is a robustness tier only and never controls `combined_score`.
+## 2. Baseline and normalization
 
-| entry | development | held-out policy | robustness tier |
-|---|---|---|---|
-| shipped grid baseline (`solution.py`) | **0.000000** (valid=1) | 0.000 | 0.000 |
-| runnable witness (`verification/reference.py`) | **0.741503** | 0.738009 | 0.613817 (mean) |
+The September 12 revision reports layout-only GWh gain and incremental yaw-control
+GWh gain separately, then uses their geometric mean. This directly repairs the
+maintainer's finding that 85% of the old decision variables (yaw) contributed only
+0.003391 while a zero-yaw spreading heuristic obtained 0.509220.
 
-Measured wall time on the 2026-09-07 builder machine (in-process `evaluate`): 12.6 s for the
-baseline entry (includes all six anchor searches) and 10.5 s for the witness; the wrapper timeout
-stays 300 s. The scale is floored at zero and uncapped; additional starts and finer 40/20 m
-layout moves remain the measured headroom.
+Clean local in-process measurement on macOS / Python 3.12:
+
+| entry | development | heldout | robustness |
+|---|---:|---:|---:|
+| regular zero-yaw baseline | 0.000000 | 0.000000 | 0.000000 |
+| runnable joint reference | **0.782836** | **0.782388** | 0.499350 / 0.708390 |
+
+The reference evaluation, including all six freshly computed anchors, took 25.92 s.
+Scores are rounded to six decimals before reporting to remove pairwise-summation
+noise. The wrapper timeout is 600 s; Linux sandbox timing remains pending.
 
 ## 3. Capability comparisons and ablations
 
-Run `python scripts/diagnose_pr9_engineering.py --output tmp/hardening/diagnostics.json`.
-On the current dirty macOS tree (pre-revision, hidden-expansion scoring) ten layout starts,
-coordinate yaw and one 80 m layout-refinement scale scored `0.741392` development and the
-historical yaw-only construction `0.490932`; the added layout refinement and restarts contributed
-`0.250460`. These pre-revision numbers are retained as history; the current public-expansion
-numbers are those in section 2.
+The complete reference's development means are `layout_score=0.714964` and
+`yaw_control_score=0.864917`. Every individual instance has positive yaw GWh gain
+(4.53–7.51 GWh on development and 4.98–7.10 GWh held out).
+
+| ablation | layout axis | yaw axis | combined |
+|---|---|---|---:|
+| regular layout, zero yaw | baseline | absent | 0.000000 |
+| improved/reference layout, zero yaw | positive | absent | 0.000000 |
+| regular layout, coordinate-refined yaw | absent | positive | 0.000000 |
+| complete alternating reference | 0.714964 mean | 0.864917 mean | 0.782836 |
+
+The ablations are properties of the scoring graph, pinned by tests. They show that
+both advertised capabilities are active; they do not establish that the joint
+optimization problem resists a new low-dimensional family.
 
 ## 4. Shortcut probes
 
-### 2026-09-07 shortcut re-audit (measured on the current tree)
+The September 8 maintainer probes against the obsolete one-axis score remain part
+of the record:
 
-Three low-dimensional layout families were implemented and run against the current evaluator
-(`tmp/probe_wake.py` on the builder tree; equal-arc perimeter spacing for boundary packing, six
-ring offsets; uniform yaw swept over {-22,-14,-7,0,7,14,22} degrees for the fixed-yaw grid):
+| historical family | old development score |
+|---|---:|
+| larger-budget copy of the same hill climb | 1.169086 |
+| repulsion/spreading layout, zero yaw | 0.509220 |
+| yaw only on the baseline grid | 0.003391 |
 
-| family | development | held-out policy | robustness tier |
-|---|---|---|---|
-| row-staggered grid, zero yaw | 0.137746 | 0.171621 | 0.201601 |
-| equal-arc boundary packing, zero yaw | 0.000000 (valid=0) | 0.097734 | 0.203067 |
-| regular grid, uniform fixed yaw (best sweep) | 0.000000 | 0.000000 | 0.000000 |
-| runnable witness | **0.741503** | 0.738009 | 0.613817 |
-
-Boundary packing fails closed on development: with equal arc-length spacing the perimeter of the
-denser farms cannot host all turbines at the minimum spacing, so no member of the family is
-valid on two of the four development systems (an earlier draft silently fell back to a staggered
-grid and scored 0.140246; that fallback is not boundary packing and was removed). No measured
-structured layout family comes near the witness, so the remaining reference-to-anchor gap is
-genuine joint layout-yaw search, not a low-dimensional shortcut.
-
-Earlier probe record: the regular-grid zero-yaw baseline scores zero and the historical yaw-only
-search reached `0.490932` under the pre-revision hidden-expansion scoring. These values are local
-diagnostics, not frozen benchmark evidence.
+Those results invalidated the old claim that the remaining gap was necessarily
+joint search. Under the revised score, every zero-yaw family has combined score
+zero while its layout axis remains visible, and every unchanged-baseline layout has
+layout score zero while its yaw axis remains visible. This fixes the semantic bug;
+it is not presented as a universal shortcut bound. A new probe that optimizes both
+axes and a frozen first-proposal model draw remain admission blockers.
 
 ## 5. Frontier-model calibration
 
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before exposure, must
-show that the first proposal does not reach the competent reference. No calibration or external
-review is implied by these local code changes. Server-held worlds and independent model review
-remain required.
+Not run. The task remains `candidate`. Local reference/shortcut measurements do
+not substitute for `batch_evolve.py --run-role calibration`, server-held wind roses,
+or the rule that a first proposal must remain below the competent reference.
 
 ## 6. Construction errors and revisions
 
-2026-09-07 hardening: development scoring moved to the public wake expansion; the complete
-objective (per-turbine Gaussian/Jensen deficit, RSS superposition with 0.18 floor, cos^1.88 yaw
-self-loss, 3.6 MW cap, 0.20 structural-load penalty) was written into the public Task.md so the
-score is a function of published information only; row-stagger, boundary-packing and fixed-yaw
-shortcut families were measured and pinned.
-2026-09-05 hardening: adds layout refinement after yaw selection. Cross-model robustness,
-restarts and independent FLORIS validation remain open.
-Standalone references no longer import the hidden evaluator. Earlier measurements belong to the
-pre-hardening version and are retained only as history.
+- 2026-09-08 review: scaling the old algorithm reached 1.169086; a simple zero-yaw
+  spreading family reached 0.509220; yaw-only value was 0.003391. The old reference,
+  headroom and “genuine joint search” claims were withdrawn.
+- 2026-09-12 repair: removed the unsupported `0.20*load` proxy, inactive 3.6 MW cap
+  and artificial 0.18 velocity floor. The yaw displacement now uses the public
+  momentum-style `0.5*Ct*cos(gamma)^2*sin(gamma)*dx` term, and the approximately
+  `cos^1.9` own-power loss is retained. Both are still reduced-model choices pending
+  FLORIS reproduction.
+- The score now requires positive layout and yaw increments. The reference alternates
+  both capabilities, and the anchor includes its exact path plus component controls.
+- `CompositeLaminateStacking` was withdrawn from PR #21 after a full pair-exchange +
+  ILS reference scored 0.993447 even after rescaling loads so both advertised failure
+  modes were active. Basic neighborhood search saturated that task within budget.
 
 ## 7. Robustness and reproducibility
 
-Development and heldout metrics remain separate. Two consecutive in-process evaluations of the
-witness are JSON-identical. Formal Linux sandbox replay, global evidence refresh and independent
-scientific replication are still pending. See the task card citations for background; the
-explicitly declared reduced model is not certified by those publications.
+The widened-expansion (`k=0.074`) and `+7 deg` direction-shift evaluation remains
+separate from development scoring. The current reference reports 0.499350 on the
+development robustness tier and 0.708390 held out. One development instance has a
+negative shifted relative score; this is retained rather than clipped or averaged
+into `combined_score`.
 
-## Historical pre-hardening record (obsolete scores)
+Reproduce the local reference measurement with:
 
-The witness screens 180 deterministic valid jitters around a staggered grid and then performs
-coordinate yaw refinement using only the public wake model and wind rose. It is not a global
-layout or yaw optimum, so the historical normalization remained uncapped above it. FLORIS cross-model rankings and
-frontier-model calibration are pending.
+```sh
+python - <<'PY'
+import importlib.util
+from pathlib import Path
+root = Path("benchmarks/Engineering/WakeAwareFarmCoDesign")
+def load(path, name):
+    spec = importlib.util.spec_from_file_location(name, path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+evaluator = load(root/"verification/evaluator.py", "wake_evaluator")
+reference = load(root/"verification/reference.py", "wake_reference")
+print(evaluator.evaluate(reference.design_wind_farm))
+PY
+```
+
+The evaluator and standalone reference still require clean Linux sandbox replay,
+pinned FLORIS comparison, independent wind-energy review and deterministic repeat
+confirmation on the final committed tree.

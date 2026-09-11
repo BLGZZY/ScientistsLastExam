@@ -4,18 +4,18 @@
 
 | | |
 |---|---:|
-| 任务包 | 84 |
-| optimization | 43 |
+| 任务包 | 83 |
+| optimization | 42 |
 | discovery | 41 |
 | certified | 5 |
-| candidate | 79 |
-| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 7,Engineering 14,Mathematics 19,Physics 16) |
+| candidate | 78 |
+| 学科 | 7(Biology 8,Chemistry 13,ComputerScience 7,EarthScience 7,Engineering 13,Mathematics 19,Physics 16) |
 
 认证描述的是证据质量,不是难度。标 on-ramp 的任务首个前沿模型提案已够到参考解,不用于配对 Δ 测量。
 
-## Optimization(43)
+## Optimization(42)
 
-### 工程设计(engineering_design) — 18
+### 工程设计(engineering_design) — 17
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
@@ -23,7 +23,6 @@
 | [`DistillationColumnDesign`](benchmarks/Chemistry/DistillationColumnDesign/)<br>精馏塔设计 | Chemistry | ChemicalProcess | uncapped | equilibrium_stage_process_sim | candidate | robust mixed-integer equilibrium-stage design | 混合整数精馏塔设计:塔板数与进料位置离散,兼顾纯度回收约束与再沸冷凝能耗 | 年化成本;留出迁移与密封变工况分列,无上限 |
 | [`ElectrolyteConductivityDesign`](benchmarks/Chemistry/ElectrolyteConductivityDesign/)<br>电解液电导率设计 | Chemistry | Electrochemistry | uncapped | real_data_replay | candidate | allocate EIS assays and select a robust formulation batch | 在高通量电解液数据回放里分配阻抗测定预算,选出稳健的配方批次 | 温度剖面电导率 + 批次多样性 + 重复稳健性 + 留出迁移;无上限 |
 | [`SparseRecovery`](benchmarks/ComputerScience/SparseRecovery/)<br>压缩感知稀疏恢复 | ComputerScience | SignalProcessing | clipped | analytical | candidate | compressed sensing signal recovery | 从远少于奈奎斯特的测量里恢复 k 稀疏信号 | 平均恢复信噪比 |
-| [`CompositeLaminateStacking`](benchmarks/Engineering/CompositeLaminateStacking/)<br>复合材料层合板铺层 | Engineering | AerospaceStructures | uncapped | physical_sim | candidate | robust composite-laminate sequencing | 排列固定组成的对称平衡复合材料铺层,提高多载荷下的屈曲与首层失效裕度 | 相对准各向同性基线的储备系数提升;留出板型与材料/载荷退化分列,无上限 |
 | [`HeatExchangerDesign`](benchmarks/Engineering/HeatExchangerDesign/)<br>换热器帕累托设计 | Engineering | Thermodynamics | uncapped | physical_sim | candidate | discover a multi-fidelity Pareto design archive | 发现换热器的多保真帕累托设计档案,权衡换热量、成本与泵功 | 成本对换热量的帕累托超体积;密封代理一致性、留出迁移与结垢/制造/堵塞稳健性分列,无上限 |
 | [`InvertedPendulumSwingUp`](benchmarks/Engineering/InvertedPendulumSwingUp/)<br>倒立摆摆起控制 | Engineering | ControlTheory | clipped | physical_sim | candidate | swing up and robustly stabilize a cart-pole | 设计小车倒立摆的摆起与稳定控制律,兼顾轨道限位与作动器约束 | 摆起效用;偏移工况稳健性分列 |
 | [`LowThrustTransfer`](benchmarks/Engineering/LowThrustTransfer/)<br>小推力轨道转移 | Engineering | Astrodynamics | uncapped | physical_sim | candidate | design transferable finite-thrust orbit transfers | 设计可迁移的小推力多圈轨道转移策略,兼顾终端精度与推进剂 | 标称转移效用;留出任务相位与执行误差稳健性分列,无上限 |
@@ -32,7 +31,7 @@
 | [`RANSCalibration`](benchmarks/Engineering/RANSCalibration/)<br>RANS 封闭标定 | Engineering | Turbulence | uncapped | physical_sim | candidate | calibrate a transferable algebraic channel-flow closure | 标定可迁移的代数通道流涡黏封闭,同时匹配平均速度与雷诺剪应力 | 真实 DNS 拟合;密封高雷诺数迁移与壁面坐标稳健性分列,无上限 |
 | [`RoomImpulseResponse`](benchmarks/Engineering/RoomImpulseResponse/)<br>房间声学处理设计 | Engineering | Acoustics | uncapped | physical_sim | candidate | robust room-acoustic treatment design | 布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度 | 清晰度/混响/均匀度综合效用;一阶反射代理与镜像源长程计算排序不同,含安装误差与老化偏移 |
 | [`TrussWeightMinimization`](benchmarks/Engineering/TrussWeightMinimization/)<br>桁架减重 | Engineering | StructuralEngineering | uncapped | analytical | candidate | general truss sizing under physical shifts | 给出跨结构通用的桁架截面尺寸策略,在应力、位移与欧拉屈曲约束下减重 | 标称减重;密封拓扑迁移与载荷/材料/制造稳健性分列,无上限 |
-| [`WakeAwareFarmCoDesign`](benchmarks/Engineering/WakeAwareFarmCoDesign/)<br>尾流感知风场协同设计 | Engineering | WindEnergy | uncapped | physical_sim | candidate | wind-farm layout and yaw co-design | 联合设计风机平面位置与分风向偏航策略,减弱尾流损失并保持布置可制造 | 相对规则零偏航风场的年发电价值提升;留出风况和尾流模型偏移分列,无上限 |
+| [`WakeAwareFarmCoDesign`](benchmarks/Engineering/WakeAwareFarmCoDesign/)<br>尾流感知风场协同设计 | Engineering | WindEnergy | uncapped | physical_sim | candidate | wind-farm layout and yaw co-design | 联合设计风机平面位置与分风向偏航策略,使布局增益和尾流转向增益同时成立 | 布局增益与偏航控制增益的几何均值;留出风况和尾流模型偏移分列,无上限 |
 | [`CalorimeterDesign`](benchmarks/Physics/CalorimeterDesign/)<br>量能器设计 | Physics | ParticlePhysics | uncapped | analytical_reduced_order_physics | candidate | graded sampling-calorimeter design curves | 设计分层取样量能器,使能量分辨、线性与簇射包容在多档成本约束下同时改善 | 多能点效用;留出探测器迁移与最差制造偏移分列,无上限 |
 | [`DiffractionGratingDesign`](benchmarks/Physics/DiffractionGratingDesign/)<br>衍射光栅设计 | Physics | Optics | uncapped | fourier_modal_rcwa | candidate | polarization-tolerant multilayer relief design | 设计五层一维二元介质浮雕,把透射光导入 +1 衍射级,且对偏振与角度容差 | 开发集目标级效率;偏振/角度/波长与工艺偏移稳健性分列,无上限 |
 | [`MultilayerThinFilm`](benchmarks/Physics/MultilayerThinFilm/)<br>多层减反射膜 | Physics | Photonics | clipped | physical_sim | certified | design a broadband antireflection coating | 设计可见光全谱段的多层宽带减反射膜 | 宽带减反射质量;物理下界为零平均反射 |
