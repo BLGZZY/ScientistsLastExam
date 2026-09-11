@@ -10,9 +10,9 @@
 | [73](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/73) | `c0d1f3e2` | False | NeuralReportAttribution | shortcut_revalidation_priority | 8 fixed sandbox evaluations reproduced; contract and model calibration pending |
 | [72](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/72) | `8497bd45` | False | DarkMatterRecoilAttribution | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
 | [71](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/71) | `7623c22b` | False | AnomalyZoneSpeciesTree | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
-| [69](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/69) | `691a8348` | True | CriticalPhenomenaLab | framework | integrated_with_additional_fixes; Linux acceptance pending |
-| [66](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/66) | `ae252934` | False | AMOCTippingRefusal, IMUBiasCalibration | framework | integrated_with_additional_fixes; Linux acceptance pending |
-| [60](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/60) | `dbc21822` | False | AquiferPumpingInference | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
+| [69](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/69) | `691a8348` | True | CriticalPhenomenaLab | framework | integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending |
+| [66](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/66) | `ae252934` | False | AMOCTippingRefusal, IMUBiasCalibration | framework | integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending |
+| [60](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/60) | `dbc21822` | False | AquiferPumpingInference | shortcut_revalidation_priority | 6 fixed sandbox replays reproduced; #78 0.884294 exact source unavailable; concern remains unresolved |
 | [59](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/59) | `7d62a099` | False | SpikeHistoryInference | task_intake | structural/oracle/shortcut review before calibration |
 | [58](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/58) | `c358c365` | False | FRAPBindingInference | task_intake | structural/oracle/shortcut review before calibration |
 | [57](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/57) | `43736d77` | False | SortingNetworkSize | task_intake | structural/oracle/shortcut review before calibration |
@@ -24,7 +24,7 @@
 | [48](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/48) | `4feb3eae` | False | TransientChirpInference | task_intake | structural/oracle/shortcut review before calibration |
 | [47](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/47) | `30501b1a` | False | F6SpinGlassGroundState | task_intake | structural/oracle/shortcut review before calibration |
 | [46](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/46) | `c713e8be` | False | MicrolensingEventCharacterization | task_intake | structural/oracle/shortcut review before calibration |
-| [37](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/37) | `29b6d2a7` | False | shared framework | framework | integrated_with_additional_fixes; Linux acceptance pending |
+| [37](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/37) | `29b6d2a7` | False | shared framework | framework | integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending |
 | [36](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/36) | `92f0adbf` | False | ChowlaCosineCertificate, DephrasureCodeDesign, MutuallyUnbiasedBases6 | task_intake | structural/oracle/shortcut review before calibration |
 | [31](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/31) | `92c5d38c` | True | MiplibPrimalIncumbent | task_intake | structural/oracle/shortcut review before calibration |
 | [30](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/30) | `90366563` | True | AffineLoopRankingCertificate | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
@@ -43,3 +43,7 @@
 The JSON companion records exact heads, files, overlaps, dependencies, evidence scope and unresolved calibration. PR #16 depends on family support from #17. PR #17 remains a separate review; this integration does not enable its lifetime-credit or promotion semantics.
 
 PR #73 latest-head follow-up: [fixed shortcut replay](pr73_shortcut_review_2026-09-11.md). The old free noise-key premise is gone; the disclosed paid algebraic policy remains strong. This is not a task admission decision.
+
+PR #60 latest-head follow-up: [six fixed sandbox replays](pr60_shortcut_review_2026-09-11.md) reproduced the disclosed reference and `(2,-3,-4)` probe. The exact source/thresholds of issue #78’s stronger 0.884294 candidate are unavailable in the current disclosure; that concern remains open. This is not a scientific admission decision.
+
+PR #37, #66 and #69 are integrated with additional fixes. Linux targeted acceptance has passed 178 core checks and 67 historical checks; the full suite remains pending. These are engineering acceptance results and do not change the snapshot PR heads or task admission status.

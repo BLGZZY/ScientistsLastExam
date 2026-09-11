@@ -405,10 +405,17 @@
       "shortcut_status": "latest_head_not_yet_executed",
       "independent_calibration": "not_verified",
       "dependency": [],
-      "next_action": "integrated_with_additional_fixes; Linux acceptance pending",
+      "next_action": "integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending",
       "evidence_refresh_scope": [
         "benchmarks/Physics/CriticalPhenomenaLab"
-      ]
+      ],
+      "integration_status": "integrated_with_additional_fixes",
+      "linux_acceptance": {
+        "targeted_status": "passed",
+        "core_tests_passed": 178,
+        "historical_tests_passed": 67,
+        "full_suite_status": "pending"
+      }
     },
     {
       "number": 66,
@@ -451,11 +458,18 @@
       "shortcut_status": "latest_head_not_yet_executed",
       "independent_calibration": "not_verified",
       "dependency": [],
-      "next_action": "integrated_with_additional_fixes; Linux acceptance pending",
+      "next_action": "integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending",
       "evidence_refresh_scope": [
         "benchmarks/EarthScience/AMOCTippingRefusal",
         "benchmarks/Engineering/IMUBiasCalibration"
-      ]
+      ],
+      "integration_status": "integrated_with_additional_fixes",
+      "linux_acceptance": {
+        "targeted_status": "passed",
+        "core_tests_passed": 178,
+        "historical_tests_passed": 67,
+        "full_suite_status": "pending"
+      }
     },
     {
       "number": 60,
@@ -498,13 +512,20 @@
       "category": "shortcut_revalidation_priority",
       "overlap_with_inventory": [],
       "overlap_with_other_prs": {},
-      "shortcut_status": "latest_head_not_yet_executed",
+      "shortcut_status": "fixed_latest_head_probes_executed; 6 sandbox evaluations valid and deterministic",
       "independent_calibration": "not_verified",
       "dependency": [],
-      "next_action": "rerun disclosed shortcuts against this head before admission",
+      "next_action": "obtain exact source and thresholds for issue #78 score 0.884294, then replay on this head; shortcut concern remains unresolved",
       "evidence_refresh_scope": [
         "benchmarks/EarthScience/AquiferPumpingInference"
-      ]
+      ],
+      "shortcut_evidence": ".research/pr60_shortcut_review_2026-09-11.json",
+      "unresolved_shortcut_evidence": {
+        "issue": 78,
+        "reported_development_score": 0.884294,
+        "exact_source_status": "unavailable_in_current_disclosure",
+        "resolution": "not_closed_by_disclosed_fixed_probe_replay"
+      }
     },
     {
       "number": 59,
@@ -1065,8 +1086,15 @@
       "shortcut_status": "latest_head_not_yet_executed",
       "independent_calibration": "not_verified",
       "dependency": [],
-      "next_action": "integrated_with_additional_fixes; Linux acceptance pending",
-      "evidence_refresh_scope": []
+      "next_action": "integrated_with_additional_fixes; Linux targeted acceptance passed (178 core + 67 historical); full suite pending",
+      "evidence_refresh_scope": [],
+      "integration_status": "integrated_with_additional_fixes",
+      "linux_acceptance": {
+        "targeted_status": "passed",
+        "core_tests_passed": 178,
+        "historical_tests_passed": 67,
+        "full_suite_status": "pending"
+      }
     },
     {
       "number": 36,
