@@ -15,6 +15,7 @@ RECORDED_LINEAGE = {
     "Physics/CriticalPhenomenaLab",
     "SystemsBiology/EnzymeKineticsLaw",
     "ParticlePhysics/DiscrepantMeasurements",
+    "ComputerArchitecture/CacheReplacementPolicyID",
     "MaterialsScience/PhaseDiagramDiscovery",
     "Physics/HiddenCouplingNetwork",
     "ClimateScience/ForcedSignalAttribution",
