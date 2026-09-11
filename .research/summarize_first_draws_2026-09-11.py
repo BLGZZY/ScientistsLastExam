@@ -54,7 +54,6 @@ def main():
     require(plan["feedback_modes"] == ["selection_blind"], "selection-blind plan required")
     fresh_replay = replay(plan)
     require(fresh_replay == read(args.replay), "independent replay differs from supplied replay artifact")
-    require(fresh_replay["status"] == "complete", "campaign incomplete; retain missing cells before reviewing")
     git = lambda *a: subprocess.check_output(["git", "-c", "core.commitGraph=false", "-C", str(root), *a], text=True).strip()
     require(not git("status", "--porcelain"), "calibration source must remain clean")
     require(git("rev-parse", "HEAD") == plan["source_provenance"]["git_revision"], "source revision changed")
@@ -71,8 +70,19 @@ def main():
     usage_complete = True
     for cell in plan["cells"]:
         directory = Path(cell["workdir"])
+        if not (directory / "trajectory.jsonl").is_file():
+            usage_complete = False
+            results.append({"seed_label": cell["seed"], "status": "missing_trajectory",
+                            "events": [{}, {"reference_reached": None, "scientific_score": None}]})
+            continue
         require(directory.stat().st_mode & 0o077 == 0, "run directory is not private")
         events = [json.loads(line) for line in (directory / "trajectory.jsonl").read_text().splitlines() if line.strip()]
+        if len(events) < 2:
+            usage_complete = False
+            results.append({"seed_label": cell["seed"], "status": "first_proposal_unavailable",
+                            "trajectory_sha256": sha((directory / "trajectory.jsonl").read_bytes()),
+                            "events": [{}, {"reference_reached": None, "scientific_score": None}]})
+            continue
         require(len(events) == 2 and [e["step"] for e in events] == [0, 1], "unexpected proposal horizon")
         manifest = read(directory / "run_manifest.json")
         for key in ("task_id", "task_package_sha256", "task_contract_sha256", "runtime_source_sha256", "llm_condition_sha256"):
@@ -151,6 +161,8 @@ def main():
               "source_revision": git("rev-parse", "HEAD"), "source_unchanged": True,
               "plan_sha256": plan["plan_sha256"], "plan_file_sha256": sha(args.plan.read_bytes()),
               "replay_file_sha256": sha(args.replay.read_bytes()),
+              "campaign_replay_status": fresh_replay["status"],
+              "campaign_cell_status_counts": fresh_replay["cell_status_counts"],
               "reviewer_script_sha256": sha(Path(__file__).read_bytes()), "reference_score": args.reference,
               "expected_worlds_per_evaluation": args.expected_worlds,
               "scheduled_first_proposals": len(results), "valid_complete_first_proposals": len(results) - unavailable,
