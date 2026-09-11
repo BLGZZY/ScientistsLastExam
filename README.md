@@ -42,7 +42,7 @@ Scientists' Last Exam
 
 <!-- task-inventory:start -->
 
-当前 85 个任务包,横跨 7 个学科,5 个 certified、80 个 candidate。
+当前 86 个任务包,横跨 7 个学科,5 个 certified、81 个 candidate。
 这一段的每个数字都由 `tests/test_readme_inventory_counts.py` 对着注册表核,改不动就是改错了。
 
 optimization(42 个):在受约束的设计空间里把目标做得更好。分四类:
@@ -51,8 +51,8 @@ optimization(42 个):在受约束的设计空间里把目标做得更好。分�
 分数是论证证明出的界有多强)。
 分数由做出来的东西有多好决定;公开纪录是 score = 1 的见证,不是封顶。
 
-discovery(43 个):从受预算约束的观测里恢复一个机制,或判断根本没有机制可恢复。
-分五类:公式 6、结构 6、证据 9、物质 6、参数反演 16。每题包含三种世界:
+discovery(44 个):从受预算约束的观测里恢复一个机制,或判断根本没有机制可恢复。
+分五类:公式 6、结构 6、证据 10、物质 6、参数反演 16。每题包含三种世界:
 机制在候选可表达的模型族内(该找出来)、机制在族外、根本没有机制(后两种该拒答)。
 候选看不到自己面对的是哪一类。
 
@@ -175,7 +175,9 @@ python scripts/report_discipline_scores.py --input experiments/<name>.json \
 python -m pytest tests/ -q                                   # 笔记本:沙箱测试自动 skip
 python scripts/audit_tasks.py --output /tmp/certification.json
 python scripts/audit_benchmark_standards.py --output /tmp/standards.json
-python scripts/refresh_global_evidence.py --commit           # 仅限 Linux 主机、干净树
+mkdir -m 700 /tmp/sle-private-evidence                      # 使用新的仓库外私有目录
+python scripts/refresh_global_evidence.py --commit --private-output /tmp/sle-private-evidence/baseline.json
+# 上述刷新仅限 Linux 主机、干净树；私有完整原件不可覆盖，公开报告只含选择指标和哈希。
 ```
 
 ## 任务汇总
