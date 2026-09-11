@@ -34,6 +34,30 @@ ARCHIVES = {
         "experiments/rans_v2_calibration_analysis_2026-07-24.json",
         "bf4357b7e543492f27973249fb96cb94a714296cf3542c2d9f9f395dd165be7e",
     ),
+    "demographic_sfs_v2": (
+        "experiments/demographic_sfs_v2_calibration_analysis_2026-07-25.json",
+        "88950cd4d3b99c55ca6810a3c2c9d9c0471109fadd2ed817416d3753383222c0",
+    ),
+    "diffraction_grating": (
+        "experiments/diffraction_grating_v2_calibration_analysis_2026-07-26_v2.json",
+        "c5bfe01b7a6d63f69720e1763f625577c938dc467a9c5e153b0885302260ac4e",
+    ),
+    "electrolyte_conductivity": (
+        "experiments/electrolyte_conductivity_design_calibration_analysis_2026-07-25.json",
+        "2f3fa9d7b0d57375ddfa1f5699129421fae3931895f6f6e3b3d8894db864bb31",
+    ),
+    "force_field_hypothesis": (
+        "experiments/force_field_hypothesis_v2_calibration_analysis_2026-07-26.json",
+        "1f5f6af3e437eb949f3a5075673ba1122ef61f9fffc2b4734b9d2d160d171360",
+    ),
+    "protein_stability": (
+        "experiments/protein_stability_design_calibration_analysis_2026-07-25.json",
+        "a8086d7525413782be2d833781615984d76c53558fd8e985ad0f863c15547f27",
+    ),
+    "photovoltaic_tandem": (
+        "experiments/photovoltaic_tandem_v1_calibration_analysis_2026-07-25.json",
+        "e938f0bc635ec1569a2276a9041995ee957eeb89248db008dc5a48a5e8658607",
+    ),
 }
 RECORD_LABELS = {"budget_one", "normal_budget_three", "blind_budget_three"}
 

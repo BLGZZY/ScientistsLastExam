@@ -9,8 +9,9 @@ because their raw files are still intact. Validate these claims separately.
 python scripts/audit_historical_records.py --task all > /tmp/historical-integrity.json
 ```
 
-This read-only command pins the three committed AlloyHardness, Calorimeter-v2,
-and RANS-v2 analysis documents at revision
+This read-only command pins the committed AlloyHardness, Calorimeter-v2,
+RANS-v2, DemographicSFS, DiffractionGrating, ElectrolyteConductivity,
+ForceFieldHypothesis, ProteinStability, and PhotovoltaicTandem analysis documents at revision
 `f9c05b65b100e0b7d6acabbf16e64602fb73eea9`. Each document's existing digests bind
 its calibration and batch reports, raw trajectories, run manifests, and retained
 best/terminal sources. The command also reconstructs the original scalar
@@ -33,7 +34,7 @@ claimed as verified evidence.
 ## Current compatibility and replay
 
 The existing `analyze_*_calibrations.py` entry points continue to enforce their
-unchanged source migration checks. With the present source tree, all three
+unchanged source migration checks. With the present source tree, the first eight
 analyses reject current compatibility: the task/runtime changes exceed the old
 audited scope, and current file hashes differ. Intact old migration reports or
 a successful direct oracle replay do not override that refusal. New current
@@ -43,14 +44,17 @@ own provenance; do not overwrite old reports or replace their digests.
 The raw-data integration tests now assert both original integrity and current
 refusal. They do not skip on a migration failure. Existing missing-raw-data skips
 remain for checkouts that do not contain the ignored run directories. Run the
-fixture tests in any checkout; validate retained artifact replays on the original
-compatible scientific environment because the historical comparisons are exact.
+fixture tests in any checkout; validate retained artifact replays with the original
+scientific dependencies because the historical comparisons are exact.
 
 ```bash
 OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
 python -m pytest tests/test_historical_records.py \
   tests/test_alloy_hardness_analysis.py tests/test_calorimeter_analysis.py \
-  tests/test_rans_analysis.py -q -p no:cacheprovider
+  tests/test_rans_analysis.py tests/test_demographic_sfs_analysis.py \
+  tests/test_diffraction_grating_analysis.py tests/test_electrolyte_conductivity_analysis.py \
+  tests/test_force_field_hypothesis_analysis.py tests/test_protein_stability_analysis.py \
+  -q -p no:cacheprovider
 ```
 
 The fixtures mutate each type of originally bound file, rewrite a batch
