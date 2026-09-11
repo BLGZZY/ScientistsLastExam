@@ -22,6 +22,8 @@
 #80 / #72 / #79 的 provider-reported returned-proposal token 分别为 52,280 / 44,696 / 52,200。
 这些数不包含不可获得的失败 HTTP 请求用量，价格 unavailable，不能视为零费用。
 没有根据 heldout 或失败结果选择候选、重试模型提案、调整阈值或重签旧测量。
+#80 的三次首提案用于这次限定的 D16 对照，不是框架注册的正式 model measurement。
+全局 maturity 中的 current model measurement 数仍为 0；这次准入不补足多模型、迭代搜索或长时反馈证据。
 
 ## 系统修复与证据边界
 
