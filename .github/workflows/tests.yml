@@ -56,4 +56,26 @@ jobs:
         # the refresh is the maintainer's own step, and skipping it is the regression.
         env:
           SLE_REQUIRE_FROZEN_INVENTORY: ${{ github.ref == 'refs/heads/main' && '1' || '0' }}
-        run: /usr/bin/python3 -m pytest tests/ -q -p no:cacheprovider
+        run: /usr/bin/python3 -m pytest tests/ -q -p no:cacheprovider --junitxml=/tmp/sle-tests.xml
+      - name: Report executed and unavailable checks
+        if: always()
+        run: |
+          /usr/bin/python3 scripts/summarize_test_coverage.py --junit /tmp/sle-tests.xml \
+            --output /tmp/sle-test-coverage.json --markdown-output /tmp/sle-test-coverage.md
+      - name: Publish coverage summary
+        if: always()
+        run: |
+          if [ -f /tmp/sle-test-coverage.md ]; then
+            cat /tmp/sle-test-coverage.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo 'Test execution evidence unavailable; inspect the failed setup or test step.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+      - name: Preserve execution evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-execution-evidence
+          path: |
+            /tmp/sle-tests.xml
+            /tmp/sle-test-coverage.json
+          if-no-files-found: error
