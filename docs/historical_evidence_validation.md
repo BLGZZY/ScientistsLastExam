@@ -34,12 +34,19 @@ claimed as verified evidence.
 ## Current compatibility and replay
 
 The existing `analyze_*_calibrations.py` entry points continue to enforce their
-unchanged source migration checks. With the present source tree, the first eight
+unchanged source migration checks. With the present source tree, all nine
 analyses reject current compatibility: the task/runtime changes exceed the old
 audited scope, and current file hashes differ. Intact old migration reports or
 a successful direct oracle replay do not override that refusal. New current
 evidence requires a separately reviewed migration or new experiments with their
 own provenance; do not overwrite old reports or replace their digests.
+
+PhotovoltaicTandem previously used glob pathspec magic with `git ls-tree`, which
+that command rejects, and compared only the calibration and model revisions.
+It now checks the whole runtime package (a conservative superset of the former
+Python-only scope), retains that historical comparison, and independently gates
+the model-to-current comparison. Its public tests use pinned archived records as
+fixtures; the raw files must still pass the separate audit on a data host.
 
 The raw-data integration tests now assert both original integrity and current
 refusal. They do not skip on a migration failure. Existing missing-raw-data skips
@@ -54,6 +61,7 @@ python -m pytest tests/test_historical_records.py \
   tests/test_rans_analysis.py tests/test_demographic_sfs_analysis.py \
   tests/test_diffraction_grating_analysis.py tests/test_electrolyte_conductivity_analysis.py \
   tests/test_force_field_hypothesis_analysis.py tests/test_protein_stability_analysis.py \
+  tests/test_photovoltaic_analysis.py \
   -q -p no:cacheprovider
 ```
 
