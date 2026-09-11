@@ -6,7 +6,7 @@ The tables below retain the contributor's historical in-process measurements at 
 
 The previous first-query reference deliberately omitted later positions and is inadequate as an admission reference. `verification/reference_positional.py` now packages the existing positional method with original helper source inlined and no parameter changes. Source hashes and the exact adaptation are recorded in `.research/pr80_source_adaptation_2026-09-11.json`. The original method remains a no-later-position control. Fixed source-matched no-scan, no-library and no-confirmation programs are standalone, and the machine shortcut contract includes the historical strongest no-confirmation alternative as well as the full positional method without confirmation. The fixed pilot below now supplies measured expected scores in a separate card update; no model difficulty pass is implied.
 
-The discrete compliance derivation, branch-coupling delta argument and truncation limits are in `references/compliance_argument.md`. Complete novelty comparison and real first-proposal model evidence remain outstanding. No new model call or global evidence refresh is included in this repair.
+The discrete compliance derivation, branch-coupling delta argument and truncation limits are in `references/compliance_argument.md`. Complete catalog novelty comparison and three genuine first proposals are now recorded below and in .research/pr80_admission_2026-09-11.md. Independent privacy-domain review remains pending.
 
 The following historical narrative is retained for provenance; it does not override this current admission status.
 
@@ -37,7 +37,7 @@ score: later-position scanning, scanning as a whole, the library, and confirmati
 fixed candidate-method qualification, not a model difficulty or iteration result. The old
 318-policy grid is author provenance; only its fixed reported strongest alternative and the
 stronger positional no-confirmation alternative were re-evaluated here, without new grid
-selection, seed tuning or changed worlds. True frontier first-proposal evidence is still missing.
+selection, seed tuning or changed worlds. The independent first-proposal comparison below was run after this fixed method pilot.
 
 ## Reference (truth-blind): a first-query dissent scan, a screened library, one confirmed pair
 
@@ -91,9 +91,17 @@ confirmation.
 
 ## Model draws
 
-None. The task was built on a machine without a model endpoint. The card records
-`calibration_evidence_status: missing`; the frontier draw and the global evidence refresh are
-owed before certification.
+Three predeclared, independent `gpt-5.6-sol` first proposals used `greedy_rewrite`, selection-blind feedback, one proposal per seed label, reasoning high and a 16384-token output cap. The model-condition hash is `967fb197a1603c8c9bd881997ba02cfde1336f0cbb2e1c3a369c3cec24d50d07`; immutable plan hash `8bc89f14b2ffd251113cc619f26cc5d05d785b6e74125c787122999f9894928d`. All cells are retained; there was no adaptive candidate retry or selection.
+
+| Seed label | Development | Held out | Valid worlds | Reaches reference |
+|---|---:|---:|---:|---|
+| 0 | 0.21659171428571433 | 0.22160099999999994 | 18/18 | No |
+| 1 | 0.2761347142857143 | 0.24126249999999996 | 18/18 | No |
+| 2 | 0.2652197142857144 | 0.12217275000000004 | 18/18 | No |
+
+The complete measured reference is 0.8193980000000003 development / 0.729870 held out. Each proposal has zero false claims, correct refusal 1.0 in both splits and genuine discovery coverage 2/7 development and 1/4 held out. The first-proposal criterion passes this comparison only; no iterative result or general model-hardness claim follows. Provider-reported returned-proposal usage is 52280 tokens (12441 input, 39839 output); price and possible failed HTTP-attempt usage are unavailable.
+
+The original clean source is `c02e402f7ee709521c5843f6abd3256b6e57f872`, package `fc763f6e070e96cc5356234b3b3e1101ffb867bf6ba5bf4013a2b5ef4f02e94b`, contract `47ded87d94cbdb164dde218aed3f2922281a45ae11b98f42500d1d94e885fdd6`, runtime `e29d3b1d7b0e0f9f5b1b09a8c0a45ace098ad8790547d0333c1940e0a421bea9`. `experiments/sparse_vector_first_draw_review_2026-09-11.json` independently verifies six original evaluation receipts, the retained program bytes and all 42 private artifact hashes. Subsequent card/known-best updates do not change the agent-visible Task.md or scientific implementation. A separate six-evaluation retained-candidate replay establishes compatibility after those documentation edits; it adds no model samples and leaves original evidence immutable. External domain review and fresh server-held confirmation remain pending.
 
 ## Baseline: the classic pair, a count ratio, never declining
 
@@ -212,5 +220,5 @@ counts. All of them score valid 0, combined 0 and feasibility 0 without raising.
 run twice gives fresh runs, and the counts do not depend on the order of calls. A reference
 evaluation takes about one second in process.
 
-Not done: the sandbox half of `scripts/check_task_contribution.py` (no Bubblewrap on the build
+At original author construction, not yet done: the sandbox half of `scripts/check_task_contribution.py` (no Bubblewrap on the build
 machine), a frontier-model draw, the global evidence refresh.

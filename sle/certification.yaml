@@ -440,24 +440,18 @@ tasks:
   DataPrivacy/SparseVectorAudit:
     status: candidate
     reason: >-
-      The first differential-privacy task and the first audit of an implementation against its
-      specification, in the discovery-evidence cell. A curator claims that a deployed sparse vector
-      technique, AboveThreshold with a cutoff, is (1, 0.001)-differentially private; the candidate
-      runs the deployment on query vectors of its choice under a budget of 200000 runs and either
-      names two neighbouring vectors and a set of outputs whose exact probabilities break the claim,
-      or declines. The oracle knows the deployment and scores the witness's privacy loss exactly.
-      The specification reaches a loss of 0.90 against an epsilon of 1, so plug-in maxima show
-      violations in worlds where the claim holds; two compliant deployments deviate from the specification only on
-      events rarer than delta; noise-scale violations sit a quarter of epsilon above the claim on
-      events of under one per cent and cost tens of thousands of runs per side to certify; and
-      noise-skipping branches live at an unpublished offset and set of positions. A false witness
-      costs one world wherever it is made. Reference 0.570 on the development split and 0.480 held
-      out, with no false discovery on eight further seeds; a documented positional scan as its
-      headroom scores 0.819 and 0.730; the baseline scores zero; the best of 318 shortcut
-      strategies reaches 0.427, 75 per cent of the reference, and averages 0.063 with fifty false
-      discoveries on the eight further seeds. Built without a model endpoint or a sandbox, so the
-      frontier draw, the sandbox check and the global evidence refresh are still owed. Pending
-      external privacy review.
+      Paid-sample auditing of sparse-vector differential privacy: submit neighbouring query vectors
+      and an output event witnessing a violation, or decline. Deterministic finite threshold-noise
+      enumeration has documented truncation/compliance bounds; it is not a formal real-arithmetic
+      certificate. The complete positional reference scores 0.8193980000000003 development and
+      0.72987 held out; baseline zero and the fixed strongest historical shortcut 0.4274261428571428.
+      All substantive capability ablations lower development score. Correct claim-denominator FDR,
+      all-world validity and per-world candidate isolation are verified. At c02e402, 151 targeted
+      Linux tests and the 13-call contribution gate passed. Three independent valid first proposals
+      score 0.21659171428571433, 0.2761347142857143 and 0.2652197142857144, all below the complete
+      reference. Their original receipts remain immutable and documentation-only compatibility
+      is checked separately. Candidate intake only; independent privacy review, iterative difficulty
+      and fresh server-held confirmation remain pending.
     citation_ids: [doi:10.14778/3055330.3055331, doi:10.1145/3243734.3243818, doi:10.1145/3243734.3243863, doi:10.1109/SP40001.2021.00081, doi:10.1561/0400000042, doi:10.1145/1536414.1536467, doi:10.1145/2382196.2382264, doi:10.1093/biomet/26.4.404, arxiv:2006.07709, doi:10.1109/SP40001.2021.00069, doi:10.1137/09076828X, doi:10.1109/ALLERTON.2018.8636068]
   CausalDiscovery/SurvivorshipConfoundedDesign:
     status: candidate

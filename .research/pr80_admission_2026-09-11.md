@@ -1,6 +1,6 @@
 # PR80 admission repair and fixed validation
 
-**Current status:** complete positional method and declared shortcut guard validated; genuine model first-proposal evidence remains pending. At frozen source `c02e402f7ee709521c5843f6abd3256b6e57f872`, the standard contribution gate passed structural/runtime/shortcut phases and all 151 targeted Linux tests passed without skips. Difficulty remains `unassessed`. Exact validation details are in `pr80_validation_2026-09-11.json`; no task file changes follow this freeze in this repair branch.
+**Current status:** the complete reference, shortcut guard and three independent valid first proposals satisfy the fixed candidate-intake comparison. The original c02e402 standard contribution gate and all 151 targeted Linux tests passed. Global evidence and integration CI are recorded separately; external domain review and certification remain pending. Historical stages below retain their original scope and outstanding work as of that stage.
 
 ## Original fixed plan
 
@@ -105,3 +105,12 @@ per-world observations, candidate output, private worker errors or credentials. 
 pilot retains its original 5c5b358 provenance and all 14 records. There were no model calls,
 world or anchor changes, parameter tuning, or global evidence refresh. Scientific admission
 still requires the independently scheduled first-proposal draws and domain review.
+
+
+## Independent first proposals and maintainer disposition
+
+The fixed three-cell plan `8bc89f14b2ffd251113cc619f26cc5d05d785b6e74125c787122999f9894928d` completed at clean c02e402. Each first proposal was valid on all 18 worlds. Development scores 0.21659171428571433, 0.2761347142857143 and 0.2652197142857144 are below the complete reference 0.8193980000000003; held-out scores are 0.22160099999999994, 0.24126249999999996 and 0.12217275000000004. None is a blanket refusal: each recovers 2/7 development and 1/4 held-out violating worlds, with zero false claims and correct refusal 1.0 in both splits.
+
+The independent review `experiments/sparse_vector_first_draw_review_2026-09-11.json` verifies all six original evaluation receipts, retained candidate bytes, complete per-world validity and 42 private artifact hashes. Model condition, runtime, original task package and contract are included. Reported returned-proposal usage is 52280 tokens; price and unsuccessful transport-attempt usage are unavailable. No cell was dropped, adaptively retried or selected using held-out scores.
+
+Maintainer decision: admit as candidate after final source-compatible replay, fresh global evidence and CI. The model comparison supports the bounded first-proposal criterion only. No evaluator, prompt, reference, instance, budget, threshold or score was changed after seeing these draws. Card and known-best documentation updates require a separate fixed replay of the three retained programs twice each, comparing every metric with its original receipt; this is compatibility evidence, not additional model calibration. Original records remain unchanged. External review, general model hardness, iterative improvement and fresh server-held confirmation are not established.
