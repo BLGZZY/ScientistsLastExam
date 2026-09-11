@@ -42,7 +42,7 @@ def git(*args):
 def source_hashes():
     paths = git("ls-files", "sle", "scripts/check_task_contribution.py",
                 "scripts/shortcut_probe_contract.py", "scripts/check_evaluator_survives_bad_candidates.py",
-                "benchmarks/Physics/DarkMatterRecoilAttribution", str(Path(__file__).relative_to(ROOT)))
+                "benchmarks/Physics/DarkMatterRecoilAttribution", str(Path(__file__).resolve().relative_to(ROOT)))
     return {path: sha((ROOT / path).read_bytes()) for path in paths.splitlines()}
 
 
