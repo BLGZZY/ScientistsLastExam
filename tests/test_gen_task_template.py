@@ -48,16 +48,22 @@ class GeneratedRunEvalTests(unittest.TestCase):
     def test_wrapper_shells_out_instead_of_importing_the_candidate(self):
         rendered = _render()
         self.assertIn("subprocess.run(", rendered)
-        self.assertIn('"-m", "sle", "eval"', rendered)
+        self.assertIn('sle/frontier_eval_entrypoint.py', rendered)
+        helper = (REPO / 'sle/frontier_eval_entrypoint.py').read_text()
+        self.assertIn('"-m", "sle", "eval"', helper)
         for bypass in ("importlib", "exec_module", "spec_from_file_location", "exec("):
             with self.subTest(bypass=bypass):
                 self.assertNotIn(bypass, rendered)
 
     def test_wrapper_reports_failures_instead_of_raising(self):
         rendered = _render()
-        self.assertIn("error_message", rendered)
-        self.assertIn("completed.returncode", rendered)
-        self.assertIn("stderr", rendered)  # the reason has to reach the report
+        self.assertIn("result.returncode", rendered)
+        self.assertIn("return 2", rendered)
+        self.assertIn("stderr", rendered)
+        # Candidate diagnostics and metric filtering belong to the trusted helper.
+        # Launch/import failures are infrastructure errors and must not invent a score.
+        helper = (REPO / "sle/frontier_eval_entrypoint.py").read_text()
+        self.assertIn("error_message", helper)
 
     def test_root_depth_matches_the_benchmarks_layout(self):
         """`parents[4]` must land on the repository root from the wrapper's own location."""

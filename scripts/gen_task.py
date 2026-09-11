@@ -36,81 +36,53 @@ from sle.benchmark_layout import discipline_for_domain  # noqa: E402
 
 DEFAULT_EVAL_TIME_SECONDS = 100
 
-RUN_EVAL_TEMPLATE = '''"""Black-box eval entrypoint for {task}.
-
-A thin wrapper over the trusted evaluation path (`python -m sle eval`), which loads the oracle in
-a supervised trusted subprocess and runs the candidate in the Bubblewrap sandbox over a typed
-JSON-RPC boundary. Do NOT import the candidate into this process: the oracle lives here, so an
-in-process import is a way for candidate code to run unsandboxed whenever anyone reaches for the
-convenience. The harness never uses this file; external harnesses do, through `eval_command.txt`,
-so it keeps that contract and loses the shortcut.
-
-What it writes is the search-visible view, not everything the evaluator returned. `sle eval`
-prints the full metrics dictionary, which for a discovery task carries the held-out scores, the
-per-instance rows and the discovery axes. The repository's own search loop never sees those - it
-reads through `sle.metric_visibility.search_visible_metrics` - but an external harness reads this
-file, and a harness that feeds it back into its own loop would be selecting on the sealed split.
-The whitelist is imported rather than restated so the two paths cannot answer differently.
-"""
-from __future__ import annotations
-
+RUN_EVAL_TEMPLATE = '''"""Launch the shared trusted evaluator without importing project code."""
 import argparse
-import json
-import os
 import subprocess
 import sys
 from pathlib import Path
 
-INVALID = -1e18
-TASK_ID = "{task_id}"
 ROOT = Path(__file__).resolve().parents[4]
-EVAL_TIMEOUT_S = {eval_timeout}
+TASK_ID = {task_id!r}
+EVAL_TIMEOUT_S = {eval_timeout!r}
+
 
 # The task id is written in, where the previous template derived everything from __file__.
 # That is deliberate - `sle eval` needs the registered id, not a path - but it means a wrapper
 # copied to a neighbouring task keeps pointing at the task it came from, and scores the new
 # candidate against the old oracle without complaining. The directory name is the second half
 # of the id, so the copy is cheap to catch here rather than in whoever reads the numbers.
-# This runs before the import below, so a copied wrapper says what is wrong with it instead of
-# dying on ModuleNotFoundError wherever it was copied to.
 _expected_task = Path(__file__).resolve().parents[1].name
 if TASK_ID.split("/")[-1] != _expected_task:
     raise SystemExit(
         "TASK_ID %r does not name this directory (%r); this wrapper was copied from another"
         " task and would score against that task's oracle" % (TASK_ID, _expected_task))
 
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
 
-from sle.metric_visibility import SEARCH_VISIBLE_KEYS  # noqa: E402
-
-
-def main() -> int:
+def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--candidate", required=True)
     parser.add_argument("--metrics-out", required=True)
     parser.add_argument("--timeout", type=float, default=EVAL_TIMEOUT_S)
+    parser.add_argument("--full-metrics-dir")
     args = parser.parse_args()
-    metrics = {{"combined_score": INVALID, "valid": 0.0}}
+    command = [sys.executable, str(ROOT / "sle/frontier_eval_entrypoint.py"),
+               "--task", TASK_ID, "--root", str(ROOT), "--timeout", str(args.timeout),
+               "--candidate", args.candidate, "--metrics-out", args.metrics_out]
+    if args.full_metrics_dir:
+        command.extend(["--full-metrics-dir", args.full_metrics_dir])
     try:
-        completed = subprocess.run(
-            [sys.executable, "-m", "sle", "eval", "--task", TASK_ID, "--allow-uncertified",
-             "--candidate", str(Path(args.candidate).resolve()), "--timeout", str(args.timeout)],
-            cwd=str(ROOT), capture_output=True, text=True, timeout=args.timeout + 120,
-            env={{**os.environ, "PYTHONPATH": str(ROOT)}})
-        if completed.returncode != 0:
-            raise RuntimeError("sle eval exited %d: %s" % (
-                completed.returncode, (completed.stderr or "").strip()[-500:]))
-        result = json.loads(completed.stdout)
-        metrics.update(result)
-        metrics.setdefault("raw_score", result.get("combined_score"))
-    except Exception as exc:  # noqa: BLE001 - a broken evaluation is reported, not raised
-        metrics["error_message"] = "%s: %s" % (type(exc).__name__, exc)
-    public = {{key: value for key, value in metrics.items() if key in SEARCH_VISIBLE_KEYS}}
-    Path(args.metrics_out).write_text(
-        json.dumps(public, indent=2, default=str), encoding="utf-8")
-    print(json.dumps({{k: public.get(k) for k in ("combined_score", "valid")}}))
-    return 0
+        Path(args.metrics_out).unlink(missing_ok=True)
+        result = subprocess.run(command, capture_output=True, text=True)
+        if result.returncode:
+            print("evaluation entrypoint unavailable or infrastructure failure (exit %d)"
+                  % result.returncode, file=sys.stderr)
+            return 2
+        print(result.stdout, end="")
+        return 0
+    except OSError:
+        print("evaluation entrypoint could not be launched or report cleared", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
