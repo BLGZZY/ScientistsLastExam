@@ -44,6 +44,7 @@ CHINESE_NAMES = {
     "Catalysis/CatalystDeactivationLab": "催化剂失活实验室",
     "CausalDiscovery/InterventionalSCM": "干预式结构因果模型",
     "CausalDiscovery/SurvivorshipConfoundedDesign": "幸存者偏差下的效应估计",
+    "DataPrivacy/SparseVectorAudit": "稀疏向量技术的差分隐私审计",
     "ChemicalKinetics/ReactionMechanismFitting": "反应机理辨识",
     "ChemicalProcess/DistillationColumnDesign": "精馏塔设计",
     "Chemistry/LennardJonesCluster": "Lennard-Jones 团簇",
@@ -157,6 +158,9 @@ CHINESE_BRIEFS = {
     "CausalDiscovery/SurvivorshipConfoundedDesign": (
         "每一行数据都已被结果相关的筛选选中,在幸存者表里估计真实处理效应",
         "处理效应恢复;混杂开启的伪关联须识别,无 T→Y 边时不得宣称效应"),
+    "DataPrivacy/SparseVectorAudit": (
+        "对一个声称满足 (ε, δ) 差分隐私的稀疏向量技术部署实现做黑盒审计:在运行次数预算内选择相邻查询向量与输出事件,给出违反见证或判定没有违反;实现可能偏离公开规范,且并非每处偏离都构成违反",
+        "见证的精确隐私损失对照构造者锚点评分;损失不超过 ε 的见证记误发现并扣一个世界,分数标尺锚在全拒答为零"),
     "ChemicalKinetics/ReactionMechanismFitting": (
         "自选温度、初始混合与采样时刻,从公开一阶反应库里认出稀疏反应网络与其温度依赖",
         "机制恢复 + 外推;库外世界须拒答"),
