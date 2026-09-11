@@ -133,6 +133,7 @@ def test_private_directory_and_symlink_locations_fail_closed(tmp_path, monkeypat
     tmp_path = tmp_path.resolve()
     directory = tmp_path / "shared"
     directory.mkdir(mode=0o755)
+    directory.chmod(0o755)  # The operator host intentionally uses umask 077.
     with pytest.raises(ValueError, match="0700"):
         baseline._open_private(directory / "original.json")
     target = tmp_path / "private"
