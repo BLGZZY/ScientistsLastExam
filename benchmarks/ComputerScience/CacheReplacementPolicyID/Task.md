@@ -156,9 +156,11 @@ Reported separately, never averaged into one number:
 The evaluator also returns the numeric world, determinable-world and unsupported-world
 counts, false-discovery and correct-refusal counts, discovery-attempt count, valid count
 and signed mechanism-score sum for each split. Development denominators are 12/9/3
-(all/deterministic/randomised); heldout denominators are 6/4/2. The false-discovery rate
-uses all worlds as denominator, not the number of policy claims. Invalid worlds remain in
-their planned denominator and receive no refusal credit.
+(all/deterministic/randomised); heldout denominators are 6/4/2. FDR is the number of false
+policy claims divided by valid non-abstaining policy claims across the split. With no claims
+it is reported as zero together with `policy_claim_count=0`; coverage must also be inspected.
+The historical false-claim rate per all worlds remains `false_claim_world_rate`. Invalid
+worlds remain in planned mechanism/refusal/coverage denominators and receive no refusal credit.
 
 A sealed held-out set of six further worlds, four deterministic and two randomised, is scored too,
 under the same keys with the `heldout_` prefix, and is not visible to a searcher. `per_instance`

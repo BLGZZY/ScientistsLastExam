@@ -623,11 +623,16 @@ def _split_summary(records):
     raw = float(np.mean([r["mechanism_score"] for r in records]))
     always_abstain = len(unsupported) / len(records)
     normalized = float(np.clip((raw - always_abstain) / (1.0 - always_abstain), 0.0, 1.0))
+    claims = [r for r in records if r["valid"] and not r["abstained"]]
+    false_claim_count = sum(bool(r["false_discovery"]) for r in claims)
     return {
         "normalized_mechanism": normalized,
         "raw_mechanism": raw,
         "policy_recovery": float(np.mean([r["recovered"] for r in determinable])),
-        "false_discovery_rate": float(np.mean([r["false_discovery"] for r in records])),
+        "false_discovery_rate": false_claim_count / len(claims) if claims else 0.0,
+        "false_claim_world_rate": float(np.mean([r["false_discovery"] for r in records])),
+        "false_claim_count": false_claim_count,
+        "policy_claim_count": len(claims),
         "correct_refusal_rate": float(np.mean([r["correct_refusal"] for r in unsupported])),
         "discovery_coverage": float(np.mean([not r["abstained"] for r in determinable])),
         "confidence_calibration": float(np.mean([r["confidence_calibration_score"] for r in records])),
@@ -676,6 +681,7 @@ def evaluate(identify):
     for split, summary in (("development", dev), ("heldout", held)):
         for key in ("valid_count", "world_count", "determinable_world_count",
                     "unsupported_world_count", "false_discovery_count",
-                    "correct_refusal_count", "discovery_attempt_count", "mechanism_score_sum"):
+                    "correct_refusal_count", "discovery_attempt_count", "mechanism_score_sum",
+                    "false_claim_count", "policy_claim_count", "false_claim_world_rate"):
             result[split + "_" + key] = summary[key]
     return result

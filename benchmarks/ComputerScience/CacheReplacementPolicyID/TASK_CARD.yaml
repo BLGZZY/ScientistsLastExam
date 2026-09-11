@@ -122,10 +122,10 @@ metric_contract:
     direction: higher
   fdr:
     metric: false_discovery_rate
-    estimand: false_policy_claims_per_all_worlds_not_claim_conditional_fdr
-    numerator: false_discovery_count
-    denominator: world_count
-    denominator_metric: world_count
+    estimand: false_policy_claims_per_valid_non_abstaining_policy_claims
+    numerator: false_claim_count
+    denominator: policy_claim_count
+    denominator_metric: policy_claim_count
     direction: lower
   refusal:
     metric: correct_refusal_rate
@@ -168,7 +168,9 @@ post_builder_review:
   repairs: >-
     Reset candidate sessions between worlds; preserve all charged callbacks within each
     world; keep malformed-trace violations fatal after the candidate catches the exception;
-    use the shared fail-closed wrapper and numeric split denominators; declare an explicitly
+    use the shared fail-closed wrapper and numeric split denominators; report claim-conditional
+    FDR with valid non-abstaining policy claims as its denominator, retaining the historical
+    per-world rate separately; declare an explicitly
     unmeasured reference/probe contract. No old artifact or model draw is re-signed.
   data_scope: >-
     Synthetic policy tables and procedural noisy traces, not captured hardware timings.
