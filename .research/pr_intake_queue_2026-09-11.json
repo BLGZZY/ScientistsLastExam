@@ -244,13 +244,14 @@
       "category": "shortcut_revalidation_priority",
       "overlap_with_inventory": [],
       "overlap_with_other_prs": {},
-      "shortcut_status": "latest_head_not_yet_executed",
+      "shortcut_status": "fixed_latest_head_probes_executed; 8 sandbox evaluations valid and deterministic",
       "independent_calibration": "not_verified",
       "dependency": [],
-      "next_action": "rerun disclosed shortcuts against this head before admission",
+      "next_action": "declare executable shortcut contract; independent model calibration and scientific review remain pending",
       "evidence_refresh_scope": [
         "benchmarks/Biology/NeuralReportAttribution"
-      ]
+      ],
+      "shortcut_evidence": ".research/pr73_shortcut_review_2026-09-11.json"
     },
     {
       "number": 72,

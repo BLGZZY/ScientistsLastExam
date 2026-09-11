@@ -7,7 +7,7 @@
 | [80](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/80) | `25864a40` | False | SparseVectorAudit | task_intake | structural/oracle/shortcut review before calibration |
 | [79](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/79) | `e58a2b21` | False | LDMismatchFineMapping | task_intake | structural/oracle/shortcut review before calibration |
 | [74](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/74) | `8193c5aa` | True | FocalMechanismStressInversion | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
-| [73](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/73) | `c0d1f3e2` | False | NeuralReportAttribution | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
+| [73](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/73) | `c0d1f3e2` | False | NeuralReportAttribution | shortcut_revalidation_priority | 8 fixed sandbox evaluations reproduced; contract and model calibration pending |
 | [72](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/72) | `8497bd45` | False | DarkMatterRecoilAttribution | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
 | [71](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/71) | `7623c22b` | False | AnomalyZoneSpeciesTree | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
 | [69](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/69) | `691a8348` | True | CriticalPhenomenaLab | framework | integrated_with_additional_fixes; Linux acceptance pending |
@@ -41,3 +41,5 @@
 | [11](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/11) | `f56031a1` | False | TransitTimingAttribution | shortcut_revalidation_priority | rerun disclosed shortcuts against this head before admission |
 
 The JSON companion records exact heads, files, overlaps, dependencies, evidence scope and unresolved calibration. PR #16 depends on family support from #17. PR #17 remains a separate review; this integration does not enable its lifetime-credit or promotion semantics.
+
+PR #73 latest-head follow-up: [fixed shortcut replay](pr73_shortcut_review_2026-09-11.md). The old free noise-key premise is gone; the disclosed paid algebraic policy remains strong. This is not a task admission decision.
