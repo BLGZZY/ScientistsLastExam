@@ -2,13 +2,12 @@
 
 ## Post-builder admission status: hold
 
-The numerical reference and ladder tables below are historical builder observations.
-The 0.556 reference deliberately omits permutation-family inference, while its existing
-headroom rung reports 0.778 development and 0.750 heldout. The lower line is rejected as an
-admission threshold. `verification/reference_permutation_augmented.py` is a standalone
-candidate restoring this family; its full current-source measurement, false-positive guard
-review and new first-proposal calibration remain pending. The machine contract records null
-expected scores. These repairs and construction fixtures do not establish difficulty.
+The reference is `verification/reference_permutation_augmented.py`, which restores the
+permutation-family inference that the builder's first reference left out; that first reference
+is kept as an omission probe and its 0.556 line is not the admission threshold. The numbers
+below were measured in process on this source (`references/known_best.md`). The sandbox
+measurement that fills the machine contract's null expected scores, the false-positive guard
+review and the first-proposal calibration remain pending. Nothing here establishes difficulty.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget
@@ -168,21 +167,22 @@ carries one row per world.
 
 ## Where the scale sits
 
-The reference learner scores 0.556 on the development split and 0.500 held out. It makes no false
-discovery and declines every randomised policy. It recovers five of the nine deterministic
-development policies and two of the four held out. Over sixteen seeds for the runs, this one and
-fifteen re-drawn, it averages 0.542 and 0.484 and never makes a false discovery. It is not the ceiling, and a better
-learner with the same budget exists.
+The reference learner scores 0.778 on the development split and 0.750 held out. It makes no false
+discovery and declines every randomised policy. It recovers seven of the nine deterministic
+development policies and three of the four held out. Over sixteen seeds for the runs, this one and
+fifteen re-drawn, it averages 0.778 and 0.734 and never makes a false discovery. The two development
+policies and the one held out that it declines are deterministic machines of 78 to 134 states that
+it will not claim under its 32-state guard; a learner that recovers them safely is not in hand.
 
 The baseline in `solution.py` scores 0.000. It submits the closest of three textbook policies in
 every world, and it is right in two development worlds and wrong in the other ten. Declining
 everything scores 0.000.
 
-A sweep of 52 low-effort strategies was scored on the same worlds. They write textbook policies
-out without running anything, fit textbook policies or fixed policy families to noisy traces with
-and without a check, or run a generic automaton learner on its own with claim caps from 8 to 1024
-states. The best of them reaches 0.444 on the development split, 80 per cent of the reference, and
-0.250 held out.
+A fixed grid of 343 low-effort strategies was scored on the same worlds. They write textbook
+policies out without running anything, fit textbook policies or fixed policy families to noisy
+traces with and without a check, or run a generic automaton learner with claim caps from 8 to 1024
+states, alone or with one family fit. The best of them reaches 0.667 on the development split, 86
+per cent of the reference, and 0.500 held out; none reaches 90 per cent.
 
 ## Rules
 

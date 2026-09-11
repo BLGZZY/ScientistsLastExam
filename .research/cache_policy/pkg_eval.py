@@ -1,6 +1,6 @@
 """Evaluate a candidate on the package's own evaluator and print the summary and the per-world rows.
 
-    .venv/bin/python .research/cache_policy/pkg_eval.py [reference|baseline] [seed shift ...]
+    .venv/bin/python .research/cache_policy/pkg_eval.py [reference|original|baseline] [seed shift ...]
 """
 import importlib.util
 import json
@@ -20,7 +20,8 @@ def load(path, name):
 
 ev = load(TASK / "verification/evaluator.py", "crp_evaluator")
 CANDIDATES = {
-    "reference": lambda: load(TASK / "verification/reference_lstar_family.py", "crp_reference").identify,
+    "reference": lambda: load(TASK / "verification/reference_permutation_augmented.py", "crp_reference").identify,
+    "original": lambda: load(TASK / "verification/reference_lstar_family.py", "crp_original_reference").identify,
     "baseline": lambda: load(TASK / "solution.py", "crp_baseline").identify,
 }
 

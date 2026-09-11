@@ -1,8 +1,11 @@
-"""Ablation ladder, headroom and shortcut probe on the package's own evaluator.
+"""Ablation ladder and shortcut probe on the package's own evaluator.
 
-Every strategy is assembled from the reference's own parts (verification/reference_lstar_family.py)
-with one choice changed, plus a textbook-template fit, a permutation-policy fit in the style of
-Abel and Reineke (the headroom) and blind template claims.
+Every strategy is assembled from the reference's own parts
+(verification/reference_permutation_augmented.py: determinism tests, the age-table library, the
+permutation-policy fit in the style of Abel and Reineke, capped L* with checks) with one choice
+changed, plus a textbook-template fit and blind template claims. `no_permfit` is the original
+builder reference, verification/reference_lstar_family.py, which the review rejected as an
+omission of a published family; it is kept as an omission probe.
 
     .venv/bin/python .research/cache_policy/ladder.py NAME [shift ...]
 """
@@ -16,7 +19,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 from pkg_eval import TASK, ev, load  # noqa: E402
 
-R = load(TASK / "verification/reference_lstar_family.py", "crp_reference_ladder")
+R = load(TASK / "verification/reference_permutation_augmented.py", "crp_reference_ladder")
 B = load(TASK / "solution.py", "crp_baseline_ladder")
 
 
@@ -42,64 +45,29 @@ def template_fit(box, rng, loose):
     return R._machine(best[1]) if best[0] <= max(3, int(loose * total)) else None
 
 
-def permfit(box):
-    """Positions by eviction rank under W consecutive misses; each hit permutation from one hit
-    and W victim queries; the miss permutation from one miss."""
-    W = box.W
-
-    def ranks(prefix):
-        seq, w = [], tuple(prefix)
-        for _ in range(W):
-            seq.append(box.victim(w))
-            w = w + ("M",)
-        if sorted(seq) != list(range(W)):
-            return None
-        return {way: W - 1 - k for k, way in enumerate(seq)}
-
-    pos0 = ranks(())
-    if pos0 is None:
-        return None
-    at0 = {p: w for w, p in pos0.items()}
-    hp = []
-    for p in range(W):
-        new = ranks((at0[p],))
-        if new is None:
-            return None
-        perm = [None] * W
-        for w, k in new.items():
-            perm[k] = pos0[w]
-        hp.append(perm)
-    new = ranks(("M",))
-    if new is None:
-        return None
-    v0 = at0[W - 1]
-    mp = [None] * W
-    for w, k in new.items():
-        mp[k] = 0 if w == v0 else pos0[w] + 1
-    return R._machine(ev._Permutation(W, hp, mp, [at0[k] for k in range(W)]), cap=2000)
-
-
 CONFIGS = {
     "strategy_reference": {},
-    "headroom": {"permfit": True},
+    "no_permfit": {"permfit": False},
     "no_pooled": {"pooled": False},
     "no_determinism": {"per_position": False, "pooled": False},
     "cap_big": {"cap": 1024},
     "cap_big_no_pooled": {"cap": 1024, "pooled": False},
     "weak_check": {"checks": 4},
     "no_check": {"check": False},
-    "library_only": {"lstar": False},
-    "library_only_no_check": {"lstar": False, "check": False},
-    "lstar_only": {"library": False},
-    "lstar_only_cap_big": {"library": False, "cap": 1024},
-    "permfit_only": {"library": False, "lstar": False, "permfit": True},
-    "permfit_only_no_check": {"library": False, "lstar": False, "permfit": True, "check": False},
-    "template": {"templates": True, "library": False, "lstar": False},
-    "template_no_determinism": {"templates": True, "library": False, "lstar": False, "per_position": False, "pooled": False},
-    "template_no_check": {"templates": True, "library": False, "lstar": False, "check": False},
-    "template_loose": {"templates": True, "library": False, "lstar": False, "check": False, "loose": 0.05, "pooled": False},
-    "library_loose": {"lstar": False, "check": False, "pooled": False},
-    "all_parts": {"templates": True, "permfit": True, "cap": 1024},
+    "library_only": {"lstar": False, "permfit": False},
+    "library_only_no_check": {"lstar": False, "permfit": False, "check": False},
+    "lstar_only": {"library": False, "permfit": False},
+    "lstar_only_cap_big": {"library": False, "permfit": False, "cap": 1024},
+    "permfit_only": {"library": False, "lstar": False},
+    "permfit_only_no_check": {"library": False, "lstar": False, "check": False},
+    "no_library": {"library": False},
+    "no_lstar": {"lstar": False},
+    "template": {"templates": True, "library": False, "lstar": False, "permfit": False},
+    "template_no_determinism": {"templates": True, "library": False, "lstar": False, "permfit": False, "per_position": False, "pooled": False},
+    "template_no_check": {"templates": True, "library": False, "lstar": False, "permfit": False, "check": False},
+    "template_loose": {"templates": True, "library": False, "lstar": False, "permfit": False, "check": False, "loose": 0.05, "pooled": False},
+    "library_loose": {"lstar": False, "permfit": False, "check": False, "pooled": False},
+    "all_parts": {"templates": True, "cap": 1024},
 }
 
 
@@ -121,8 +89,8 @@ def learn(box, rng, cfg):
         m = R._fit_library(box, rng)
         if ok(m):
             return m
-    if cfg.get("permfit"):
-        m = permfit(box)
+    if cfg.get("permfit", True):
+        m = R._fit_permutation(box)
         if ok(m, cfg.get("checks", R.LSTAR_CHECKS)):
             return m
     if cfg.get("lstar", True):

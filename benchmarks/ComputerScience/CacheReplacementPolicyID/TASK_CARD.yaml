@@ -7,7 +7,7 @@ oracle:
   deterministic: true
 normalization:
   baseline: ten random traces of 32 accesses played once each, the closest of LRU, FIFO and tree PLRU submitted as its machine at confidence 0.9, never declining
-  reference: victim queries answered by replaying a prefix, missing once and probing the old blocks in a shuffled order, accumulated to a likelihood lead of 10^4 and remembered; a per-position tail test on six random traces and a pooled minority test on 32 bursts and loops at 48 runs each, either one failing a refusal; a library of 2064 age-table policies fitted by majority vote on 24 mixed traces, survivors settled by the victim query their difference names and checked on 16 traces; otherwise L* for Mealy machines with Rivest-Schapire counterexample processing, its equivalence queries 64 targeted traces at five runs each with every disagreement confirmed by six more, no hypothesis above 32 states claimed; it knows one family by name and stops L* at 32 states by design, and scores 0.556 on the development split and 0.500 held out
+  reference: victim queries answered by replaying a prefix, missing once and probing the old blocks in a shuffled order, accumulated to a likelihood lead of 10^4 and remembered; a per-position tail test on six random traces and a pooled minority test on 32 bursts and loops at 48 runs each, either one failing a refusal; a library of 2064 age-table policies fitted by majority vote on 24 mixed traces, survivors settled by the victim query their difference names and checked on 16 traces; otherwise L* for Mealy machines with Rivest-Schapire counterexample processing, its equivalence queries 64 targeted traces at five runs each with every disagreement confirmed by six more, before L*, a permutation-policy fit in the manner of Abel and Reineke from eviction ranks under consecutive misses, checked on 64 traces; no hypothesis above 32 states claimed, a false-positive guard under which the 120-state switch policy and the 78- and 134-state fill-ageing policies are declined; it scores 0.778 on the development split and 0.750 held out
   score: development mechanism recovery normalized above always-abstain; a machine equivalent to the policy scores 1 in a deterministic world and one that differs anywhere scores minus one there and zero in a randomised world, declining scores zero and one; recovery, false discovery, refusal, coverage, calibration, runs used and the held-out split stay separate
 citations:
 - id: doi:10.1109/RTAS.2013.6531080
@@ -35,21 +35,24 @@ citations:
 invariants:
 - the cache behind run and the machine the score compares against are the same policy; with the noise off the simulator and the minimised truth machine give the same outcome on every trace tested, and the thirteen deterministic worlds are pairwise inequivalent minimal machines of 15, 24 (four of them), 40, 78, 120, 128, 134, 255 and 720 (two) states
 - the switch world agrees with LRU until six misses in a row; the shortest word that tells them apart is six misses, and the reference declines it
-- the pooled determinism test is what keeps rare randomness from being claimed; over 24 re-drawn seeds its z at 32 traces stays at or below 2.55 in every deterministic world and at or above 5.83 in every randomised one, where at 24 traces the random victim once in 32 misses fell to 3.90; without the test the reference claims four randomised worlds on the graded seed and scores 0.333 and 0.000 held out
-- a false machine costs one world wherever it is made, minus one in a deterministic world and zero where declining scores one; with every check removed the reference scores 0.000 with 81 false discoveries over eight seeds
-- the reference leaves four deterministic development policies and two held out unclaimed, by design; a permutation-policy fit from eviction ranks under consecutive misses, added before L*, recovers two of them and one held out and scores 0.778 and 0.750 with no false discovery on eight seeds
-- raising the claim cap claims nothing more; at 1024 states the reference scores 0.556 on the graded seed, averages 0.542 and 0.406 over eight seeds and claims three wrong machines, and at 64 or 128 states with 128 checks it matches the reference on the graded seed
+- the pooled determinism test is what keeps rare randomness from being claimed; over 24 re-drawn seeds its z at 32 traces stays at or below 2.55 in every deterministic world and at or above 5.83 in every randomised one, where at 24 traces the random victim once in 32 misses fell to 3.90; without the test the reference claims two randomised worlds on the graded seed and 25 over eight re-drawn seeds, and averages 0.611 and 0.344
+- a false machine costs one world wherever it is made, minus one in a deterministic world and zero where declining scores one; with every check removed the reference scores 0.111 and 0.000 with 49 false discoveries over eight seeds
+- the reference declines the 120-state switch policy, the 134-state fill-ageing policy and the held-out 78-state one under its 32-state claim guard; without the permutation fit, which is the builder's first reference and the omission probe, it scores 0.556 and 0.500 and declines the two 720-state permutation policies and tree PLRU on eight ways as well
+- raising the claim cap claims nothing more on the graded seed; at 1024 states the reference scores 0.778 and 0.750 there, averages 0.708 and 0.688 over eight re-drawn seeds and claims six wrong machines, five of them for the switch policy
 - declining every world scores exactly zero by construction, and the closest textbook policy claimed everywhere scores zero; confidence feeds only the calibration axis
 - runs are charged and overspend fails closed; the candidate receives a closure and not the ledger, so it cannot raise its own budget; the same trace run twice gives a fresh run and outcomes do not depend on the order of calls; malformed submissions and traces score zero and never raise out of the evaluator
 - held-out split, per-world rows and the discovery axes remain evaluator-only
 known_shortcuts: >-
-  a 52-strategy sweep over blind textbook claims (7, all scoring zero), the textbook templates
-  fitted to noisy traces at four mismatch tolerances with and without a check and the determinism
-  tests (17, best 0.222 and 0.000 held out), the reference's age-table library alone (4, best
-  0.222), a permutation-policy fit alone (6, best 0.333) and L* alone at claim caps of 8 to 1024
-  states with 16 to 128 checks (18, best 0.444) tops out at 0.444 on the development split and
-  0.250 held out, 80 per cent of the reference, with L* alone at a cap of 32 states; over eight
-  re-drawn seeds that strategy averages 0.417 and 0.188 with three false discoveries
+  a fixed grid of 343 strategies declared before any ran, .research/cache_policy/grid.py: blind
+  textbook claims (7, all zero), the textbook templates fitted to noisy traces at five tolerances
+  with 0 to 64 checks and every choice of determinism tests (80, best 0.222 and 0.000 held out),
+  the age-table library alone (16, best 0.222), the permutation fit alone (16, best 0.333), the
+  templates with the fit or the library (24, best 0.444), L* alone at caps of 8 to 1024 states
+  with 4 to 128 checks (64, best 0.444), L* with the templates (8, best 0.556), L* with the library
+  (64, best 0.556) and L* with the permutation fit (64, best 0.667); the grid tops out at 0.667 on
+  the development split and 0.500 held out, 86 per cent of the reference, at the reference without
+  its age-table library, and no cell reaches 90 per cent; over eight re-drawn seeds the best cells
+  average 0.653 and 0.500 with no false discovery
 review:
   domain: pending_external_computer_architecture
   evaluator_security: automated_bad_candidate_crash_sweep_determinism_and_abstention_normalization_checks
@@ -60,7 +63,7 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Learning replacement policies from hardware is published, from permutation-policy inference by measurement (Abel and Reineke 2013, 2014) to active automata learning over a cache abstraction (Vila et al. 2020), and the learning algorithms are textbook (Angluin 1987; Rivest and Schapire 1993; Shahbaz and Groz 2009). A model that knows them will reach for L* and a template library at once. What is not published is which policies these are, that two of them are random rarely enough to pass a majority vote, that one differs from LRU only after six misses in a row, and how a budget of 200000 accesses has to be split between the determinism tests, the victim queries and the equivalence checks under noise. The ablation shows the score turns on combining the determinism tests, the library, L* and its checks rather than on any one of them, and the shortcut probe bounds what a searcher gets at 80 per cent of the reference. The reference's own headroom is deliberate and documented, since it stops L* at 32 states and knows no permutation policy. Task.md names no policy family. No frontier draw has been run yet, so the difficulty at the frontier is not measured.
+  rationale: Learning replacement policies from hardware is published, from permutation-policy inference by measurement (Abel and Reineke 2013, 2014) to active automata learning over a cache abstraction (Vila et al. 2020), and the learning algorithms are textbook (Angluin 1987; Rivest and Schapire 1993; Shahbaz and Groz 2009). A model that knows them will reach for L* and a template library at once. What is not published is which policies these are, that two of them are random rarely enough to pass a majority vote, that one differs from LRU only after six misses in a row, and how a budget of 200000 accesses has to be split between the determinism tests, the victim queries and the equivalence checks under noise. The ablation shows the score turns on combining the determinism tests, the library, the permutation fit, L* and its checks rather than on any one of them, and the fixed 343-cell shortcut grid tops out at 86 per cent of the reference, at the permutation fit with L* and without the library. The reference declines three policies of 78 to 134 states under a 32-state claim guard that is a false-positive control, not a reserve. A first proposal that fits an age-table family as well as the permutation family reaches the reference, and the score moves in steps of 1/9, so the first-proposal criterion is open until the calibration run. Task.md names no policy family. No frontier draw has been run yet, so the difficulty at the frontier is not measured.
 lineage:
   status: complete
   builder_model_ids:
@@ -105,7 +108,7 @@ construction_audit:
   expert_hours: null
   red_team_rounds: 8
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the ablation ladder, the 52-strategy shortcut probe, the determinism statistics over 24 seeds and the sixteen-seed robustness check from the scripts in .research/cache_policy, where summary.py recomputes every quoted number; the 29 bad-candidate shapes are in tests/test_cache_replacement_policy_id.py; the sandbox evaluation of scripts/check_task_contribution.py has not been run because the task was built on a machine without Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
+  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the 23-rung ablation ladder, the fixed 343-cell shortcut grid, the determinism statistics over 24 seeds and the sixteen-seed robustness check of the reference from the scripts in .research/cache_policy, where summary.py recomputes every quoted number; the 29 bad-candidate shapes are in tests/test_cache_replacement_policy_id.py; the sandbox evaluation of scripts/check_task_contribution.py has not been run because the task was built on a machine without Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
 
 # Post-builder review: declarations deliberately remain unmeasured. Historical
 # builder rungs must not become trusted current-source admission measurements.
@@ -162,9 +165,10 @@ post_builder_review:
   historical_threshold_rejected: >-
     The builder reference at 0.556 deliberately omits the published permutation-family
     inference used by its own 0.778 headroom rung. That lower score is not an admission
-    threshold. The standalone augmented candidate above restores this family, but is
-    unmeasured through the current sandbox. Its remaining claim guard needs review as a
-    false-positive control. No complete-reference or model-difficulty pass is asserted.
+    threshold. The standalone augmented candidate above restores this family. The builder
+    measured it in process at 0.778 and 0.750 (references/known_best.md); it is unmeasured
+    through the current sandbox. Its remaining claim guard needs review as a false-positive
+    control. No complete-reference or model-difficulty pass is asserted.
   repairs: >-
     Reset candidate sessions between worlds; preserve all charged callbacks within each
     world; keep malformed-trace violations fatal after the candidate catches the exception;
