@@ -16,6 +16,14 @@ def load(path):
     return module
 MODULE = load(ROOT / 'benchmarks/Physics/DarkMatterRecoilAttribution/verification/evaluator.py')
 
+
+def test_public_detector_design_is_identical_across_worlds_and_splits():
+    problems = [w['problem'] for split in MODULE.SPLIT_SEEDS for w in MODULE.split_worlds(split)]
+    problems.extend(MODULE.make_world(seed, kind)['problem']
+                    for seed in range(20) for kind in (*MODULE.LAWS, 'none', 'unsupported'))
+    assert all(problem == problems[0] for problem in problems)
+
+
 def test_recoil_kernel_matches_independent_speed_integral():
     (mass, ratio, t, energy) = (43.0, 0.83, 1, MODULE.ENERGIES)
     (_, a, z) = MODULE.TARGETS[t]

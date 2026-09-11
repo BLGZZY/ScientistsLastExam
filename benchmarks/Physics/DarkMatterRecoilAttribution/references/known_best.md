@@ -1,3 +1,12 @@
+> Shared-grid revision, 2026-09-11: all public problem values now match across
+> worlds and splits. Earlier results below use the historical variable energy
+> grid and are not current-source measurements. Candidate algorithms, latent
+> parameter draw positions, class/mass coverage, scoring and budget are retained.
+> The reference now uses a charged pilot and local Fisher allocation; the
+> historical equal-allocation reference remains separately executable.
+> `revision_replay.json` fixes the new replay before evaluation. The old D16
+> failure is preserved and cannot be cleared by these engineering measurements.
+
 # DarkMatterRecoilAttribution: witness and construction record
 
 ## 1. Reference and sources

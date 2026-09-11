@@ -57,7 +57,10 @@ def make_world(seed, kind, *, signal_mass=None):
     weights = rng.dirichlet([2, 2, 2]) * rng.uniform(55, 100)
     background = rng.uniform(4, 12, 3)
     gain = rng.uniform(0.75, 1.25, 3)
-    energy = ENERGIES * rng.uniform(0.92, 1.08)
+    # Reserve the historical design draw so other latent draws retain their
+    # seed mapping. A public detector grid must not serve as a free world ID.
+    rng.uniform(0.92, 1.08)
+    energy = ENERGIES.copy()
     if signal_mass is not None:
         mass = float(signal_mass)
     target_masses = np.full(3, mass)

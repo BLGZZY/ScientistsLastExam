@@ -58,8 +58,8 @@ does not assert that cosmic dark matter does not exist.
 | `background_control_factor` | control/science background exposure ratio (8) |
 | `reference_momentum_gev` | q0 (0.05) |
 
-The finite detector design is public; seeds, splits and physical parameters are not
-provided. Do not infer a world label from call order or retain information between
+The detector design and all other public problem values are identical across
+worlds and splits. Seeds, splits and physical parameters are not provided. Do not infer a world label from call order or retain information between
 independent worlds. No access to other worlds is scientifically legitimate.
 
 ## Charged experiment
@@ -147,3 +147,19 @@ The construction/ablation and shortcut results are summarized in
 `references/known_best.md` for reviewers; that file is not candidate-visible.
 Only edit `solution.py`; deterministic CPU NumPy/SciPy, no network, processes or hidden
 file reads. `sle.contract_lint` is a free optional shape utility, not a scoring oracle.
+
+## Review reference and current revision
+
+The current review-only reference buys a one-unit pilot on each target, fits
+both recoil laws and all detector/background/halo nuisances, then allocates the
+remaining nine units using estimated Fisher information for log mass after
+profiling nuisance directions. Both pilot law fits enter the design, weighted
+by their relative likelihood. Final inference reuses all paid observations.
+The equal-allocation method is retained for direct comparison. This local
+approximation is not a globally optimal design or calibrated posterior.
+
+A public-input audit replaced the continuously world-varying energy grid with
+a shared detector grid. Prior numerical evidence describes the earlier grid.
+New methods and ability removals are fixed in `references/revision_replay.json`;
+source-bound validation and a new independent model calibration are required.
+The previously failed first proposal remains recorded.
