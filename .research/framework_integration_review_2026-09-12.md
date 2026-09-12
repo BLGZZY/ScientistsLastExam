@@ -50,6 +50,15 @@ world-isolation checks and 20 additional runtime, receipt, ledger and sidecar re
 ## Integration gates
 
 Global baseline, wrapper, recovery and preflight measurements are generated separately from
-clean revisions and retain the exact measured source. The integration evidence index records
+clean revisions and retain the exact measured source. `experiments/framework_merge_validation_2026-09-12_v1.json` records
 final counts and hashes. Whole-suite GitHub CI must pass on the submitted merge tree; directed
 checks above do not replace that gate.
+
+Completed integration measurements: certification v87, baseline v71, maturity v29;
+86/86 baselines valid and deterministic over172 evaluations, infrastructure failures0;
+86/86 wrapper results match the independently collected baselines; seven fixed artifacts
+have identical complete metrics before/after across28 evaluations; recovery v12 passes
+8/8 scenarios; preflight v4 passes70 checks with0 failures/0 missing across21 evaluations.
+Inventory stays86 (42 optimization /44 discovery),5 certified /81 candidate; external,
+release and long-horizon readiness remain0. New raw baseline and preflight reports remain
+private; public files use the existing schema2 projections.
