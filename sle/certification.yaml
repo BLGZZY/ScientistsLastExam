@@ -10,6 +10,10 @@ policy:
   statuses: [certified, candidate, quarantined]
 
 tasks:
+  PowerSystems/RobustACTransmissionSwitching:
+    status: candidate
+    reason: Deterministic mixed discrete-continuous preventive switching under full polar AC power-flow checks, hidden load and N-1 scenarios, and a charged 48-call search budget; retained pending clean Linux calibration, independent power-systems review, larger-network replication, and long-horizon measurement.
+    citation_ids: [doi:10.1109/TPWRS.2008.922256, doi:10.1016/j.orl.2019.08.009]
   Ecology/OccupancyDetectionDesign:
     status: candidate
     reason: Active repeat-survey allocation and latent occupancy inference under imperfect detection, with explicit refusal for nonlinear habitat and spatially structured worlds; retained as a candidate pending server-held surveys, real field-data replication and independent ecology review.

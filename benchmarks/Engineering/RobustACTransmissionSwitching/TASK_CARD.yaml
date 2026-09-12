@@ -1,0 +1,71 @@
+schema_version: 2
+scientific_question: Can a budgeted search find a low-cost preventive line-switching and generator-participation policy that remains feasible under nonlinear AC equations, load variation, and single-line contingencies?
+artifact: A deterministic policy that queries mixed discrete-continuous plans and returns one callback-issued plan identifier.
+oracle:
+  model: polar-coordinate AC power flow on six frozen synthetic five-bus worlds with series branch admittances, quadratic generation costs, and fixed N-1/load scenarios
+  feasibility: connectivity, converged active/reactive nodal balance, voltage bounds, active/reactive generator bounds, bidirectional apparent-power limits, valid switching set, participation bounds, and callback budget
+  deterministic: true
+normalization:
+  baseline: all switchable lines energized with generator-1 participation fixed at 0.40
+  reference: truth-blind 48-call screen of the intact and every single-open topology over five shares, followed by eight high-share refinements; double switching remains explicit headroom
+  score: mean development reduction in worst-scenario cost relative to baseline and reference, lower-clipped but uncapped above the witness; feasibility and held-out transfer are reported separately
+citations:
+- id: doi:10.1109/TPWRS.2008.922256
+  title: Optimal Transmission Switching
+- id: doi:10.1016/j.orl.2019.08.009
+  title: Strong NP-hardness of AC power flows feasibility
+invariants:
+- every callback evaluation rebuilds the complex admittance matrix and solves the full polar AC balance equations for every frozen scenario
+- both directions of every active branch are checked against its apparent-power limit
+- the shipped all-lines-closed plan is feasible in all six worlds and defines score zero
+- the truth-blind single-switch witness is feasible in all six worlds and materially improves worst-scenario cost
+- caught invalid queries and budget overruns fail the world
+- development score is search-visible while held-out and per-world diagnostics are sealed
+known_shortcuts: The worlds are synthetic, share one small topology, expose all base network parameters, and use a deterministic local AC root solve. Topology memorization, low-dimensional share sweeps, and simulator-specific exploitation remain possible; a single-switch sweep is intentionally the reference rather than a claimed global optimum. The task omits dynamics, protection, unit commitment, transformers, shunts, voltage-dependent load, uncertainty distributions, and cascading failures.
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  reference:
+    candidate: verification/reference_screen_refine.py
+    expected_score: 1.0
+  probes:
+  - id: fixed_topology_share_sweep
+    candidate: verification/shortcut_fixed_topology.py
+    expected_score: 0.5820883141862041
+  relative_margin: 0.1
+  score_tolerance: 0.000001
+review:
+  domain: pending_external_power_systems
+  evaluator_security: pending_ci_sandbox_budget_malformed_candidate_determinism_and_metric_sealing_checks
+provenance:
+  class: procedural
+  target_source: Deterministic equations and frozen synthetic worlds defined in the evaluator.
+  task_contract_public_before_evaluation: true
+  fresh_confirmation_status: not_applicable_synthetic
+novelty_risk:
+  level: medium
+  rationale: Optimal transmission switching is established, but no existing SLE or audited Frontier-Eng task combines preventive topology search, AC feasibility, contingencies, and generator participation.
+lineage:
+  status: complete
+  builder_model_ids: [openai:gpt-5]
+  builder_scaffolds: [SLE_contribution_contract_and_merged_PR6_exemplar]
+  calibrator_model_ids: []
+  calibration_runs: []
+  calibration_evidence_status: missing
+  edits_triggered_by_model: none_before_first_frontier_draw
+  shortcut_discoverer: builder_static_analysis_and_exhaustive_plan_probe
+  frozen_before_eval: false
+  freeze_timestamp: null
+long_horizon:
+  status: not_tested
+  measurement_health_passed: false
+  material_headroom_after_2h: false
+  evidence: []
+construction_audit:
+  status: builder_checked_pending_independent_review
+  author_domain: AI_assisted_pending_human_verification
+  reviewer_domain: pending_external
+  expert_hours: null
+  red_team_rounds: 1
+  oracle_disagreement_status: not_quantified
+  independent_recomputation_status: analytic_balance_and_reference_recomputed_by_task_tests

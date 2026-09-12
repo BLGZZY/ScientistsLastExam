@@ -1,0 +1,13 @@
+domain: PowerSystems
+task: RobustACTransmissionSwitching
+scientific_role: optimization
+difficulty: hard
+tier: T2
+oracle_type: physical_sim
+score_mode: uncapped
+gpu_required: false
+eval_time_seconds: 20
+science_metric: robust_ac_cost_improvement
+reference_baseline: fixed_topology_fixed_participation
+reference_sota: 48_call_single_switch_screen_and_refine_witness
+citation: "Fisher et al., IEEE Trans. Power Syst. 23 (2008), DOI 10.1109/TPWRS.2008.922256; Bienstock & Verma, Operations Research Letters 47 (2019), DOI 10.1016/j.orl.2019.08.009"

@@ -4,18 +4,18 @@
 
 | | |
 |---|---:|
-| 任务包 | 86 |
-| optimization | 42 |
+| 任务包 | 87 |
+| optimization | 43 |
 | discovery | 44 |
 | certified | 5 |
-| candidate | 81 |
-| 学科 | 7(Biology 9,Chemistry 13,ComputerScience 8,EarthScience 7,Engineering 13,Mathematics 19,Physics 17) |
+| candidate | 82 |
+| 学科 | 7(Biology 9,Chemistry 13,ComputerScience 8,EarthScience 7,Engineering 14,Mathematics 19,Physics 17) |
 
 认证描述的是证据质量,不是难度。标 on-ramp 的任务首个前沿模型提案已够到参考解,不用于配对 Δ 测量。
 
-## Optimization(42)
+## Optimization(43)
 
-### 工程设计(engineering_design) — 16
+### 工程设计(engineering_design) — 17
 
 | 任务 | 学科 | 领域 | 打分 | oracle | 认证 | 说明 | 中文题意 | 中文评估方法 |
 |---|---|---|---|---|---|---|---|---|
@@ -29,6 +29,7 @@
 | [`MOSFETDoping`](benchmarks/Engineering/MOSFETDoping/)<br>MOSFET 掺杂剖面 | Engineering | Semiconductor | uncapped | physical_sim | candidate | design transferable silicon nMOS halo-profile Pareto archives | 设计可迁移的短沟道硅 nMOS 晕环掺杂剖面帕累托档案 | 驱动电流对漏电的帕累托超体积;密封留出迁移与最差偏移稳健性分列,无上限 |
 | [`NeutronDiffusionCriticality`](benchmarks/Engineering/NeutronDiffusionCriticality/)<br>中子扩散临界优化 | Engineering | NuclearEngineering | uncapped | physical_sim | candidate | optimize reactor fuel loading for maximum k-effective | 在平均富集度约束下优化堆芯燃料富集分布以最大化 k_eff | 相对均匀装载的 k_eff 提升;无上限 |
 | [`RANSCalibration`](benchmarks/Engineering/RANSCalibration/)<br>RANS 封闭标定 | Engineering | Turbulence | uncapped | physical_sim | candidate | calibrate a transferable algebraic channel-flow closure | 标定可迁移的代数通道流涡黏封闭,同时匹配平均速度与雷诺剪应力 | 真实 DNS 拟合;密封高雷诺数迁移与壁面坐标稳健性分列,无上限 |
+| [`RobustACTransmissionSwitching`](benchmarks/Engineering/RobustACTransmissionSwitching/)<br> | Engineering | PowerSystems | uncapped | physical_sim | candidate | secure a nonlinear AC grid by switching lines |  |  |
 | [`RoomImpulseResponse`](benchmarks/Engineering/RoomImpulseResponse/)<br>房间声学处理设计 | Engineering | Acoustics | uncapped | physical_sim | candidate | robust room-acoustic treatment design | 布置声源、吸声与受点,让语音房间同时兼顾清晰度、混响时间与声场均匀度 | 清晰度/混响/均匀度综合效用;一阶反射代理与镜像源长程计算排序不同,含安装误差与老化偏移 |
 | [`TrussWeightMinimization`](benchmarks/Engineering/TrussWeightMinimization/)<br>桁架减重 | Engineering | StructuralEngineering | uncapped | analytical | candidate | general truss sizing under physical shifts | 给出跨结构通用的桁架截面尺寸策略,在应力、位移与欧拉屈曲约束下减重 | 标称减重;密封拓扑迁移与载荷/材料/制造稳健性分列,无上限 |
 | [`CalorimeterDesign`](benchmarks/Physics/CalorimeterDesign/)<br>量能器设计 | Physics | ParticlePhysics | uncapped | analytical_reduced_order_physics | candidate | graded sampling-calorimeter design curves | 设计分层取样量能器,使能量分辨、线性与簇射包容在多档成本约束下同时改善 | 多能点效用;留出探测器迁移与最差制造偏移分列,无上限 |

@@ -1,0 +1,5 @@
+1) Only edit solution.py and keep optimize_switching(problem, evaluate_plan).
+2) Use at most 48 callback calls per grid world; caught invalid calls and overruns still fail.
+3) Return one plan_id issued by the current callback session.
+4) Deterministic CPU code only; NumPy/SciPy/standard library, no network or process creation.
+5) Do not read or import verification/ or frontier_eval/.
