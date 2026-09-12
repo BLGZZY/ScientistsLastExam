@@ -279,6 +279,10 @@ def _load_model(label, relative):
     ):
         raise ValueError("unexpected model condition")
     workdir = resolve_run_workdir(run["workdir"], ROOT)
+    # Private run directories are absent from public checkouts. A present but
+    # incomplete/corrupt run must still fail the full verifier below.
+    if not workdir.exists():
+        raise FileNotFoundError("private model run directory is absent: %s" % workdir)
     verification = verify_run(workdir)
     relative_workdir = workdir.relative_to(ROOT)
     trajectory_path = workdir / "trajectory.jsonl"
