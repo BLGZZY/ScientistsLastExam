@@ -26,7 +26,7 @@ Every public `problem` key:
 | `cost_tiers` | sizes <=64 cost 1, <=192 cost 2, <=384 cost 3 |
 | `budget_units` | 18 units, also passed as the third argument |
 | `log_noise_std` | known standard deviation of independent Gaussian log timing error |
-| `finite_size_correction` | log(runtime_ms) = log(c*f(m)) + a*64/m; unknown a in [-2,2] |
+| `nuisance_model` | log(runtime_ms) = log(c*f(m)) + a*64/m; unknown a in [-2,2] |
 | `noise_note` | observation-noise description; repeated sizes receive fresh errors |
 | `refusal_note` | refuse model inadequacy or budget/domain-limited class ambiguity |
 

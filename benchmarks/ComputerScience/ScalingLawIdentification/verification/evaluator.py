@@ -85,7 +85,7 @@ def problem_statement(world):
         "cost_tiers": [[bound, cost] for bound, cost in COST_TIERS],
         "budget_units": BUDGET_UNITS,
         "log_noise_std": world["noise"],
-        "finite_size_correction": "log runtime = log(c*f(m)) + a*64/m; -2 <= a <= 2",
+        "nuisance_model": "log runtime = log(c*f(m)) + a*64/m; -2 <= a <= 2",
         "noise_note": "independent Gaussian log timing error with stated standard deviation",
         "refusal_note": "refuse model inadequacy or classes observationally indistinguishable within the query domain and budget",
     }
