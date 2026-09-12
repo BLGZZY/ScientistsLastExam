@@ -68,8 +68,8 @@ Mechanism recovery, false discovery, refusal and discovery coverage are reported
 separately with denominators. Confidence predicts response quality and is scored
 as one minus squared error. Invalid rows earn zero and are not discovery attempts.
 `valid=1` means at least one valid development world; `feasibility_rate` gives the
-fraction. One malformed world does not erase other valid recovery. All-invalid
-submissions return `valid=0, combined_score=0`.
+fraction. One malformed world does not erase other valid recovery. All-invalid returned
+artifacts return `valid=0, combined_score=0`.
 
 Use `sle.contract_lint` for free local submission-shape checks.
 Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, with no
@@ -95,3 +95,19 @@ worlds, independent review and frontier-model calibration remain pending.
 
 Each sandbox world starts a fresh candidate session. Module globals and temporary
 files cannot carry a world index or previous answers across worlds.
+
+The per-world validity rule applies to decoded artifacts and caught oracle-call
+errors. Worker crashes, uncaught runtime errors, sandbox violations and the overall
+timeout fail the run through the trusted harness.
+
+Measured capability comparisons (development / heldout):
+
+| Variant | Scores |
+|---|---|
+| Full witness | 0.875000 / 0.944444 |
+| Fixed prime order | 0.875000 / 0.777778 |
+| Without singularity filtering | 0.791667 / 0.833333 |
+| Three-query limit | 0.000000 / 0.000000 |
+| Four-query limit | 0.166667 / 0.111111 |
+
+These are diagnostic capability comparisons, not model calibration.

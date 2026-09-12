@@ -33,10 +33,13 @@ invariants:
 - singular-only and empty compatibility sets are distinct; quantitative traces in review_evidence.json
 - Q-isomorphic twins remain indistinguishable at every published prime
 - a full abstention scores zero; one invalid world does not erase valid-world recovery
-known_shortcuts: 'Historical reviewer probes at 0310ab2: threshold grid 25 points 0.000; four-prime 0.000;
-  six-prime 0.4875; adaptive stop 0.8063; fingerprints 0.9438; zero-query literals 1.000 (all superseded).
-  Revised source-bound replays and ablations: verification/review_audit.py and references/review_evidence.json.
-  Calibration remains missing.'
+- fresh sandbox sessions isolate module globals and temporary files between worlds
+known_shortcuts: 'Historical reviewer at 0310ab2: 25-point threshold grid 0.000, four-prime 0.000, six-prime
+  0.4875, adaptive stopping 0.8063, 1-2-prime memorization 0.9438, zero-query literals 1.000. Revised
+  clean Linux: reference 0.875000 / 0.944444; 25-point heuristic grid and current-world literal programs
+  with 0, 1 or 2 queries all 0.000 / 0.000. Four-query ablation 0.166667 / 0.111111; no discriminant filtering
+  0.791667 / 0.833333; fixed prime order 0.875000 / 0.777778. Full source-bound results in references/review_evidence.json;
+  no frontier calibration.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -48,7 +51,7 @@ contamination:
     claims.
 review:
   domain: pending_external_mathematics
-  evaluator_security: review_regressions_added_linux_replay_pending
+  evaluator_security: clean_linux_ci_dependency_replay_and_regressions; full_suite_and_sandbox_guard_results_in_PR
 provenance:
   class: procedural
   target_source: Repository-visible deterministic arithmetic worlds with development and held-out curves

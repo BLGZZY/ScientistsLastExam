@@ -1,153 +1,131 @@
-# Reference and admission record — EllipticCurveRecovery
+# Reference and admission record: EllipticCurveRecovery
 
-Maintainer-facing. `frontier_eval/agent_files.txt` serves only `Task.md`,
-`solution.py` and `frontier_eval/constraints.txt` (and `sle.spec`'s
-`agent_visible_text()` composes the agent context from `Task.md` plus
-`constraints.txt` only), so nothing in this file reaches candidates by
-construction.
+Maintainer-facing. `review_evidence.json` binds the current diagnostic to source
+hashes and a clean Linux revision. Its direct-evaluator scope is distinct from the
+sandbox contribution gate. Task.md, solution.py and constraints.txt are the only
+agent files; reference methods and literal attack fixtures are withheld.
 
-## 1. Reference method
+## 1. Reference method and scientific headroom
 
-`verification/reference_solver.py` is standalone: ascending small primes queried
-until the budget binds (eight units; the wide +-1200 window needs most of them),
-per-prime enumeration of every (a mod p, b mod p) reproducing the returned count
-by direct Legendre sums, incremental Chinese-remainder lifting with
-coefficient-window pruning at each step (keeping the partial sets small instead of
-exploding over the cartesian product), singular lift filtering, and refusal when
-zero or multiple lifts survive. It deliberately lacks quadratic-form acceleration
-and Hasse-interval reasoning.
+The standalone witness builds exact per-prime residue-count tables, expands their
+classes into the complete public integer window, filters on every purchased count,
+and selects affordable cost-one primes by the entropy of predicted counts over the
+remaining pairs. It retains singular models during query planning and filters the
+discriminant at decision time. It claims only a unique nonsingular lift.
 
-## 1a. Solution-family notes (maintainer-facing — never serve to candidates)
+Headroom is **budgeted experimental design**, specifically a multistep rather than
+one-step discrimination policy and joint comparison of more expensive primes.
+The reference covers the full bounded coefficient family and performs standard
+counting, lifting, consistency, singularity and ambiguity checks. Quadratic-form
+acceleration and Hasse reasoning are no longer advertised as score headroom:
+review correctly showed that they had no benefit under the former score.
 
-The intended strategy family, removed from the agent-visible `Task.md` on
-2026-09-07 after a clean-room solver written from the old wording tied the
-reference (0.750/0.750) in 0.4 s. `Task.md` now states phenomenon and interface
-only; the recipe lives here:
+## 2. Baseline, evidence and normalization
 
-- Each per-prime point count leaves a finite set of compatible pairs
-  (a mod p, b mod p), and the Chinese remainder theorem combines enough residue
-  sets to isolate a unique pair in the bounded integer window.
-- The budget makes prime selection an information decision — small primes are
-  cheap but occasionally leave twin curves, and one more prime resolves them.
-- The reference realizes this as ascending small-prime queries within the
-  budget, per-prime residue enumeration by direct Legendre sums, incremental CRT
-  with coefficient-window pruning across the wide +-1200 window, and refusal
-  when no nonsingular lift survives. Exact recovery from a smaller prime
-  certificate can score above the full-budget reference under the efficiency
-  multiplier.
+The single-query fixed guess scores zero. The five-unit budget restricts
+information acquisition; unused budget does not increase the score. The trusted
+`verification/arithmetic.py` independently reconstructs every bounded pair
+compatible with the actual purchased transcript. A supported claim earns recovery
+credit only if it is correct and that nonsingular set is its singleton. Knowing an
+answer without distinguishing measurements earns zero. Repeated queries add no
+information. World-level exact certificates aggregate into a graded cohort rate.
 
-## 2. Baseline and normalization
+Development has 24 supported curves plus four singular, four smooth genus-two and
+four Q-isomorphic worlds; heldout has 18+4+4+4. Refusal earns one on unsupported
+worlds, supported abstention zero, followed by normalization above full abstention.
+A singular bounded integer claim is valid but wrong and contributes to false
+discovery on refusal worlds. Invalid artifacts/calls lose only their world;
+valid_count > 0 determines aggregate validity.
 
-The shipped `solution.py` queries one prime and guesses (0, 1): `0.000000`. Supported
-recovery is multiplied by `1 - 0.25 * budget_used / 8`; correct-refusal credit stays
-unweighted and separately reported. The full-budget reference has evidence efficiency
-`0.750`. Re-measured on 2026-09-06, it reaches `0.750000` development and robustness
-with zero false discoveries and full refusal.
+## 3. Capability ablations
 
-## 3. Capability comparisons and ablations
+`review_evidence.json` records the complete metrics. The initial revised reference
+measures 0.875 development / 0.944444 heldout. Removing adaptive selection leaves
+**development unchanged** but reduces heldout to 0.777778; this component's measured
+benefit is heldout discrimination. Removing discriminant filtering reduces scores
+to 0.791667 / 0.833333 and produces false discoveries. Limiting the same method to
+four queries gives 0.166667 / 0.111111; three queries gives zero. These are observed
+capability comparisons, not frontier-model calibration or a proof of expert difficulty.
 
-Re-measured on 2026-09-07 by truncating the reference's `QUERY_PRIMES` to the
-first six small primes (11, 13, 17, 19, 23, 29; six budget units) and running
-`verification/evaluator.py` directly, double-run deterministic:
+## 4. Source-bound shortcut probes
 
-| variant | development | held-out robustness |
-|---|---:|---:|
-| full reference (budgeted ascending primes) | 0.750 | 0.750 |
-| six primes in the wide window | 0.4875 | 0.2708 |
+The [0310ab2 review](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/52#issuecomment-5594780907)
+found the old reference at 0.750, adaptive stopping at 0.8063, descending cheap primes
+at 0.8187, literal answers plus 1–2-prime fingerprints at 0.9438, and a zero-query
+call-counter literal program at **1.000 through the sandbox**. The old threshold
+grid (25 points) and four-prime ablation scored zero; six primes gave 0.4875.
+These are historical reviewer measurements, superseded by the revised score.
 
-Six primes do not collapse the score to zero: most supported worlds still lift
-uniquely, but two development worlds (and two held-out worlds) leave twin curves
-sharing all six counts, and the reference abstains on them — 0.4875 development
-/ 0.2708 robustness with refusals intact and zero false discoveries. An earlier
-record of `0.000` here was wrong (never reproducible); the wide window makes the
-prime ladder load-bearing, not decisive on its own. Local debugging numbers, not
-frozen benchmark evidence.
+The new audit exports literal answers for **every current world**, using the
+stronger call-order side channel, and checks them with zero, one and two real
+queries. All three score **0 development / 0 heldout** even in the direct evaluator
+where the counter persists. Their sources and hashes are recorded; the exact
+fixtures live in `verification/shortcut_memo_*.py` and run twice in the contribution
+gate. Fresh candidate processes at every world also remove the call-order channel
+in the real sandbox. A regression explicitly tests that reset.
 
-## 4. Shortcut probes
+A newly specified 25-point heuristic sweep uses n=1..5 small primes and
+k in {0.5,1,1.5,2,2.5} to turn the mean/absolute point-count deviations into a and b.
+Its best score is zero. This is a reproducible representative low-dimensional
+probe; the review did not provide its original threshold-candidate source, so this
+is not asserted to be the identical historical candidate.
 
-A fixed guess scores zero; residue enumeration over any single prime alone leaves
-hundreds of candidates. No low-dimensional shortcut applies — the artifact is the
-integer pair and the information budget is the difficulty.
+## 5. Frontier-model calibration and lineage
 
-## 5. Frontier-model calibration
+Current-revision clean frontier calibration remains missing. Builder lineage
+remains complete and empty calibration lists remain explicitly disclosed; the
+maintainer withdrew the objection to that combination. The old macOS proxy draws
+and the draw on scientifically incorrect refusal worlds are archived in
+`history_before_2026-09-12.md`; they are not current admission evidence.
 
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before
-exposure, must show that the first proposal does not reach the reference — the
-residue-then-CRT strategy is the admission question.
+## 6. Construction corrections and refusal invariants
 
-## 6. Construction errors and revisions
+The previous quartic/genus confusion, missing affine roots, wrong infinity count,
+exploding Cartesian CRT, small coefficient window and mismatched contract are
+preserved in the archived history. This revision additionally removes the
+unused-budget multiplier, adds transcript support and fresh sessions, publishes
+per-world validity, separates singular claims from malformed artifacts, expands
+the cohorts and introduces Q-isomorphic coefficient ambiguity.
 
-Five construction errors were caught locally, the fifth in the 2026-09-06
-difficulty rework. (i) A half-written compatibility shim never constrained
-residues across primes. (ii) The cartesian CRT enumeration exploded once a fifth
-prime was added — rebuilt incrementally with window pruning. (iii) Four primes
-left twin-curve ambiguity on two development worlds. (iv) The point counter
-dropped the y = 0 point at roots of the cubic (x^3 + 1 over F_11 counted 22
-against the classical 12) — corrected in both the oracle and the reference, and
-pinned against the classical value. (v) The difficulty audit judged the +-40
-window knowledge-gated with budget to spare — the window widened to +-1200 and
-primes repriced so the residue-then-CRT strategy now has to manage a real
-information budget. All pinned in `tests/test_elliptic_curve_recovery.py`.
+Singular worlds use a=-3t², b=2t³ from positive t square classes in development and
+negative t classes in heldout; their complete published-prime count signatures are
+disjoint. Isomorphic worlds contain both (a,b) and (16a,64b) in the window, equal at
+every listed prime. Supported sampled curves exclude those simple scaling twins;
+all shipped supported curves have unique lifts with eight descending cheap primes.
 
-## 7. Robustness and reproducibility
+The evidence file records exact traces for primes 97,89,83,79,73. After five, each
+singular world retains one or two cubic lifts and zero nonsingular lifts; each
+genus-two world has no cubic lift. The isomorphic worlds retain at least two
+nonsingular lifts. Some new genus-two worlds are recognizable earlier, while
+others need the joint bounded consistency check. Point-count size alone is not a
+general certificate of refusal. These are finite-window empirical construction
+checks, not a universal theorem about genus-two/elliptic point-count sequences.
 
-All counts are exact integer computations; determinism is arithmetic. Development
-and held-out curves use fresh seeds. Formal Linux sandbox replay, global evidence
-refresh and independent replication are pending.
+## 7. Robustness and reproduction
 
-## Reproduce
+The generator, signatures and transcripts are deterministic and repository-visible.
+Evidence checks require informative purchased counts but cannot prove a solver
+has not memorized an informative query policy. Fresh server-held worlds, independent
+arithmetic-geometry review and frontier calibration are still needed. This PR
+remains candidate and does not regenerate maintainer-owned global evidence.
+The unrelated cross-PR source-count rulings were removed from this PR.
 
 ```bash
-python scripts/measure_reference.py \
-  --task Mathematics/EllipticCurveRecovery \
-  --reference verification/reference_solver.py \
-  --entry recover_curve
+python benchmarks/Mathematics/EllipticCurveRecovery/verification/review_audit.py --output /tmp/curve-review.json --export-candidates /tmp/curve-probes
+python scripts/check_task_contribution.py --task Mathematics/EllipticCurveRecovery --timeout 300
+python -m pytest tests/test_elliptic_curve_recovery.py -q
 ```
 
-## 8. 2026-09-08 clean-room first-proposal calibration (post-de-leak)
+## Current clean Linux diagnostic
 
-After the solution recipe was removed from the agent-visible `Task.md`
-(commit b725249), an uncontaminated first-proposal draw was run under strict
-candidate visibility: only `Task.md`, `solution.py`, `constraints.txt` and the
-runner mechanics were read; `verification/` and `references/` stayed unread;
-one designed proposal, at most three runner invocations (interface fixes only,
-no score-driven tuning).
+Measured at `b02aef3b4281001b0cabd463e0fcf01d38ca6af0` using Ubuntu 22.04, Python 3.10.12, NumPy 1.24.4 and SciPy 1.10.1. The evidence file preserves that revision and its source hashes; this later documentation commit does not change the measured evaluator or reference.
 
-- **Result: combined_score 0.000, valid 0.** Development evidence efficiency
-  0.5848, held-out 0.49375; all eight supported worlds across both splits were
-  recovered exactly (intrinsic mechanism 1.0, budgets 5-6 of 8);
-  development false-discovery rate 0.0; correct-refusal rate 0.0; robustness
-  0.0. The proposal (per-prime residue tables over descending large primes,
-  candidate-set filtering, singular-signature detection, medoid tie-breaks for
-  the Q-isomorphism twins) solved every supported world without trial and
-  error, but its query pattern invalidated all four refusal worlds; the one
-  demonstrably safe query (a single `count_points(11)`, as the shipped
-  baseline makes) was not rediscovered inside the run allowance.
-- **Comparison:** the pre-de-leak wording produced a first proposal at
-  0.750/0.750 (recorded in 1a). De-leaking moved the first-proposal combined
-  score from tied-with-reference to zero.
-- **Reading:** the recovery arithmetic remains implementation-grade for a
-  frontier model; after de-leaking, admission pressure rests on (a) navigating
-  the disclosed invalidation contract ("overspending or unknown primes
-  invalidate the world even when caught") conservatively enough to keep
-  refusal worlds valid, and (b) the refusal decision itself. This is a proxy
-  draw run on macOS, not the sandboxed frozen-frontier draw the certification
-  gate requires; that draw is still pending.
+| Variant | Development | Heldout |
+|---|---:|---:|
+| Reference | 0.875000 | 0.944444 |
+| ADAPTIVE=False | 0.875000 | 0.777778 |
+| DISCRIMINANT_FILTER=False | 0.791667 | 0.833333 |
+| MAX_QUERIES=3 | 0.000000 | 0.000000 |
+| MAX_QUERIES=4 | 0.166667 | 0.111111 |
 
-## 9. Scientific correction and fresh audit (2026-09-08)
-
-The earlier refusal generator was scientifically wrong: a squarefree quartic
-hyperelliptic model has genus one, its counter omitted affine roots, and it
-always added two points at infinity regardless of the leading coefficient.
-It is replaced by a monic degree-five polynomial, verified squarefree at every
-queryable prime, with every affine root counted once and one point at infinity.
-This is the odd-degree genus-two construction in [Sutherland’s definitions](https://math.mit.edu/~drew/Definitions.html).
-Direct two-coordinate enumeration tests independently verify the point counter.
-The earlier first-proposal observations in section 8 apply to the old, incorrect
-refusal worlds and are **not admission evidence for this revision**. The full
-reference still needs a fresh frozen model comparison.
-
-The convenience runner now uses the trusted sandbox path. Fractional/bool prime
-queries and fractional/bool coefficient claims fail closed; invalid rows no
-longer count as discovery attempts. Confidence is checked against response
-quality, and held-out rate denominators are published.
+Grid best: **0.000000** development, 0.000000 heldout. Reference repeats were equal. Full grid parameters and diagnostic axes are retained in `review_evidence.json`.
