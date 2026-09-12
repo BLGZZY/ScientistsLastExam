@@ -135,3 +135,9 @@ with current main. The task wrapper now uses `sle/frontier_eval_entrypoint.py`;
 public files omit heldout and per-world diagnostics. Integration tests opt into
 an explicit private sidecar. This wrapper correction leaves the measured evaluator
 and reference source unchanged and is validated separately.
+
+`integration_validation_2026-09-12.json` records the subsequent latest-main integration
+checks at `122eaaab17b48b106ce82806ca4d766cc2bec567`, including the
+real sandbox contribution guard and exact regression scope. Historical full-suite
+failures/skips and any successful unchanged-source recheck remain explicitly recorded.
+This documentation-only receipt does not change the measured task or framework code.
