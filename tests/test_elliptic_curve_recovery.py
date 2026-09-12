@@ -170,6 +170,36 @@ class RunnerIntegrationTests(unittest.TestCase):
         # abstention. Fresh workers must always start at that first entry.
         self.assertTrue(all(not row['abstained'] for row in metrics['per_world']))
 
+    def test_caught_query_type_error_is_world_local_in_sandbox(self):
+        task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
+        ev = _load(task / "verification/evaluator.py", "ec_bad_query_boundary")
+        world = ev._world(ev._BASE_DEVELOPMENT_SPECS[0])
+        trigger = ev._legendre_count_cubic(97, world['a'], world['b'])
+        source = (task / 'verification/reference_solver.py').read_text()
+        source += """
+_reference = recover_curve
+
+def recover_curve(problem, count_points, budget_units):
+    def wrapped(prime):
+        report = count_points(prime)
+        if prime == 97 and report['point_count'] == %d:
+            try:
+                count_points(11.0)
+            except Exception:
+                pass
+        return report
+    return _reference(problem, wrapped, budget_units)
+""" % trigger
+        with tempfile.TemporaryDirectory() as tmp:
+            candidate = Path(tmp) / 'caught_query.py'
+            candidate.write_text(source)
+            returncode, stdout, metrics = self._run_entrypoint(str(candidate))
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stdout['valid'], 1)
+        self.assertGreater(stdout['combined_score'], 0)
+        self.assertGreater(metrics['feasibility_rate'], 0)
+        self.assertLess(metrics['feasibility_rate'], 1)
+
     def test_baseline_exits_zero_with_a_written_metrics_file(self):
         returncode, stdout, metrics = self._run_entrypoint("solution.py")
         self.assertEqual(returncode, 0)
