@@ -4,10 +4,11 @@
 
 The reference is `verification/reference_permutation_augmented.py`, which restores the
 permutation-family inference that the builder's first reference left out; that first reference
-is kept as an omission probe and its 0.556 line is not the admission threshold. The numbers
-below were measured in process on this source (`references/known_best.md`). The sandbox
-measurement that fills the machine contract's null expected scores, the false-positive guard
-review and the first-proposal calibration remain pending. Nothing here establishes difficulty.
+is kept as an omission probe and its 0.556 line is not the admission threshold. Independent
+Linux sandbox double runs reproduced the augmented reference at 7/9 development and 0.750
+held out, with all 18 worlds valid and identical complete metrics. The original-seed ability
+ablations were also repeated. The broader grid, false-positive guard robustness review and
+first-proposal calibration remain pending. Nothing here establishes model difficulty.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget

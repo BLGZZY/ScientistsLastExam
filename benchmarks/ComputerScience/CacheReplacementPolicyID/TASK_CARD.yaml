@@ -110,8 +110,9 @@ construction_audit:
   oracle_disagreement_status: not_quantified
   independent_recomputation_status: the reference and the baseline are runnable from this directory, and the 23-rung ablation ladder, the fixed 343-cell shortcut grid, the determinism statistics over 24 seeds and the sixteen-seed robustness check of the reference from the scripts in .research/cache_policy, where summary.py recomputes every quoted number; the 29 bad-candidate shapes are in tests/test_cache_replacement_policy_id.py; the sandbox evaluation of scripts/check_task_contribution.py has not been run because the task was built on a machine without Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
 
-# Post-builder review: declarations deliberately remain unmeasured. Historical
-# builder rungs must not become trusted current-source admission measurements.
+# Original graded-world measurements were independently repeated in the Linux
+# sandbox at a8cbb99d; the source-bound aggregate report is cited below. The
+# builder's broader robustness/grid records remain separate construction evidence.
 evaluation_budget:
   accesses_per_world: 200000
   evaluator_timeout_seconds: 360
@@ -149,34 +150,43 @@ shortcut_probe:
   metric: combined_score
   reference:
     candidate: verification/reference_permutation_augmented.py
-    expected_score: null
+    expected_score: 0.7777777777777778
   probes:
+    - id: permutation_and_lstar_without_age_table
+      candidate: verification/probe_without_age_table.py
+      expected_score: 0.6666666666666666
     - id: original_reference_without_permutation_family
       candidate: verification/reference_lstar_family.py
-      expected_score: null
+      expected_score: 0.5555555555555555
     - id: textbook_closest_baseline
       candidate: solution.py
-      expected_score: null
+      expected_score: 0.0
   relative_margin: 0.1
   score_tolerance: 0.000001
 post_builder_review:
   original_pr_head: 7d59e684485db9df3a54303ed956b8bb7025856d
-  status: hold_pending_complete_reference_measurement_and_admission
+  status: hold_pending_independent_grid_guard_and_model_calibration
   historical_threshold_rejected: >-
     The builder reference at 0.556 deliberately omits the published permutation-family
     inference used by its own 0.778 headroom rung. That lower score is not an admission
     threshold. The standalone augmented candidate above restores this family. The builder
-    measured it in process at 0.778 and 0.750 (references/known_best.md); it is unmeasured
-    through the current sandbox. Its remaining claim guard needs review as a false-positive
-    control. No complete-reference or model-difficulty pass is asserted.
+    measured it in process at 0.778 and 0.750 (references/known_best.md). The independent
+    2026-09-12 review repeated it in the real Linux sandbox at source a8cbb99d: both runs
+    were valid in all 18 worlds, with exactly equal full metrics, development 7/9 and
+    heldout 0.75, zero false claims and complete randomized-world refusal. Nine fixed
+    methods were each evaluated twice. The machine contract also includes the strongest
+    declared omission probe, without the age-table library, measured at 6/9 development.
+    The broad grid and claim-guard robustness review remain distinct from this original-seed
+    replay, and no model-difficulty pass is asserted.
   repairs: >-
     Reset candidate sessions between worlds; preserve all charged callbacks within each
     world; keep malformed-trace violations fatal after the candidate catches the exception;
     use the shared fail-closed wrapper and numeric split denominators; report claim-conditional
     FDR with valid non-abstaining policy claims as its denominator, retaining the historical
-    per-world rate separately; declare an explicitly
-    unmeasured reference/probe contract. No old artifact or model draw is re-signed.
+    per-world rate separately; bind the executable reference/probe contract to independent
+    Linux measurements and include the strongest declared omission. No old artifact or
+    model draw is re-signed.
   data_scope: >-
     Synthetic policy tables and procedural noisy traces, not captured hardware timings.
     Noise-seed shifts redraw observations of the same 18 policies, not new mechanism families.
-  evidence: .research/cache_policy/review_2026-09-11.md
+  evidence: .research/cache_policy/review_2026-09-12.md
