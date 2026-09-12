@@ -206,6 +206,10 @@ def _evaluate_world(candidate, spec, split, index):
     world = _world(spec)
     profiler = _Profiler(world)
     try:
+        # Scientific worlds are independent experiments, including across splits.
+        reset = getattr(candidate, "reset_session", None)
+        if callable(reset):
+            reset()
         submission = candidate(problem_statement(world), profiler.time_run,
                                BUDGET_UNITS)
         probs, scale, confidence, abstain = _validate(submission)

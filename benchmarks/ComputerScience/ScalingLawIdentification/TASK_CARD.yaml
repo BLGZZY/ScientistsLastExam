@@ -109,3 +109,19 @@ frontier_eng_overlap_review:
     floors. FE implements faster kernels/allocators rather than inferring a law from budgeted timings.
   evidence: .research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  relative_margin: 0.3
+  score_tolerance: 0.01
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.754779
+  probes:
+  - id: review_grid_best
+    candidate: verification/shortcut_rms.py
+    expected_score: 0.482147
+evaluation_budget:
+  cpu_only: true
+  timeout_seconds: 300
+  note: 77 independent world sessions; process isolation retained at every boundary.
