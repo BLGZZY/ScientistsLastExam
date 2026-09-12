@@ -8,7 +8,7 @@ def _seed(problem, index):
     low, high = problem["cell_volume_bounds"]
     volume = low + (0.25 + 0.12 * index) * (high - low)
     base = volume ** (1.0 / 3.0)
-    shapes = ((1.0, 1.0, 1.0), (1.22, 0.91, 0.90), (0.86, 1.25, 0.93))
+    shapes = ((1.0, 1.0, 1.0), (1.10, 0.95, 0.957), (0.94, 1.11, 0.958))
     shape = np.asarray(shapes[index], dtype=float)
     shape /= np.prod(shape) ** (1.0 / 3.0)
     rng = np.random.default_rng(1729 + 97 * n + index)
@@ -26,4 +26,3 @@ def _seed(problem, index):
 def search_crystals(problem, relax_structure):
     records = [relax_structure(_seed(problem, index)) for index in range(3)]
     return {"candidate_ids": [row["candidate_id"] for row in records]}
-

@@ -13,7 +13,7 @@ valid in every world and defines score 0.0.
 
 ## 3. Capability ladder
 
-A three-start cubic-only search scores `0.3089156287047785`, leaving a margin of about 0.69 to the
+A three-start cubic-only search scores `0.17252846472624697`, leaving a margin of about 0.83 to the
 24-start witness. The remaining ablations—removing volume variation, anisotropy, energy-aware
 archive selection, or diversity selection—await clean Linux calibration.
 
@@ -31,7 +31,7 @@ two-hour material headroom are unmeasured, so the task remains `candidate`.
 ## 6. Construction errors and corrections
 
 The first implementation used Python loops over every atom/image pair and exceeded a practical
-evaluation budget. The energy was vectorized and the local relaxation reduced to 35 iterations.
+evaluation budget. The energy was vectorized and the local relaxation reduced to 25 iterations.
 A first multistart witness was also beaten by an eight-start cubic probe because its archive
 selection traded away too much energy. The final witness includes those cubic starts and exactly
 maximizes the published three-member archive utility; both corrections are retained here.
@@ -44,4 +44,3 @@ experimental, or large-cell conclusion follows.
 
 Sources: Abraham and Probert (2006), DOI `10.1103/PhysRevB.73.224104`; Oganov and Glass (2006),
 DOI `10.1016/j.cpc.2006.07.020`.
-

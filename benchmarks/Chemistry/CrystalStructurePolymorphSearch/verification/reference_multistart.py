@@ -11,7 +11,7 @@ def _seed(problem, index):
     volume = low + (0.12 + 0.76 * ((index * 0.61803398875) % 1.0)) * (high - low)
     base = volume ** (1.0 / 3.0)
     phase = 2.0 * np.pi * ((index * 0.41421356237) % 1.0)
-    shape = np.exp(0.22 * np.array([np.sin(phase), np.sin(phase + 2.094), np.sin(phase + 4.189)]))
+    shape = np.exp(0.11 * np.array([np.sin(phase), np.sin(phase + 2.094), np.sin(phase + 4.189)]))
     shape /= np.prod(shape) ** (1.0 / 3.0)
     token = problem["formula"] + "|" + str(index)
     seed = int(hashlib.sha256(token.encode()).hexdigest()[:8], 16)

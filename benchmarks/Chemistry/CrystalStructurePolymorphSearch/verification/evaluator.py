@@ -16,7 +16,8 @@ CRYSTAL_STRUCTURE_POLYMORPH_SEARCH_V1 = True
 CALL_BUDGET = 24
 RETURN_COUNT = 3
 TRANSLATIONS = np.asarray(
-    [(i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1) for k in (-1, 0, 1)],
+    [(i, j, k) for i in (-2, -1, 0, 1, 2)
+     for j in (-2, -1, 0, 1, 2) for k in (-2, -1, 0, 1, 2)],
     dtype=float,
 )
 
@@ -59,7 +60,7 @@ def _problem(world):
         "pair_sigma": world["sigma"].tolist(),
         "external_pressure_reduced": world["pressure"],
         "cell_volume_bounds": list(world["volume_bounds"]),
-        "cell_length_bounds": [1.2, 4.5],
+        "cell_length_bounds": [1.5, 4.5],
         "cell_aspect_ratio_limit": 2.2,
         "minimum_seed_separation": 0.42,
         "local_relaxation_model": "periodic shifted 12-6 binary Lennard-Jones plus P*V",
@@ -88,7 +89,7 @@ def _normalize_structure(structure, world):
     if not isinstance(lengths, (list, tuple)) or len(lengths) != 3:
         raise ValueError("cell_lengths must have length three")
     lengths = np.asarray([_finite(v, "cell length") for v in lengths], dtype=float)
-    if np.any(lengths < 1.2) or np.any(lengths > 4.5):
+    if np.any(lengths < 1.5) or np.any(lengths > 4.5):
         raise ValueError("cell length is outside the public bounds")
     volume = float(np.prod(lengths))
     if not world["volume_bounds"][0] <= volume <= world["volume_bounds"][1]:
@@ -156,10 +157,10 @@ def _relax(world, structure):
         return _enthalpy(world, cell, frac)
 
     bounds = [(-0.75, 0.75)] * (3 * (len(coords) - 1)) + [
-        (math.log(low_volume), math.log(high_volume)), (-0.22, 0.22), (-0.22, 0.22)
+        (math.log(low_volume), math.log(high_volume)), (-0.12, 0.12), (-0.12, 0.12)
     ]
     result = minimize(objective, x0, method="L-BFGS-B", bounds=bounds,
-                      options={"maxiter": 35, "ftol": 1.0e-9, "maxls": 20})
+                      options={"maxiter": 25, "ftol": 1.0e-9, "maxls": 20})
     relaxed_lengths, relaxed_coords = decode(result.x)
     volume = float(np.prod(relaxed_lengths))
     if not low_volume - 1e-5 <= volume <= high_volume + 1e-5:
@@ -258,7 +259,7 @@ def _baseline_seed(world, index):
         world["volume_bounds"][1] - world["volume_bounds"][0]
     )
     base = volume ** (1.0 / 3.0)
-    shapes = ((1.0, 1.0, 1.0), (1.22, 0.91, 0.90), (0.86, 1.25, 0.93))
+    shapes = ((1.0, 1.0, 1.0), (1.10, 0.95, 0.957), (0.94, 1.11, 0.958))
     shape = np.asarray(shapes[index % len(shapes)])
     shape /= float(np.prod(shape)) ** (1.0 / 3.0)
     lengths = base * shape
@@ -294,7 +295,7 @@ def _reference_seed(world, index):
     volume = low + (0.12 + 0.76 * ((index * 0.61803398875) % 1.0)) * (high - low)
     base = volume ** (1.0 / 3.0)
     phase = 2.0 * np.pi * ((index * 0.41421356237) % 1.0)
-    shape = np.exp(0.22 * np.asarray([
+    shape = np.exp(0.11 * np.asarray([
         np.sin(phase), np.sin(phase + 2.094), np.sin(phase + 4.189)
     ]))
     shape /= float(np.prod(shape)) ** (1.0 / 3.0)

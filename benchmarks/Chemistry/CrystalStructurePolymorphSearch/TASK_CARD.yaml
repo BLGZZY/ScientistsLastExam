@@ -2,7 +2,7 @@ schema_version: 2
 scientific_question: Given only a binary composition and frozen periodic pair potential, can a budgeted global search find a low-enthalpy crystal while retaining structurally distinct low-energy polymorphs?
 artifact: A deterministic search policy that proposes periodic orthorhombic seeds through a charged local-relaxation callback and returns three callback-issued candidate identifiers.
 oracle:
-  model: periodic shifted 12-6 binary Lennard-Jones energy over the central and 26 adjacent cells plus external-pressure volume work, followed by deterministic L-BFGS-B relaxation of coordinates, volume, and orthorhombic shape
+  model: periodic shifted 12-6 binary Lennard-Jones energy over the complete 5 by 5 by 5 image stencil covering the largest cutoff plus external-pressure volume work, followed by deterministic L-BFGS-B relaxation of coordinates, volume, and orthorhombic shape
   feasibility: exact species count and order, finite three-vector cell, finite N by 3 fractional coordinates, public length/volume/aspect/separation bounds, three distinct session-issued candidates, and no callback-budget violation
   deterministic: true
 normalization:
@@ -16,6 +16,7 @@ citations:
   title: Crystal structure prediction using ab initio evolutionary techniques principles and applications
 invariants:
 - energy is invariant to a common fractional translation of all atoms
+- the five-by-five-by-five periodic image stencil completely covers the largest pair cutoff under the minimum relaxed cell length
 - every final candidate was locally relaxed by the trusted callback in the current world
 - atom identities and stoichiometric order cannot be changed by a submission
 - cell volume is parameterized to remain within its frozen bounds throughout relaxation
@@ -33,7 +34,7 @@ shortcut_probe:
   probes:
   - id: three_cubic_random_starts
     candidate: verification/shortcut_cubic.py
-    expected_score: 0.3089156287047785
+    expected_score: 0.17252846472624697
   relative_margin: 0.1
   score_tolerance: 0.000001
 review:
@@ -71,4 +72,3 @@ construction_audit:
   red_team_rounds: 1
   oracle_disagreement_status: not_quantified
   independent_recomputation_status: periodic_energy_invariance_and_anchor_recomputation_covered_by_task_tests
-

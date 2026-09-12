@@ -50,8 +50,9 @@ For species `a,b`, pair distance `r`, and cutoff `r_c = 2.5 sigma_ab`, the froze
 u_ab(r) = 4 epsilon_ab [(sigma_ab/r)^12 - (sigma_ab/r)^6] - u_ab(r_c)
 ```
 
-for `r < r_c`, and zero beyond the cutoff. The oracle sums the central cell against the 26 adjacent
-periodic images with the usual one-half factor, then minimizes `E + P V`. This is a model potential,
+for `r < r_c`, and zero beyond the cutoff. The oracle sums the central cell against the 124 images
+in the surrounding `5 by 5 by 5` supercell with the usual one-half factor. Together with the public
+minimum cell length this completely covers the largest cutoff. It then minimizes `E + P V`. This is a model potential,
 not a claim about any named chemical element.
 
 Archive utility is `-H_best + 0.15 D`, where `D` is the mean RMS distance between sorted,
@@ -101,4 +102,3 @@ The audited Frontier-Eng catalogue contains no crystal-structure or polymorph se
 References: Abraham and Probert, *Physical Review B* 73, 224104 (2006), DOI
 `10.1103/PhysRevB.73.224104`; Oganov and Glass, *Computer Physics Communications* 175 (2006), DOI
 `10.1016/j.cpc.2006.07.020`.
-
