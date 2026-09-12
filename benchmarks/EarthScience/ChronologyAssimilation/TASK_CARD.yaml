@@ -38,7 +38,8 @@ known_shortcuts: 'Historical reviewed head: five-date linear interpolation / unw
   std attained 0.698764/0.682105 against 0.736298/0.708775. This invalidated the earlier shortcut claim.
   The revised curve-increment score and joint public-input reference are audited by verification/replay_review.py
   (1008 fixed cheap strategies and six ablations); current Linux results are in references/review_replay.json
-  and known_best.md. No calibration draw is claimed.'
+  and known_best.md. No calibration draw is claimed. Current clean Linux replay: best 0.435979/0.387287,
+  reference 0.797985/0.714963; 1008 grid settings.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -50,7 +51,7 @@ contamination:
     data-assimilation validation are still required.
 review:
   domain: pending_external_paleoclimate
-  evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
+  evaluator_security: native_and_ci_pinned_linux_sandbox_replayed_independent_security_review_pending
 provenance:
   class: procedural
   target_source: Repository-visible deterministic pseudoproxy generator with development and held-out
@@ -77,7 +78,8 @@ lineage:
     accumulation, noisy proxy calibration, non-clipped dating endpoints and a full age-curve artifact;
     the scalar-offset collapse is retained as a measured local probe. 2026-09-12 maintainer comments triggered
     local age-increment scoring, a joint age/field MAP reference, the fixed cheap grid, six legal ablations,
-    and corrected nearest-neighbor documentation.
+    and corrected nearest-neighbor documentation. Independent world-session resets and runnable task-card
+    shortcut guards were added during current-main integration.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
@@ -121,7 +123,7 @@ shortcut_probe:
   score_tolerance: 0.01
   reference:
     candidate: verification/reference_solver.py
-    expected_score: 0.797985
+    expected_score: 0.797115
   probes:
   - id: review_grid_best
     candidate: verification/shortcut_linear.py

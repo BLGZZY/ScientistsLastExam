@@ -127,3 +127,25 @@ this local synthetic generator is not an implementation or validation of that pa
 无. Nearest catalog entries: predict_modality; denoising. Paid dating observations jointly constrain sample ages and climate reconstruction with unsupported-world refusal; FE predicts cell modalities or removes image/RNA noise without an age-depth chronology.
 
 See `.research/chronology_assimilation_frontier_eng_overlap_2026-09-07.md` for the task-specific comparison against the pinned paper and available repository catalog. The requested 95-entry source could not be reconciled with the available 78 rows (84 expanded tasks); source reconciliation and maintainer acceptance remain pending.
+
+## Measured capability ladder
+
+Contributor Linux replay (NumPy 1.26.4 / SciPy 1.13.1); both splits use the same
+method and fixed parameters. These measurements do not establish model difficulty.
+
+| Method | Development | Held out | Development loss |
+|---|---:|---:|---:|
+| Full reference | 0.797985 | 0.714963 | 0.000000 |
+| Without joint chronology refinement | 0.489000 | 0.440218 | 0.308985 |
+| Replace final GP with unweighted mean / constant std | 0.775516 | 0.706424 | 0.022470 |
+| Without diagonal age-error propagation | 0.797607 | 0.714278 | 0.000378 |
+| Without laboratory calibration check | 0.547985 | 0.381630 | 0.250000 |
+| Without cross-record coherence check | 0.547985 | 0.381630 | 0.250000 |
+| Without either refusal check | 0.297985 | 0.048296 | 0.500000 |
+| Best of 1008 fixed cheap strategies | 0.435979 | 0.387287 | 0.362006 |
+
+The diagonal age-error approximation has only a small measured effect. The main
+chronology capability is joint refinement from dates and shared proxy observations.
+
+Each scientific world, including the first held-out world, starts a fresh sandbox
+process; calls within one world share the same charged budget and candidate state.
