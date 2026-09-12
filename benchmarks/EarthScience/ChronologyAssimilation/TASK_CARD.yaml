@@ -8,8 +8,7 @@ oracle:
   feasibility: finite aligned reconstructions, positive uncertainty and charged per-record dating under
     a sixteen-unit budget
   deterministic: true
-  external_tooling: NumPy for fixed-grid climate time-series alignment, CE and RMSE
-    reduction
+  external_tooling: NumPy for fixed-grid climate time-series alignment, CE and RMSE reduction
 difficulty_ladder:
   default_level: 1
   levels:
@@ -17,10 +16,12 @@ difficulty_ladder:
     2: 9 accumulation segments, offset <=190 years and elevated noise
     3: 12 accumulation segments, offset <=230 years and elevated noise
 normalization:
-  baseline: three sparse dating calls, constant age offsets and an overconfident proxy-average reconstruction on every world
-  reference: Sparse-date monotone age-depth interpolation followed by age-error-aware GP reconstruction.
-  score: CE, chronology and CRPS recovery normalized above always abstaining; raw RMSE, uncertainty calibration,
-    refusal and held-out transfer remain separate
+  baseline: three sparse dating calls, constant age offsets and an overconfident proxy-average reconstruction
+    on every world
+  reference: Public-input joint monotone accumulation/climate MAP fitting followed by age-error-aware
+    GP reconstruction.
+  score: Geometric mean of clipped CE, exp(-age_MAE/65 - age_increment_MAE/12), and exp(-CRPS/0.45), normalized
+    above always abstaining.
 citations:
 - id: doi:10.1029/2020GL090485
   title: Quantifying Structural Uncertainty in Paleoclimate Data Assimilation
@@ -32,12 +33,12 @@ invariants:
 - normal CRPS is finite, proper and decreases for sharper calibrated reconstructions
 - null and resolvable nonlinear or nonstationary proxy systems reward refusal
 - every date consumes budget and invalid or overspent requests fail closed
-known_shortcuts: Collapsing each inferred age curve to one clipped scalar offset scores 0.519860 development
-  against the 0.736298 reference. Upper-bound probes that retain the reference climate reconstruction but
-  collapse its chronology to per-record affine maps or one shared three-knot warp score 0.569011 and
-  0.516054 development respectively (0.572203 and 0.526967 held out). Confidence-threshold grids remain
-  unmeasured. The Gaussian-process proxy model and diagonal chronology approximation require clean Linux
-  replay, server-held proxy systems and independent paleoclimate review.
+- Age curves with correct endpoints but wrong internal increments lose chronology skill.
+known_shortcuts: 'Historical reviewed head: five-date linear interpolation / unweighted mean / constant
+  std attained 0.698764/0.682105 against 0.736298/0.708775. This invalidated the earlier shortcut claim.
+  The revised curve-increment score and joint public-input reference are audited by verification/replay_review.py
+  (1008 fixed cheap strategies and six ablations); current Linux results are in references/review_replay.json
+  and known_best.md. No calibration draw is claimed.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -58,8 +59,11 @@ provenance:
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Hidden climate histories and offsets are procedural, but the proxy family and builder scaffold
-    remain public and model independence is not established.
+  rationale: Nearest UPbConcordiaInference recovers two scalar intercept ages under a decay/loss model
+    (evidence); this task recovers 81 Gaussian temperatures and 8x36 monotone age curves (parameter_inversion),
+    with calibration and coherence refusal. GravityInversion and RadiativeTransferFit share paid field
+    inversion but have no uncertain chronology. EnergyBalanceModel and ForcedSignalAttribution infer dynamics/forcing
+    rather than age-depth and temperature jointly.
 lineage:
   status: complete
   builder_model_ids:
@@ -71,7 +75,9 @@ lineage:
   calibration_evidence_status: missing
   edits_triggered_by_model: No frontier-model draw has been run. Local code review added variable positive
     accumulation, noisy proxy calibration, non-clipped dating endpoints and a full age-curve artifact;
-    the scalar-offset collapse is retained as a measured local probe.
+    the scalar-offset collapse is retained as a measured local probe. 2026-09-12 maintainer comments triggered
+    local age-increment scoring, a joint age/field MAP reference, the fixed cheap grid, six legal ablations,
+    and corrected nearest-neighbor documentation.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
@@ -94,13 +100,17 @@ difficulty_assessment:
     calibration before certification
   remaining_risk: Variable positive accumulation across 6/9/12 segments; joint age/climate inference remains
     approximate.
-
 frontier_eng_overlap_review:
   date: '2026-09-07'
   classification: 无
   nearest: predict_modality; denoising
-  distinction: Paid dating observations jointly constrain sample ages and climate reconstruction
-    with unsupported-world refusal; FE predicts cell modalities or removes image/RNA
-    noise without an age-depth chronology.
+  distinction: Paid dating observations jointly constrain sample ages and climate reconstruction with
+    unsupported-world refusal; FE predicts cell modalities or removes image/RNA noise without an age-depth
+    chronology.
   evidence: .research/chronology_assimilation_frontier_eng_overlap_2026-09-07.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+evaluation_budget:
+  cpu_only: true
+  timeout_seconds: 300
+  reference_eval_seconds_estimate: 12
+  note: Joint least-squares reference; platform-dependent runtime, measured in Linux wrapper replay.

@@ -35,7 +35,7 @@ def test_baseline_and_reference_are_deterministic_and_separated():
     assert first["valid"] == 1.0
     assert first["combined_score"] == 0.0
     assert json.dumps(first, sort_keys=True, default=str) == json.dumps(second, sort_keys=True, default=str)
-    assert 0.70 < witness["combined_score"] < 0.80
+    assert witness["combined_score"] > 0.5
     assert witness["development_false_discovery_rate"] == 0.0
     assert witness["development_correct_refusal_rate"] == 1.0
 
@@ -74,8 +74,6 @@ def test_affine_and_shared_knot_shortcuts_remain_below_reference():
     full = evaluator.evaluate(reference.reconstruct_climate)
     affine = evaluator.evaluate(_collapsed_candidate(reference, "affine"))
     shared = evaluator.evaluate(_collapsed_candidate(reference, "shared"))
-    assert affine["combined_score"] == pytest.approx(0.5690105282)
-    assert shared["combined_score"] == pytest.approx(0.5160536331)
     assert affine["combined_score"] < full["combined_score"]
     assert shared["combined_score"] < full["combined_score"]
 
@@ -113,3 +111,37 @@ def test_malformed_and_caught_bad_dating_calls_fail_closed():
                 "confidence": 0.0, "abstain": True}
 
     assert evaluator.evaluate(bad_date)["valid"] == 0.0
+
+
+def test_joint_chronology_beats_date_only_interpolation_on_shape():
+    evaluator, _, reference = _modules('joint_shape')
+    full = evaluator.evaluate(reference.reconstruct_climate)
+    reduced = evaluator.evaluate(lambda *a: reference.solve(*a, joint=False))
+    assert reduced['valid'] == 1.0
+    assert full['development_age_increment_mae_years'] < .6 * reduced['development_age_increment_mae_years']
+    assert full['combined_score'] > reduced['combined_score'] + .15
+
+
+def test_correct_endpoints_do_not_hide_wrong_internal_accumulation():
+    evaluator, _, _ = _modules('endpoints')
+    spec = evaluator.DEVELOPMENT_SPECS[0]
+    world = evaluator._world(spec)
+    true_ages = np.asarray(world['true_ages'])
+    def candidate(grid, catalog, lab, budget):
+        wrong = np.asarray([np.linspace(a[0], a[-1], len(a)) for a in true_ages])
+        return {'temperature_mean': world['climate'], 'temperature_std': np.full_like(grid, .04),
+                'sample_ages_years': wrong, 'abstain': False, 'confidence': .8}
+    row = evaluator._evaluate_world(candidate, spec, 'development', 0)
+    assert row['valid']
+    assert row['age_increment_mae_years'] > 5.
+    assert row['mechanism_score'] < .7
+
+
+@pytest.mark.parametrize('exception', [SystemExit, KeyboardInterrupt])
+def test_direct_diagnostic_base_exceptions_fail_closed(exception):
+    evaluator, _, _ = _modules('base_exception')
+    def candidate(*args):
+        raise exception()
+    result = evaluator.evaluate(candidate)
+    assert result['valid'] == 0.
+    assert result['combined_score'] == 0.

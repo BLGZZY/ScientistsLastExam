@@ -44,7 +44,7 @@ def reconstruct_climate(time_grid_years, proxy_catalog, date_sample, budget_unit
 A dating call may request 1–10 unique valid samples from one record and costs
 `1 + ceil(n_samples/5)`. Total cost may not exceed 16. The returned time grid is ascending. A
 non-abstaining reconstruction must contain finite means, strictly positive finite standard
-deviations, and monotone sample ages for every record. A legacy `age_offsets_years` vector in
+deviations in `[1e-100,1e100]`, mean magnitudes at most `1e100`, and monotone sample ages for every record. A legacy `age_offsets_years` vector in
 `[-300,300]` is still accepted when curves are absent; it is converted into clipped nominal-plus-offset
 curves and scored on all 288 sample ages. With explicit curves, the offset vector may be omitted.
 
@@ -57,7 +57,13 @@ cannot earn perfect confidence calibration. Invalid artifacts do not count as di
 attempts; coverage counts valid, non-abstaining supported-world submissions.
 
 - `combined_score` is chronology-aware temperature mechanism recovery above always abstaining.
-- Supported worlds report coefficient of efficiency (CE), RMSE, sample-age MAE and CRPS.
+- Supported worlds report coefficient of efficiency (CE), RMSE, sample-age MAE,
+  adjacent-sample age-increment MAE, and Gaussian CRPS. Define
+  `age_skill = exp(-age_MAE/65 - age_increment_MAE/12)` with ages in years and
+  `probability_skill = exp(-mean_CRPS/0.45)` with temperatures in degrees C.
+  Mechanism recovery is the cube root of `max(clip(CE,0,1),1e-12) * age_skill * probability_skill`.
+  Local increments measure accumulation-rate recovery, so joining sparse dates
+  cannot receive the same credit as reconstructing the intervening chronology.
 - Null and resolvable nonstationary/nonlinear proxy worlds reward calibrated refusal.
 - False discovery, correct refusal, supported coverage and probability calibration are separate.
 - `robustness_score` uses held-out spectra, proxy mixes, dating noise and chronology curves.
@@ -87,7 +93,15 @@ DOI `10.5194/cp-16-1325-2020`.
 
 ## 关系与区别 / Relationship to nearby tasks
 
-EnergyBalanceModel fits climate dynamics, ForcedSignalAttribution identifies forcing mechanisms, and ProspectiveMetaAnalysis synthesizes study evidence. This task pays for chronology observations, reconstructs a common climate series and tests proxy response adequacy against calibration observations.
+Geophysics/UPbConcordiaInference is the closest neighbor: it buys dating measurements
+and returns two scalar intercept ages on closed-form decay curves; it refuses event
+histories outside a single lead-loss family and occupies discovery/evidence. Here the
+artifact is 81 probabilistic temperatures plus 8x36 monotone ages, scored on CRPS and
+local chronology shape, with calibration and cross-record adequacy axes; the taxonomy
+is discovery/parameter_inversion. Geophysics/GravityInversion and
+AtmosphericScience/RadiativeTransferFit also buy observations for field inversion,
+but have no uncertain age-depth coordinate. EnergyBalanceModel and
+ForcedSignalAttribution infer dynamics or forcing rather than chronology.
 
 ## Admission and reference scope
 
@@ -98,7 +112,7 @@ the maintainer-facing `references/known_best.md`, which is not served to candida
 They do not replace clean Linux sandbox replay, independent domain review,
 Frontier-Eng overlap review or a frozen frontier-model calibration draw.
 
-Each `proxy_catalog` row also supplies `calibration_temperature_c`, `calibration_proxy_values` (paired length-7 arrays), and scalar `calibration_noise_std`. These are noisy laboratory calibration observations of the proxy response, not the hidden historical climate series. They make a shared nonlinear response testable even when all historical proxies agree on that transformed series.
+Each `proxy_catalog` row also supplies `calibration_temperature_c`, `calibration_proxy_values` (paired length-7 arrays), and scalar `calibration_noise_std`. These are noisy laboratory calibration observations of the proxy response, not the hidden historical climate series.
 
 Each catalog row additionally supplies `chronology_model` (description), `accumulation_segments`
 (integer), and `age_bounds_years` ([0,2000]). These fields describe the public

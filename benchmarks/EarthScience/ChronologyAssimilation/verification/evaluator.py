@@ -188,7 +188,7 @@ def _validate(submission):
         return None, None, None, confidence, True
     if mean.shape != TIME_GRID.shape or std.shape != TIME_GRID.shape or (not curves.size and offsets.shape != (N_PROXY,)):
         raise ValueError("reconstruction arrays have the wrong shape")
-    if np.any(~np.isfinite(mean)) or np.any(~np.isfinite(std)) or np.any(std <= 0.0) or np.any(~np.isfinite(offsets)):
+    if np.any(np.abs(mean) > 1e100) or np.any(std < 1e-100) or np.any(std > 1e100) or np.any(~np.isfinite(mean)) or np.any(~np.isfinite(std)) or np.any(std <= 0.0) or np.any(~np.isfinite(offsets)):
         raise ValueError("reconstruction arrays must be finite and uncertainty positive")
     if offsets.size and offsets.shape != (N_PROXY,):
         raise ValueError("age offsets must have one entry per proxy when provided")
@@ -228,7 +228,7 @@ def _climate_field_metrics(mean, truth):
 def _empty(split, index):
     return {"split": split, "world_index": index, "valid": False, "abstained": False,
             "mechanism_score": 0.0, "coefficient_efficiency": -1e6, "rmse_c": 1e6,
-            "age_mae_years": 1e6, "mean_crps_c": 1e6, "confidence_score": 0.0,
+            "age_mae_years": 1e6, "age_increment_mae_years": 1e6, "mean_crps_c": 1e6, "confidence_score": 0.0,
             "false_discovery": False, "correct_refusal": False, "dating_cost": 0}
 
 
@@ -251,27 +251,33 @@ def _evaluate_world(candidate, spec, split, index):
                 np.clip(record["nominal_age_years"] + offset, 0., 2000.)
                 for record, offset in zip(world["catalog"], offsets)])
             age_mae = float(np.mean(np.abs(estimated_ages - world["true_ages"])))
+            # Local accumulation matters in addition to absolute age. A curve
+            # joining sparse dates can have accurate endpoints but wrong rates.
+            age_increment_mae = float(np.mean(np.abs(
+                np.diff(estimated_ages, axis=1) - np.diff(world["true_ages"], axis=1))))
             with np.errstate(over="raise", invalid="raise", divide="raise"):
                 crps = float(np.mean(_crps_normal(mean, std, truth)))
             ce_score = float(np.clip(ce, 0.0, 1.0))
-            age_score = float(math.exp(-age_mae / 65.0))
+            age_score = float(math.exp(-age_mae / 65.0 - age_increment_mae / 12.0))
             crps_score = float(math.exp(-crps / 0.45))
             mechanism = float((max(ce_score, 1e-12) * age_score * crps_score) ** (1.0 / 3.0))
         elif supported:
             mechanism, ce, rmse, age_mae, crps = 0.0, -1e6, 1e6, 1e6, 1e6
+            age_increment_mae = 1e6
         else:
             correct = bool(abstain)
             mechanism = 1.0 if correct else 0.0
             ce, rmse, age_mae, crps = (0.0, 0.0, 0.0, 0.0) if correct else (-1e6, 1e6, 1e6, 1e6)
+            age_increment_mae = 0.0 if correct else 1e6
         target_confidence = mechanism if supported and not abstain else 0.0
         row.update({"valid": True, "abstained": abstain, "mechanism_score": mechanism,
                     "coefficient_efficiency": ce, "rmse_c": rmse,
-                    "age_mae_years": age_mae, "mean_crps_c": crps,
+                    "age_mae_years": age_mae, "age_increment_mae_years": age_increment_mae, "mean_crps_c": crps,
                     "confidence_score": 1.0 - (confidence - target_confidence) ** 2,
                     "false_discovery": bool(not supported and not abstain),
                     "correct_refusal": bool(not supported and abstain),
                     "dating_cost": lab.used})
-    except Exception:
+    except BaseException:
         pass
     return row
 
@@ -286,6 +292,7 @@ def _summary(rows, specs):
             "ce": float(np.mean([r["coefficient_efficiency"] for r in supported])),
             "rmse": float(np.mean([r["rmse_c"] for r in supported])),
             "age_mae": float(np.mean([r["age_mae_years"] for r in supported])),
+            "age_increment_mae": float(np.mean([r["age_increment_mae_years"] for r in supported])),
             "crps": float(np.mean([r["mean_crps_c"] for r in supported])),
             "confidence": float(np.mean([r["confidence_score"] for r in rows])),
             "false_count": sum(r["false_discovery"] for r in unsupported),
@@ -307,6 +314,9 @@ def evaluate(reconstruct_climate):
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "heldout_mechanism_score": hold["raw"],
+        "development_age_increment_mae_years": dev["age_increment_mae"],
+        "heldout_age_increment_mae_years": hold["age_increment_mae"],
         "development_coefficient_efficiency": dev["ce"],
         "development_rmse_c": dev["rmse"],
         "development_age_mae_years": dev["age_mae"],

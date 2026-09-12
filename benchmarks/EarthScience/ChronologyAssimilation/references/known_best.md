@@ -1,118 +1,79 @@
-> Version note (2026-09-05, second local hardening): Variable positive accumulation across 6/9/12 segments; joint age/climate inference remains approximate. The sections below include historical measurements from the first hardening; they are not measurements of the current version. Current local comparisons are recorded in `https://github.com/BLGZZY/ScientistsLastExam/blob/3106a1e/docs/reviews/new_tasks_difficulty_v2.md`.
+# Reference and admission record
 
-# Reference and admission record — ChronologyAssimilation
+## 1. Runnable public-input method
 
-## 1. Reference method
+The standalone reference uses charged dates to initialize monotone age-depth curves,
+then jointly fits the public positive-accumulation family and an 81-point common
+climate with sparse nonlinear least squares. Gaussian-process reconstruction uses
+the refined ages and an approximate diagonal dating-error variance. Laboratory
+calibration and cross-record coherence are separate adequacy tests. No seeds,
+true ages, climate spectrum or evaluator imports are used.
 
-`verification/reference_solver.py` is standalone and uses only public inputs and charged interfaces. Calibration-tested, dated Gaussian-process reconstruction with propagated age error and coherence refusal.
-It is a method witness, not independent high-fidelity verification. Public noisy proxy calibration observations make shared nonlinear response misspecification testable. Dating avoids clipped endpoints. The posterior still approximates shared chronology errors diagonally.
+Joint posterior uncertainty, correlated chronology errors and adaptive dating remain
+headroom. The diagonal propagation approximation is included as an ablation; a tiny
+score delta must not be described as evidence of a separate demanding capability.
+
+The pseudoproxy context is Amrhein et al., DOI 10.1029/2020GL090485, and Badgeley
+et al., DOI 10.5194/cp-16-1325-2020. The public positive-accumulation synthetic model
+is inspired by age-uncertain reconstruction, not a reproduction of a published
+climate reconstruction. All field and dating constants are in the local evaluator.
 
 ## 2. Baseline and normalization
 
-The shipped `solution.py` is the baseline. Tests check valid near-zero development scores.
-Optimization references define one through recomputed objective differences; discovery scores
-retain their fixed supported-world ceilings and refusal normalization. Changed oracle versions
-must not be compared as if their score differences were model improvements.
+The shipped legal baseline is confidently uninformative and scores zero. Full
+abstention also scores zero, with distinct discovery coverage. See Task.md for the
+complete numerical score. Invalid artifacts never become discovery attempts.
+Chronology skill is exp(-age_MAE/65 - age_increment_MAE/12). Adjacent-sample
+increments penalize an interpolant whose dated endpoints are right but accumulation
+between them is wrong. Exact fields and ages achieve unit supported mechanism skill.
 
-## 3. Capability comparisons and ablations
+## 3. Capability ablations
 
-Run `python -m pytest tests/test_chronology_assimilation.py -q` for the retained
-chronology artifact and shortcut comparisons. To measure the complete trusted reference,
-use the standalone command in the Reproduce section below. The former cross-task
-`diagnose_pr9_earth.py` script is not part of this split PR.
-On the current dirty macOS tree, the joint age-curve reference scores `0.736298` development
-(`mechanism_score=0.824199`) and `0.708775` robustness. Collapsing every inferred sample-age curve
-to one clipped scalar offset scores `0.519860` development (`mechanism_score=0.679906`) and
-`0.541562` robustness. The current age-curve artifact therefore contributes `0.216438` development
-score in this diagnostic. The historical method is invalid on one development world and records
-two false discoveries, so it is not presented as a valid ladder rung.
+`verification/replay_review.py` removes one capability at a time using legal public
+inputs and charged callbacks. Current Linux measurements are in the table below;
+all variants retain the original artifacts and remaining computations.
 
-## 4. Shortcut probes
+## 4. Low-dimensional shortcuts
 
-The scalar-offset collapse recovers substantial partial credit (`0.519860`). Two deliberately
-favourable upper-bound probes retain the full reference temperature reconstruction while simplifying
-only its chronology artifact: fitting one affine map per record reaches `0.569011` development /
-`0.572203` held out, and replacing all record-specific shapes with one shared three-knot warp plus a
-per-record offset reaches `0.516054` / `0.526967`. Both remain below the `0.736298` reference, so the
-nonlinear record-specific chronology is load-bearing even when the climate field is held fixed.
-Confidence-threshold grids remain an untested admission risk. These numbers are local diagnostics,
-not frozen benchmark evidence.
+The maintainer's old-head cheap strategy reached 0.698764 / 0.682105 versus
+reference 0.736298 / 0.708775 (94.9% / 96.2%). Previous affine/offset probes retained
+the reference climate and missed this direction. The new 1008-setting sweep varies
+sample count, endpoint convention, constant standard deviation, calibration gate
+and coherence gate. It buys dates, linearly interpolates, and averages unweighted
+records. The best development strategy's held-out score is reported without retuning.
 
 ## 5. Frontier-model calibration
 
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before exposure, must
-show that the first proposal does not reach the competent reference. No calibration or external
-review is implied by these local code changes. Server-held worlds and independent model review
-remain required.
+No current-revision frontier-model draw has been completed. The package remains
+candidate; neither these numerical probes nor unit tests establish the required
+first-proposal admission criterion. Builder lineage remains complete with honestly
+empty calibration lists, as clarified by the maintainer's withdrawn review item.
+Historical local/macOS proposals are not frozen calibration evidence.
 
-## 6. Construction errors and revisions
+## 6. Construction errors and review revisions
 
-2026-09-05 hardening: Public noisy proxy calibration observations make shared nonlinear response misspecification testable. Dating avoids clipped endpoints. The posterior still approximates shared chronology errors diagonally.
-Standalone references no longer import the hidden evaluator. The task card records the review
-lineage, licensing uncertainty and public-world contamination risk. Earlier measurements below
-belong to the pre-hardening version and are retained only as history.
+The previous score rewarded sparse interpolation almost as much as the reference,
+while the reference never used proxy observations to refine chronology. Local
+increment scoring and joint inference repair those two issues together. The old
+known_best text listed unrelated mass/time/instrument tests that did not exist; that
+template text and the external-fork “current comparison” link have been removed.
+Nearest-neighbor documentation now includes UPbConcordiaInference, GravityInversion
+and RadiativeTransferFit. SystemExit/KeyboardInterrupt fail closed during direct
+oracle diagnostics. The wrapper retains its trusted subprocess and explicit timeout.
 
-## 7. Robustness and reproducibility
+## 7. Robustness and reproduction
 
-Development and heldout metrics remain separate. The new tests cover anchor feasibility,
-equivalent-parameter scoring, mass conservation, time refinement, forecast-unit invariance,
-instrument error poisoning and malformed submissions as applicable. Formal Linux sandbox
-replay, global evidence refresh and independent scientific replication are still pending.
-See the task card citations for background; the explicitly declared reduced model is not
-certified by those publications.
-
-## Historical pre-hardening record (obsolete scores)
-
-# Known best — ChronologyAssimilation
-
-## Scoring anchor
-
-`verification/reference_solver.py` is the shipped truth-blind dated-proxy interpolation witness.
-The evaluator recomputes its score from the public proxy archive and charged dating interface
-without reading hidden ages or the hidden climate field.
-
-Measured on 2026-09-05, the shipped baseline scores `0.000000` and the reference scores
-`0.362243` on development worlds with `0.195631` robustness. This is a reproducibility anchor,
-not a claim of optimality or paleoclimate validity. The task still requires model calibration,
-server-held proxy systems, public-data replay and independent paleoclimate review.
-
-## Difficulty ladder measurement
-
-The same frozen truth-blind witness was evaluated at all three levels on 2026-09-05:
-
-| level | combined | held-out robustness |
-|---:|---:|---:|
-| 1 | 0.362243 | 0.195631 |
-| 2 | 0.327493 | 0.165201 |
-| 3 | 0.299300 | 0.130898 |
-
-Both axes decrease monotonically as chronology span and proxy/dating noise increase.
-
-## Reproduce
+Run from a clean Linux checkout with the repository's pinned NumPy/SciPy environment:
 
 ```bash
-python scripts/measure_reference.py \
-  --task EarthScience/ChronologyAssimilation \
-  --reference verification/reference_solver.py \
-  --entry reconstruct_climate
+python benchmarks/EarthScience/ChronologyAssimilation/verification/replay_review.py --output /tmp/review-replay.json
+python benchmarks/EarthScience/ChronologyAssimilation/frontier_eval/run_eval.py --candidate benchmarks/EarthScience/ChronologyAssimilation/verification/reference_solver.py --metrics-out /tmp/reference.json
 ```
 
-### 2026-09-08 evaluator-contract re-review
+The replay records revision, clean-tree status, source hashes, Python/NumPy and OS.
+It is a contributor numerical audit, not maintainer-owned frozen global evidence.
+Linux sandbox replay and contribution checks are reported separately below.
 
-The external `frontier_eval/run_eval.py` entrypoint now delegates to the trusted
-`sle eval` sandbox path instead of importing candidate code in the oracle process.
-Malformed submissions no longer count as discovery attempts. Confidence calibration
-uses actual supported-world mechanism recovery as its target, and zero for refusals
-or unsupported worlds; the combined-score normalization is unchanged. These changes
-have targeted local regressions; they do not imply independent domain certification
-or replace clean Linux sandbox replay.
-Dating sample indices reject booleans and floating-point values even when integral;
-optional offsets must have the documented shape even alongside full curves. Floating-point
-overflow during reconstruction scoring fails closed with finite invalid metrics. The
-reference-reproduction instructions now use paths and tests actually present in this
-standalone PR.
+## Current revision measurements
 
-The 2026-09-08 baseline now fits sparse constant age offsets and confidently averages
-proxy series with noise-only uncertainty, without testing nonlinear response or
-cross-record coherence. It is a legal, scientifically weak reconstruction. Always
-abstaining remains a separate zero-score test rather than the baseline program.
+Pending clean Linux replay of the revised sources; no old scores are relabeled as current.
