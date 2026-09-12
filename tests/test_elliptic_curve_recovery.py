@@ -161,6 +161,15 @@ class RunnerIntegrationTests(unittest.TestCase):
         self.assertGreater(metrics["robustness_score"], .5)
         self.assertNotIn("error_message", metrics)
 
+    def test_literal_counter_does_not_survive_world_boundaries(self):
+        returncode, stdout, metrics = self._run_entrypoint("verification/shortcut_memo_0.py")
+        self.assertEqual(returncode, 0)
+        self.assertEqual(stdout['valid'], 1)
+        self.assertEqual(stdout['combined_score'], 0)
+        # The literal fixture's first answer is a claim, later entries include
+        # abstention. Fresh workers must always start at that first entry.
+        self.assertTrue(all(not row['abstained'] for row in metrics['per_world']))
+
     def test_baseline_exits_zero_with_a_written_metrics_file(self):
         returncode, stdout, metrics = self._run_entrypoint("solution.py")
         self.assertEqual(returncode, 0)
