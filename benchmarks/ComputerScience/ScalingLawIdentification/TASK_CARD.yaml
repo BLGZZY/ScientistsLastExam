@@ -29,7 +29,7 @@ citations:
 invariants:
 - Integer-valued float queries equal integer queries.
 - Every charged query stays within its public domain and total budget.
-- Ambiguous paired linear/linearithmic worlds have adaptive transcript KL <= 0.13 and binary accuracy
+- Under the Gaussian generative model, ambiguous paired linear/linearithmic worlds have adaptive transcript KL <= 0.13 and binary accuracy
   <= 0.63.
 - A narrow supported exponential control remains distinguishable.
 - Full abstention has zero normalized score; per-world failures retain other valid results.

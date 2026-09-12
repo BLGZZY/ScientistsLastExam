@@ -22,9 +22,12 @@ For each ambiguous world, pair linear and linearithmic families, match their sca
 at the midpoint of the log-ratio range, and keep nuisance/noise identical. At any
 size, conditional KL is squared log-mean difference divided by twice noise variance.
 The chain rule bounds every adaptive transcript by `budget*max(KL_per_query/cost)`.
-Pinsker yields equal-prior binary accuracy at most 0.623423, even for a method told
+Under the declared independent Gaussian observation model, Pinsker yields equal-prior
+binary accuracy at most 0.623423, even for a method told
 both candidate parameter settings. This does not assert zero recoverable information;
 it rules out reliable class identification. The counterpart is in the public family.
+This statistical bound is not protection against memorizing the repository-visible
+frozen seeds or lookup transcripts; generalization requires server-held fresh worlds.
 A full-domain enumerator in `ambiguity_information_bound` independently computes
 the bound. Narrow supported controls prevent bounds alone from serving as labels.
 
