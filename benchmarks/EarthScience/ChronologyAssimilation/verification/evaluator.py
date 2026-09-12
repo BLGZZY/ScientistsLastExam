@@ -237,6 +237,10 @@ def _evaluate_world(candidate, spec, split, index):
     world = _world(spec)
     lab = _DatingLab(world)
     try:
+        # Scientific worlds are independent experiments, including across splits.
+        reset = getattr(candidate, "reset_session", None)
+        if callable(reset):
+            reset()
         submission = candidate(TIME_GRID.copy(), _public_catalog(world), lab.date_sample, BUDGET_UNITS)
         mean, std, offsets, confidence, abstain = _validate(submission)
         if lab.violated:

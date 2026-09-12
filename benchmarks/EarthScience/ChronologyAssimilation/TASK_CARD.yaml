@@ -114,3 +114,15 @@ evaluation_budget:
   timeout_seconds: 300
   reference_eval_seconds_estimate: 12
   note: Joint least-squares reference; platform-dependent runtime, measured in Linux wrapper replay.
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  relative_margin: 0.3
+  score_tolerance: 0.01
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.797985
+  probes:
+  - id: review_grid_best
+    candidate: verification/shortcut_linear.py
+    expected_score: 0.435979
