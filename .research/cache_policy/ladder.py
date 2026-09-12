@@ -111,7 +111,9 @@ def learn(box, rng, cfg):
 
 
 def answer(machine):
-    if machine is None:
+    # A fitted template can have more rows than the public submission cap.
+    # Such a hypothesis is unavailable, not a valid zero-scoring policy claim.
+    if machine is None or machine[0] > 1024:
         return {"verdict": "no_policy", "confidence": 0.7}
     _n, H, M = machine
     return {"verdict": "policy", "machine": {"hit": [list(r) for r in H], "miss": [[v, t] for v, t in M]},
