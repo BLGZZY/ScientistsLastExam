@@ -1,88 +1,110 @@
-# Reference and admission record — DistributionNetworkTopology
+# Reference and admission record: DistributionNetworkTopology
 
-## 1. Reference method
+Maintainer-facing. Only Task.md, solution.py and constraints.txt are delivered to
+candidates. `review_evidence.json` binds the replay commands, source hashes, clean
+Linux revision, full grid and capability metrics. Sandbox execution is separately
+checked by `check_task_contribution.py` and the integration test.
 
-`verification/reference_solver.py` is standalone: a likelihood-tracked hypothesis
-search. Hypotheses are break sets of at most two pipes (extended to three when
-every hypothesis accrues heavy flip penalties); each probe updates a
-log-likelihood under the published flip rate with a per-pipe complexity penalty so
-supersets never tie the truth; the next route is chosen to split the leading
-hypothesis cluster as evenly as possible; a three-log-unit margin settles a claim,
-and unresolvable rivalries are checked for structural twins (identical incidence
-columns) before refusing. It deliberately lacks full entropy computation and
-Bayesian model averaging.
+## 1. Reference method and remaining capability
+
+The standalone witness enumerates every set up to the public break-size bound,
+uses the public flip probability, a uniform-cardinality prior, a fair-coin telemetry
+alternative and posterior experimental design. It includes all hypotheses tied at
+the 96th posterior rank; a rounded utility tie-break avoids NumPy-sort-dependent
+probe sequences. Repeated measurements can resolve noisy observations. Signature
+groups identify structurally inseparable hypotheses; the model evidence detects
+telemetry failures outside the sparse-break family.
+
+The reference makes a one-step experimental-design choice. It does not optimize
+a multistep decision policy or integrate every low-posterior hypothesis into each
+choice. Those are the remaining experimental-design capabilities; there is no
+incorrect hardcoded noise rate or dormant three-pipe extension. It consumes all
+remaining budget and leaves errors in supported inference and heldout recovery.
 
 ## 2. Baseline and normalization
 
-The shipped `solution.py` probes one route and blames its first pipe: `0.000000`.
-A truth-informed claim scores one. Measured on 2026-09-05 the reference reaches
-`1.0000` development and robustness at the shipped level 1 with zero false
-discoveries and full refusal.
+The shipped one-route, first-pipe guess scores zero. Three corridor observations
+are paid before candidate entry, leaving 23 of 26 units. The larger development
+cohort has 24 equally cardinality-stratified supported worlds plus six aliases and
+six telemetry-fault worlds; heldout has 18+6+6 with independent seeds.
+Supported quality is squared set Jaccard; unsupported refusal earns one. The raw
+mean is normalized above full abstention and clipped to [0,1]. F1 remains diagnostic.
+Partial invalidity affects only the offending row and feasibility fraction.
 
-## 3. Capability comparisons and ablations
+## 3. Capability ablations
 
-| variant | level 1 | level 2 | level 3 |
-|---|---:|---:|---:|
-| likelihood reference | 1.000 | 0.900 | 0.600 |
-| pre-hardening set-cover reference | 1.000 | 0.400 | 0.200 |
+All switches are exposed in the standalone reference for the audit script.
+The source-bound table is generated in `review_evidence.json`; final measured
+values are listed below after Linux replay. Each of the five advertised components
+must reduce development score when removed: the three-pipe family, adaptive route
+choice, structural-group refusal, telemetry-model check and cardinality prior.
+The regression test checks the degradation, not a hardcoded score.
 
-The rework replaced cover-probing with hypothesis tracking. The isolated candidate
-branch now ships level 3, where up to three breaks and seven-percent flips reduce the
-reference to `0.600`; levels 1 and 2 remain reproducible ladder diagnostics. These are
-local debugging numbers, not frozen benchmark evidence.
+## 4. Shortcut probes and old failures
 
-## 4. Shortcut probes
+The maintainer's [898e28e review](https://github.com/Geniusyingmanji/ScientistsLastExam/pull/51#issuecomment-5583243149)
+reported a 420-point failure-ratio grid at **0.960**, above the old reference's
+**0.600**. Five supported worlds and coarse F1 created a development-score lottery;
+ignoring the corridor gave free alias refusal. Those observations motivated the
+cohort, metric, paid-corridor and complete-reference changes. The old claim that
+all shortcut risk was intended probe-selection difficulty was wrong.
 
-Blaming the first failed route's first pipe scores zero; probing is the only signal
-source, so shortcut risk concentrates in probe-selection efficiency, which is the
-intended difficulty at levels 2 and 3.
+`verification/review_audit.py` now evaluates **1,680** points: n=6..26 and
+threshold=0.05..1.00, both floor/nearest equidistant indexing, and either using or
+ignoring the paid initial reports. Requested counts are capped at the remaining
+23 calls; the initial corridor cost is always charged. The strongest source is
+shipped as `verification/shortcut_grid.py`. Its declared score is checked twice
+through the same sandbox as the reference, with a 10% relative margin.
 
 ## 5. Frontier-model calibration
 
-Not run. This task remains `candidate`. A clean Linux model draw, frozen before
-exposure, must show that the first proposal does not reach the reference at level 3.
+No current-revision clean frontier calibration draw exists. The package remains
+candidate, with calibration_evidence_status: missing. Builder lineage remains
+complete: the maintainer explicitly withdrew the claim that an empty calibration
+list contradicts recorded builder history. Neither this replay nor a high reference
+score establishes expert difficulty.
 
-## 6. Construction errors and revisions
+## 6. Construction and review corrections
 
-Seven construction errors were caught locally, the seventh in the 2026-09-06
-difficulty rework. (i) The route enumeration revisited cells and never terminated.
-(ii) An alphabetical truncation to eighteen routes left pipes that no route could
-test. (iii) Mirror-symmetric break sets appeared in supported worlds — truth
-sampling now enforces signature uniqueness at generation. (iv) The twin pipe ids
-did not match the route table. (v) A tie rule biased toward failure widened the
-failed set under flips. (vi) The reference swept routes alphabetically and burned
-the budget before covering. (vii) The difficulty audit found the shipped level-1
-default saturated (reference 1.000, single breaks trivially recoverable) while the
-set-cover reference collapsed at level 2 (0.400/0.000) — the reference was rebuilt
-as a likelihood tracker and the batch default raised to level 2. The isolated-task
-hardening then raised the submitted default to measured level 3. All pinned in the
-task-specific tests.
+The original route traversal loops, untestable pipe truncation, incorrect h00 alias,
+slow signature enumeration, mismatched service ids and bad reference tie handling
+are retained in `history_before_2026-09-12.md`. This revision also accepts empty-list
+abstention, keeps partial valid scores, exposes flip probability, validates the
+identifiability size bound, supplies both refusal causes, adds three nearest tasks,
+corrects machine-readable citations and extends the outer runner-test timeout.
+The reference's formerly dead structural-refusal and three-pipe branches have
+been replaced and now have measurable effects. Each world uses a fresh sandbox
+session. The unrelated cross-PR source-count rulings were removed from this PR.
 
-## 7. Robustness and reproducibility
+## 7. Robustness, source scope and reproduction
 
-Break sets are signature-filtered at generation; repeated probes draw fresh flips by
-construction. Determinism was checked by comparing two full evaluation dictionaries.
-Formal Linux sandbox replay, global evidence refresh and independent replication
-are pending.
+The model is synthetic Boolean tomography, supported by
+[Ma et al. (2014)](https://doi.org/10.1145/2663716.2663723).
+Ostfeld is application context only. The data remain deterministic and
+repository-visible; frozen heldout scores do not prove contamination resistance.
+Server-held fresh-world confirmation, external domain review and frontier
+calibration remain pending. Global experiments evidence is maintainer-owned and
+is not regenerated by this candidate PR.
 
-## Reproduce
+On a clean Linux checkout with CI dependencies:
 
 ```bash
-python scripts/measure_reference.py \
-  --task WaterDistribution/DistributionNetworkTopology \
-  --reference verification/reference_solver.py \
-  --entry recover_network
+python benchmarks/Engineering/DistributionNetworkTopology/verification/review_audit.py --output /tmp/network-review.json --export-candidates /tmp/network-probes
+python scripts/check_task_contribution.py --task WaterDistribution/DistributionNetworkTopology --timeout 300
+python -m pytest tests/test_distribution_network_topology.py -q
 ```
 
-## 2026-09-08 evaluator review
+## Current clean Linux diagnostic
 
-The convenience entrypoint now routes candidates through the trusted Linux
-sandbox rather than importing them into the scoring process. Invalid responses
-no longer count as discovery attempts, confidence reflects response quality,
-and held-out rate denominators are exposed. Alias generation now samples only
-the observationally identical service pipes: the previous fallback h00 was
-signature-unique and could not justify refusal. Exhausted supported-world
-sampling now fails explicitly. Bit-set signature multiplicities preserve the
-exact identifiability test while avoiding repeated route-set enumeration.
-The registered level-three reference remains 0.600 development / 1.000 held out
-in a local direct run; this is not a frozen frontier-model calibration.
+Measured at `4ba912cba5ffccea232a33bf68155054d9ac5898` using Ubuntu 22.04, Python 3.10.12, NumPy 1.24.4 and SciPy 1.10.1. The evidence file preserves that revision and its source hashes; this later documentation commit does not change the measured evaluator or reference.
+
+| Variant | Development | Heldout |
+|---|---:|---:|
+| Reference | 0.927083 | 0.802469 |
+| ADAPTIVE | 0.416667 | 0.396605 |
+| COMPLEXITY_PRIOR | 0.875000 | 0.847222 |
+| MAX_SIZE | 0.722222 | 0.685185 |
+| MODEL_CHECK | 0.843750 | 0.635802 |
+| STRUCTURAL_REFUSAL | 0.635417 | 0.469136 |
+
+Grid best: **0.502037** development, 0.110247 heldout. Reference repeats were equal. Full grid parameters and diagnostic axes are retained in `review_evidence.json`.

@@ -34,9 +34,13 @@ invariants:
 - three initial corridor reports are charged within the same budget
 - independent fair-coin telemetry faults provide a second refusal cause
 - one malformed world does not erase valid-world recovery
-known_shortcuts: 'Historical reviewer grid: 0.960 vs reference 0.600 at 898e28e (superseded). Revised
-  source-bound grid and ablations are reproduced by verification/review_audit.py and recorded in references/review_evidence.json;
-  they are diagnostics, not frontier calibration.'
+- fresh sandbox sessions isolate module globals and temporary files between worlds
+known_shortcuts: 'Historical reviewer grid 0.960 > reference 0.600 at 898e28e. Revised clean Linux replay:
+  1680-point grid best 0.502037 development / 0.110247 heldout, 0 points above reference 0.927083 / 0.802469.
+  Removing three-pipe support, active selection, structural refusal, telemetry checking or the cardinality
+  prior lowers development to 0.722222, 0.416667, 0.635417, 0.843750 and 0.875000 respectively. Source-bound
+  full results: references/review_evidence.json; executable sandbox guard in shortcut_probe. No frontier
+  calibration.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -48,7 +52,7 @@ contamination:
     claims.
 review:
   domain: pending_external_boolean_tomography
-  evaluator_security: review_regressions_added_linux_replay_pending
+  evaluator_security: clean_linux_ci_dependency_replay_and_regressions; full_suite_and_sandbox_guard_results_in_PR
 provenance:
   class: procedural
   target_source: Repository-visible deterministic route-probe worlds with development and held-out break

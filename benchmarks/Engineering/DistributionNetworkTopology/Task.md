@@ -54,7 +54,7 @@ counts and denominators. Confidence predicts the quality of the response, includ
 refusal, and is evaluated as one minus squared error. Invalid rows score zero and
 do not count as discovery attempts. `valid=1` means at least one valid development
 world; `feasibility_rate` reports the valid fraction. One bad world does not erase
-other worlds' scores. All-invalid submissions return `valid=0, combined_score=0`.
+other worlds' scores. All-invalid returned artifacts return `valid=0, combined_score=0`.
 
 Use `sle.contract_lint` for free local submission-shape checks.
 Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, without
@@ -82,3 +82,20 @@ establish expert difficulty or replace fresh worlds and frontier calibration.
 
 Each sandbox world starts a fresh candidate session. Module globals and temporary
 files cannot carry a world index or previous answers across worlds.
+
+The per-world validity rule applies to decoded artifacts and caught oracle-call
+errors. Worker crashes, uncaught runtime errors, sandbox violations and the overall
+timeout fail the run through the trusted harness.
+
+Measured capability comparisons (development / heldout):
+
+| Variant | Scores |
+|---|---|
+| Full witness | 0.927083 / 0.802469 |
+| Without adaptive route choice | 0.416667 / 0.396605 |
+| Without the cardinality prior | 0.875000 / 0.847222 |
+| At most two-pipe hypotheses | 0.722222 / 0.685185 |
+| Without telemetry model checking | 0.843750 / 0.635802 |
+| Without structural ambiguity refusal | 0.635417 / 0.469136 |
+
+These are diagnostic capability comparisons, not model calibration.
