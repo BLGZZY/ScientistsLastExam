@@ -1,93 +1,80 @@
-# DistributionNetworkTopology — boolean tomography of a water grid
+# DistributionNetworkTopology — noisy Boolean route tomography
 
-## Scientific setting
-
-Sending a release down a testable route of a district network reports whether it
-arrived: a route fails exactly when any of its pipes is broken. Recovering the
-broken pipes from budgeted route tests is boolean network tomography — an
-identifiability problem, not just a search problem: pipes whose routes coincide can
-never be told apart, and a confident localization there is a false discovery.
-
-## Your task
+A supplied graph has hidden broken pipes. A route fails if any pipe on it is
+broken; each report flips independently with a published probability. Recover the
+broken set, or refuse when a unique sparse break explanation is unsupported.
+Some failures lie on two service pipes with identical route signatures. Other
+worlds have independent fair-coin telemetry failures, outside the sparse-break model.
 
 ```python
 def recover_network(problem, probe, budget_units):
-    """Return {"broken_pipes": [pipe ids] or None, "abstain": bool, "confidence": [0,1]}."""
+    # Return a mapping with these fields:
+    return {"broken_pipes": ["pipe id"], "abstain": False, "confidence": 0.8}
 ```
 
-`problem` is a mapping with the keys
+`problem` contains every public input:
 
-```text
-pipe_ids                  the grid pipes plus two indistinguishable service pipes
-parallel_service_pipes    the twin ids s11 and s21
-routes                    route id -> ordered pipe list (several hundred monotone
-                          routes across a 4x4 grid, plus the twin service corridor)
-probe_cost / budget_units 1 / 26
-route_note                a route fails when any of its pipes is broken; reports
-                          flip with the published probability and repeats draw
-                          fresh noise
-claim_note                the twin service lines sit in series on the same corridor,
-                          so no route can tell which twin is broken
-```
+| Key | Meaning |
+|---|---|
+| `pipe_ids` | Available pipe identifiers |
+| `parallel_service_pipes` | Two indistinguishable service-pipe identifiers |
+| `routes` | Route identifier to ordered pipe list; 4x4 grid plus service corridor |
+| `probe_cost` | One unit per call |
+| `budget_units` | Total budget, 26 units including the initial reports |
+| `initial_reports` | Three already paid reports on the service corridor |
+| `flip_probability` | Supported/alias report flip probability, 0.07 at the default |
+| `max_broken` | Maximum supported break-set cardinality, 3 at the default |
+| `route_note` | Description of the Boolean observation law |
+| `claim_note` | Explanation of structural service-pipe ambiguity |
 
-`probe(route_id)` charges one unit and returns `{route_id, arrived, budget_cost}`.
-Overspending or unknown ids invalidate the world even when caught.
+`probe(route_id)` returns `{route_id, arrived, budget_cost}` and charges one unit.
+The function argument `budget_units` is **23 remaining units**. The initial reports
+consume three units of the same 26-unit budget. Repeat measurements draw fresh
+noise; they are not free. Unknown identifiers, malformed calls and overspending
+invalidate that world even if the exception is caught.
+
+A claim lists one to six distinct known pipes. `abstain` must be boolean and
+`confidence` finite in [0,1]. For abstention, omit `broken_pipes` or use `None`
+or an empty list. Nonempty pipes and abstention are contradictory and invalid.
 
 ## Evaluation
 
-- `combined_score` is development broken-set recovery above the always-abstain
-  baseline: F1 of the claimed set against the truth. The hardened default regime
-  allows up to three broken pipes under seven percent report flips.
-- Twin-corridor worlds score refusal only; abstaining scores one and any claim
-  scores zero.
-- Set F1, false discovery rate, correct refusal rate and discovery coverage are
-  reported with denominators; a full abstention scores exactly zero.
-- `robustness_score` repeats the audit on held-out break sets.
+The development cohort contains 24 supported worlds, equally stratified across
+one, two and three breaks, six structural aliases and six telemetry-fault worlds.
+Heldout uses independent seeds with 18 supported, six alias and six fault worlds.
+For a supported world, recovery is squared Jaccard:
+`(|claim ∩ truth| / |claim ∪ truth|)**2`. Abstention earns zero there. Unsupported
+worlds earn one for abstention and zero for a claim. The raw mean is normalized
+above the always-abstain baseline and clipped to [0,1], so full abstention scores
+exactly zero. `combined_score` uses development; `robustness_score` uses heldout.
 
-This is a synthetic Boolean path-failure model inspired by water distribution.
-It does not simulate hydraulics, flow splitting, pressure, or tracer transport.
-Its OR-of-failures and distinct-path-signature criterion follows Boolean network
-tomography; see [Ma et al. (IMC 2014)](https://conferences2.sigcomm.org/imc/2014/papers/p195.pdf).
-The cited water sensor-network study provides application context, not validation
-of this simplified oracle.
+Set F1 remains a diagnostic. Mechanism quality, confidence calibration, false
+discovery, correct refusal and discovery coverage are reported separately, with
+counts and denominators. Confidence predicts the quality of the response, including
+refusal, and is evaluated as one minus squared error. Invalid rows score zero and
+do not count as discovery attempts. `valid=1` means at least one valid development
+world; `feasibility_rate` reports the valid fraction. One bad world does not erase
+other worlds' scores. All-invalid submissions return `valid=0, combined_score=0`.
 
-## Rules
+Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, without
+network or process creation. Do not read `verification/` or `frontier_eval/`.
 
-- Only edit `solution.py`; keep the complete function signature.
-- Deterministic Python/NumPy/SciPy/stdlib code only; no network or process creation.
-- Do not read `verification/` or `frontier_eval/`.
-- Dispatch errors and overspending invalidate the world even when caught.
-- Use `sle.contract_lint` for free local shape checks before returning an inference.
+## Model sources and nearby tasks
 
-Reference: Ostfeld et al. (2008), J. Water Resour. Plan. Manage.,
-doi:`10.1061/(ASCE)0733-9496(2008)134:6(556)`.
+This is a synthetic Boolean model, not a hydraulic, pressure or tracer simulator.
+The OR-failure/identifiability model is supported by
+[Ma et al., IMC 2014](https://doi.org/10.1145/2663716.2663723).
+[Ostfeld et al., 2008](https://doi.org/10.1061/(ASCE)0733-9496(2008)134:6(556))
+is water-sensor application context only.
 
-## 关系与区别 / Relationship to nearby tasks
+GraphFromDistances reconstructs weighted edges from distances;
+HiddenCouplingNetwork infers dynamical interactions; ModalDamageAttribution recovers
+stiffness damage from modal shifts. Here the unknown is a sparse Boolean failure
+set, with both structural ambiguity and observation-model inadequacy.
 
-GraphFromDistances reconstructs edges from distance queries on a hidden weighted
-network; ModalDamageAttribution localizes stiffness damage from modal shifts. This
-task recovers a failure set from pass/fail route probes under flip noise, and its
-refusal world is structural non-identifiability — twin pipes with identical route
-signatures that no probe can separate.
-
-## Admission and reference scope
-
-This package remains **candidate**. The runnable reference uses public inputs only.
-Reference methods, calibration measurements, shortcut probes and ablation diagnostics
-are recorded in the maintainer-facing `references/known_best.md`, which is not served
-to candidates. They do not replace clean Linux sandbox replay, independent review or
-a frozen frontier-model calibration draw.
-
-## Frontier-Eng overlap comparison (2026-09-07)
-
-无. Nearest catalog entries: EV2GymSmartCharging; tree_gsm_safety_stock. Paid path tests identify failed water pipes with inseparable twin-line refusal. FE chooses charging schedules or inventory service times on known graphs. Despite the name, this task diagnoses failures on a supplied route graph; it is not network-layout or energy-dispatch optimization.
-
-See `.research/distribution_network_topology_frontier_eng_overlap_2026-09-07.md` for the task-specific comparison against the pinned paper and available repository catalog. The requested 95-entry source could not be reconciled with the available 78 rows (84 expanded tasks); source reconciliation and maintainer acceptance remain pending.
-
-## Metric interpretation
-
-Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
-including a correct refusal. Its diagnostic is one minus squared error against
-that quality, before any evidence-cost adjustment. Invalid submissions do not
-count as discovery attempts. Both splits publish attempt, false-discovery and
-refusal counts with their denominators. These diagnostics remain evaluator-only.
+The Frontier-Eng comparison is in
+`.research/distribution_network_topology_frontier_eng_overlap_2026-09-07.md`.
+The pinned available catalog has 78 rows / 84 expanded entries; the documented
+95-entry source remains unresolved. This package remains **candidate**. Review
+replays and capability ablations are in `references/known_best.md`; they do not
+establish expert difficulty or replace fresh worlds and frontier calibration.

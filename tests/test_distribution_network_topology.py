@@ -130,7 +130,7 @@ class RunEvalIntegrationTests(unittest.TestCase):
                  "--candidate",
                  str(task / "verification" / "reference_solver.py"),
                  "--metrics-out", str(metrics_path)],
-                cwd=str(ROOT), capture_output=True, text=True, timeout=300,
+                cwd=str(ROOT), capture_output=True, text=True, timeout=450,
             )
             self.assertEqual(completed.returncode, 0, completed.stderr)
             summary = json.loads(completed.stdout)
@@ -144,8 +144,7 @@ class RunEvalIntegrationTests(unittest.TestCase):
                     "per_world"):
             self.assertIn(key, metrics)
         self.assertEqual(metrics["valid"], 1.0)
-        # The reference measures 0.600 on the level-3 default (known_best.md);
-        # require the documented neighbourhood, not the exact float.
+        # Check a useful recovery witness, without pinning its rounded score.
         self.assertGreaterEqual(metrics["combined_score"], 0.5)
 
 
@@ -212,3 +211,59 @@ class TomographyScienceRegressions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class RevisionEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.ev = _load(ROOT / "benchmarks/Engineering/DistributionNetworkTopology/verification/evaluator.py", "revision_network")
+        self.ref = _load(ROOT / "benchmarks/Engineering/DistributionNetworkTopology/verification/reference_solver.py", "revision_reference")
+
+    def test_empty_abstention_and_partial_validity(self):
+        for empty in (None, [], ()):
+            result = self.ev.evaluate(lambda *a: {'broken_pipes': empty, 'abstain': True, 'confidence': .8})
+            self.assertEqual(result['valid'], 1)
+            self.assertEqual(result['combined_score'], 0)
+        calls = 0
+        def partial(*args):
+            nonlocal calls
+            calls += 1
+            return {} if calls == 1 else self.ref.recover_network(*args)
+        result = self.ev.evaluate(partial)
+        self.assertEqual(result['valid'], 1)
+        self.assertGreater(result['combined_score'], 0)
+        self.assertLess(result['feasibility_rate'], 1)
+
+    def test_stratification_and_charged_corridor(self):
+        from collections import Counter
+        for specs in (self.ev._BASE_DEVELOPMENT_SPECS, self.ev.HELDOUT_SPECS):
+            counts = Counter(len(self.ev._world(s)['broken']) for s in specs if s[1] == 'supported')
+            self.assertEqual(set(counts), {1, 2, 3})
+            self.assertEqual(len(set(counts.values())), 1)
+            self.assertGreaterEqual(sum(counts.values()), 18)
+            self.assertIn('inadequate', {s[1] for s in specs})
+        def inspect(problem, probe, budget):
+            self.assertEqual(problem['flip_probability'], .07)
+            self.assertEqual(budget, 23)
+            self.assertEqual(sum(r['budget_cost'] for r in problem['initial_reports']), 3)
+            self.assertEqual({r['route_id'] for r in problem['initial_reports']}, {self.ev.ROUTE_IDS[-1]})
+            return {'abstain': True, 'confidence': .8}
+        result = self.ev.evaluate(inspect)
+        self.assertTrue(all(r['budget_used'] == 3 for r in result['per_world']))
+        self.assertEqual(result['valid'], 1)
+
+    def test_identifiability_boundary_and_size_four(self):
+        from itertools import combinations
+        from collections import Counter
+        with self.assertRaises(ValueError):
+            self.ev._identifiable(['h00', 'h01', 'h02'], 2)
+        subsets = [h for k in range(1, 5) for h in combinations(self.ev.PIPE_IDS, k)]
+        # Independent full route-set criterion, not the optimized bit counter.
+        counts = Counter(self.ev._signature(h) for h in subsets)
+        for h in subsets[::251]:
+            self.assertEqual(self.ev._identifiable(h, 4), counts[self.ev._signature(h)] == 1)
+
+    def test_claimed_capabilities_affect_recovery_or_refusal(self):
+        full = self.ev.evaluate(self.ref.recover_network)
+        for key, value in [('MAX_SIZE', 2), ('ADAPTIVE', False), ('STRUCTURAL_REFUSAL', False), ('MODEL_CHECK', False), ('COMPLEXITY_PRIOR', False)]:
+            with self.subTest(capability=key), patch.object(self.ref, key, value):
+                result = self.ev.evaluate(self.ref.recover_network)
+                self.assertLess(result['combined_score'], full['combined_score'])

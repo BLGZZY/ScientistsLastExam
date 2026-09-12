@@ -1,14 +1,12 @@
 schema_version: 2
-scientific_question: Can budgeted route tests localize broken pipes in a water grid,
-  while refusing failures on twin lines no route can separate?
+scientific_question: Can paid noisy Boolean route tests recover sparse link failures and distinguish structural
+  aliases from telemetry model inadequacy?
 artifact: A broken-pipe id set, optional abstention and a confidence scalar.
 oracle:
-  model: 4x4 grid with several hundred monotone testable routes plus a twin service
-    corridor, seeded identifiable break sets (signature uniqueness enforced at
-    generation), twin-service unidentifiable worlds, and a measured one-to-three-break
-    difficulty ladder with two-to-seven-percent report flips
-  feasibility: known pipe ids, unique nonempty claims of at most six pipes, charged
-    probes within a twenty-six-unit budget
+  model: 4x4 Boolean route graph with 641 routes, stratified one-to-three-break identifiable worlds, service-twin
+    aliases and independent fair-coin telemetry faults; development 24+6+6 and heldout 18+6+6 worlds.
+  feasibility: known pipe ids, unique nonempty claims of at most six pipes, charged probes within a twenty-six-unit
+    budget
   deterministic: true
   external_tooling: none beyond NumPy
 difficulty_ladder:
@@ -19,12 +17,12 @@ difficulty_ladder:
     3: up to three breaks, seven percent flips
 normalization:
   baseline: one probe blaming the first pipe of the first failed route
-  reference: likelihood-tracked hypothesis search with information-splitting route
-    choice, complexity-penalized break sets, margin claims and structural-alias
-    refusal
-  score: broken-set F1 on supported worlds, normalized above always abstaining
+  reference: Complete one-to-three-pipe likelihood family, cardinality prior, published noise rate, posterior
+    route splitting, signature-group refusal and a fair-coin telemetry alternative.
+  score: Squared set Jaccard on supported worlds, normalized above always abstaining; three mandatory
+    paid corridor reports consume 3 of the 26 units.
 citations:
-- id: url:https://conferences2.sigcomm.org/imc/2014/papers/p195.pdf
+- id: doi:10.1145/2663716.2663723
   title: Node Failure Localization via Network Tomography
 - id: doi:10.1061/(ASCE)0733-9496(2008)134:6(556)
   title: The battle of the water sensor networks
@@ -33,30 +31,35 @@ invariants:
 - twin pipes share exactly the same route signatures
 - repeated probes of one route draw fresh flip noise
 - a full abstention scores exactly zero after normalization
-known_shortcuts: The likelihood reference saturates level 1 at 1.000, reaches 0.900 at level 2 and 0.600 at the hardened level-3 default as multi-break ambiguity and flips bite. The historical set-cover method reaches only 1.000, 0.400 and 0.200 across the same ladder. Blaming the first pipe on the first failed route scores zero. Formal clean Linux calibration and independent review remain pending.
+- three initial corridor reports are charged within the same budget
+- independent fair-coin telemetry faults provide a second refusal cause
+- one malformed world does not erase valid-world recovery
+known_shortcuts: 'Historical reviewer grid: 0.960 vs reference 0.600 at 898e28e (superseded). Revised
+  source-bound grid and ablations are reproduced by verification/review_audit.py and recorded in references/review_evidence.json;
+  they are diagnostics, not frontier calibration.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
-  note: All runtime worlds are generated from original repository code; cited
-    publications are not redistributed.
+  note: All runtime worlds are generated from original repository code; cited publications are not redistributed.
 contamination:
   status: repository_visible_procedural
-  rationale: Fixed seeds and generated worlds are repository-visible. Procedural
-    origin does not rule out memorization or benchmark-specific fingerprinting;
-    server-held fresh worlds are required for generalization claims.
+  rationale: Fixed seeds and generated worlds are repository-visible. Procedural origin does not rule
+    out memorization or benchmark-specific fingerprinting; server-held fresh worlds are required for generalization
+    claims.
 review:
-  domain: pending_external_water_systems
-  evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
+  domain: pending_external_boolean_tomography
+  evaluator_security: review_regressions_added_linux_replay_pending
 provenance:
   class: procedural
-  target_source: Repository-visible deterministic route-probe worlds with
-    development and held-out break sets and twin-corridor regimes.
+  target_source: Repository-visible deterministic route-probe worlds with development and held-out break
+    sets and twin-corridor regimes.
   task_contract_public_before_evaluation: true
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Boolean network tomography is an established field; the twin-corridor
-    refusal world and budgeted route family are original to this package.
+  rationale: GraphFromDistances recovers weighted edges from distances; HiddenCouplingNetwork infers dynamical
+    coupling; ModalDamageAttribution localizes stiffness damage. This package infers sparse Boolean link
+    failures and tests structural ambiguity and telemetry model inadequacy.
 lineage:
   status: complete
   builder_model_ids:
@@ -66,7 +69,13 @@ lineage:
   calibrator_model_ids: []
   calibration_runs: []
   calibration_evidence_status: missing
-  edits_triggered_by_model: 2026-09-05 local build caught a route enumeration that looped without a visited set, an alphabetical truncation of the route family that left pipes untestable, mirror-symmetric break sets in supported worlds (now signature-filtered at generation), twin ids that did not match the route table, a tie rule that widened the failed set under flips, and a reference that swept routes alphabetically instead of greedily; each was fixed and pinned by tests.
+  edits_triggered_by_model: 2026-09-05 local build caught a route enumeration that looped without a visited
+    set, an alphabetical truncation of the route family that left pipes untestable, mirror-symmetric break
+    sets in supported worlds (now signature-filtered at generation), twin ids that did not match the route
+    table, a tie rule that widened the failed set under flips, and a reference that swept routes alphabetically
+    instead of greedily; each was fixed and pinned by tests. 2026-09-12 maintainer review drove larger
+    cohorts, per-world validity, source-bound shortcut replays and capability ablations; missing calibration
+    remains disclosed separately from builder lineage.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
@@ -85,18 +94,22 @@ long_horizon:
   evidence: []
 difficulty_assessment:
   status: unverified_candidate
-  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
-    and clean frontier-model calibration before certification
-  remaining_risk: The default is now level 3 (reference 0.600); a frozen frontier
-    draw must confirm first proposals sit below the reference at this level.
-
+  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model
+    calibration before certification
+  remaining_risk: Fixed repository-visible procedural worlds are not generalization evidence. Greedy experimental
+    design leaves unresolved worlds, but expert difficulty and frontier-model calibration remain unverified.
 frontier_eng_overlap_review:
   date: '2026-09-07'
   classification: 无
   nearest: EV2GymSmartCharging; tree_gsm_safety_stock
-  distinction: Paid path tests identify failed water pipes with inseparable twin-line
-    refusal. FE chooses charging schedules or inventory service times on known graphs.
-    Despite the name, this task diagnoses failures on a supplied route graph; it is
-    not network-layout or energy-dispatch optimization.
+  distinction: Paid path tests identify failed water pipes with inseparable twin-line refusal. FE chooses
+    charging schedules or inventory service times on known graphs. Despite the name, this task diagnoses
+    failures on a supplied route graph; it is not network-layout or energy-dispatch optimization.
   evidence: .research/distribution_network_topology_frontier_eng_overlap_2026-09-07.md
   status: source_count_discrepancy_pending_maintainer_confirmation
+evaluation_budget:
+  units_per_world: 26
+  development_worlds: 36
+  heldout_worlds: 30
+  timeout_seconds: 300
+  hardware: CPU; Linux bubblewrap sandbox

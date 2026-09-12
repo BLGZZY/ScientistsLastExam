@@ -1,111 +1,82 @@
-"""Truth-blind reference witness: likelihood-tracked hypothesis search.
+"""Truth-blind sparse Boolean tomography with a telemetry-failure alternative.
 
-Hypotheses are break sets of at most the published size; every probe updates a
-log-likelihood under the published flip probability; the next route is chosen to
-split the surviving plausible set as evenly as possible (an information-gain
-greedy over the hypothesis set, not a fixed cover). A single surviving hypothesis
-is claimed; structural survivors (candidates differing only in pipes with
-identical route signatures, the twin corridor) and unresolvable ties are refused.
-It deliberately lacks full entropy computation, adaptive re-planning after every
-single observation, and Bayesian model averaging.
+Enumerate the complete public break-size family, use the published noise rate,
+update likelihoods after every observation and choose a posterior-splitting route.
+Structural aliases are grouped for inference but never published as unique pipes.
+Headroom is finite-budget Bayesian experimental design: this witness chooses a
+one-step split of the top 96 hypotheses rather than solving a multistep policy.
 """
-
-from __future__ import annotations
-
-import math
 from itertools import combinations
+from functools import lru_cache
+import math
+import numpy as np
 
-MAX_HYPOTHESIS_SIZE = 2
-EXTENSION_TRIGGER = -6.0  # flip penalties this heavy mean a bigger break set is live
-DECISION_MARGIN = 3.0     # log-likelihood lead that settles a claim
-RUNNER_UP_GAP = 5.5       # cluster of near-explanations tracked for refusal checks
-COMPLEXITY_PENALTY = 0.7  # per extra broken pipe, so supersets never tie the truth
+MAX_SIZE = None
+ADAPTIVE = True
+STRUCTURAL_REFUSAL = True
+MODEL_CHECK = True
+COMPLEXITY_PRIOR = True
+
+
+@lru_cache(maxsize=8)
+def _space(route_items, pipes, max_size):
+    hypotheses = [h for k in range(1, max_size + 1) for h in combinations(pipes, k)]
+    incidence = np.array([[p in route for p in pipes] for _, route in route_items], dtype=bool)
+    predictions = np.array([np.any(incidence[:, [pipes.index(p) for p in h]], axis=1)
+                            for h in hypotheses], dtype=bool)
+    signatures = [np.packbits(row).tobytes() for row in predictions]
+    groups = {}
+    for i, signature in enumerate(signatures):
+        groups.setdefault(signature, []).append(i)
+    group_of = {i: group for group in groups.values() for i in group}
+    return hypotheses, predictions, group_of
 
 
 def recover_network(problem, probe, budget_units):
-    routes = problem["routes"]
-    incidence = {}
-    for route_id, pipes in routes.items():
-        for pipe in pipes:
-            incidence.setdefault(pipe, set()).add(route_id)
-    pipes = sorted(incidence)
-    flip = 0.04  # the published order of magnitude; robust within 2-8 percent
+    route_items = tuple((key, tuple(value)) for key, value in problem['routes'].items())
+    route_ids = [key for key, _ in route_items]
+    pipes = tuple(problem['pipe_ids'])
+    max_size = min(problem['max_broken'], MAX_SIZE or problem['max_broken'])
+    hypotheses, predictions, group_of = _space(route_items, pipes, max_size)
+    flip = problem['flip_probability']
+    prior = np.array([-math.log(math.comb(len(pipes), len(h))) if COMPLEXITY_PRIOR else 0.0
+                      for h in hypotheses])
+    prior -= np.logaddexp.reduce(prior)
+    logp = prior.copy()
+    null_logp = 0.0
+    used = np.zeros(len(route_ids), dtype=int)
 
-    def build(size):
-        space = [frozenset({pipe}) for pipe in pipes]
-        if size >= 2:
-            space += [frozenset(pair) for pair in combinations(pipes, 2)]
-        if size >= 3:
-            space += [frozenset(triple) for triple in combinations(pipes, 3)]
-        return space
+    def observe(report):
+        nonlocal logp, null_logp
+        j = route_ids.index(report['route_id'])
+        failed = not report['arrived']
+        logp += np.where(predictions[:, j] == failed, math.log1p(-flip), math.log(flip))
+        null_logp -= math.log(2)
+        used[j] += 1
 
-    hypotheses = build(MAX_HYPOTHESIS_SIZE)
-    log_likelihood = {h: -COMPLEXITY_PENALTY * len(h) for h in hypotheses}
-    probed = {}
+    for report in problem['initial_reports']:
+        observe(report)
+    for _ in range(int(budget_units) // problem['probe_cost']):
+        if ADAPTIVE:
+            top = np.argsort(logp)[-96:]
+            weights = np.exp(logp[top] - np.max(logp[top]))
+            probability = np.sum(predictions[top] * weights[:, None], axis=0) / weights.sum()
+            # Repeated measurements resolve noise, with a small tie-breaker favoring
+            # fresh routes. No early stop on a single noisy likelihood margin.
+            utility = probability * (1 - probability) / (1 + 0.04 * used)
+            j = int(np.argmax(utility))
+        else:
+            j = int(np.argmin(used))
+        observe(probe(route_ids[j]))
 
-    def best_and_runner_up():
-        ranked = sorted(log_likelihood.values(), reverse=True)
-        best = ranked[0]
-        runner = ranked[1] if len(ranked) > 1 else best - 100.0
-        return best, runner
-
-    budget = int(budget_units)
-    while budget > 0:
-        best, runner = best_and_runner_up()
-        if best - runner >= DECISION_MARGIN:
-            break  # the leader has settled the claim
-        plausible = [h for h in hypotheses
-                     if log_likelihood[h] >= best - RUNNER_UP_GAP]
-        # Choose the unprobed route that best splits the plausible set.
-        best_route, best_split = None, -1.0
-        for route_id in routes:
-            if route_id in probed:
-                continue
-            hits = sum(1 for h in plausible
-                       if set(routes[route_id]) & set(h))
-            misses = len(plausible) - hits
-            split = min(hits, misses)
-            if split > best_split:
-                best_route, best_split = route_id, split
-        if best_route is None or best_split <= 0:
-            break
-        report = probe(best_route)
-        budget -= report["budget_cost"]
-        arrived = bool(report["arrived"])
-        probed[best_route] = arrived
-        route_pipes = set(routes[best_route])
-        for h in hypotheses:
-            blocked = bool(route_pipes & set(h))
-            agrees = (arrived and not blocked) or (not arrived and blocked)
-            log_likelihood[h] += math.log(1.0 - flip) if agrees else math.log(flip)
-        # Heavy flip penalties on every hypothesis mean the break set is bigger
-        # than the current space allows; extend once.
-        if max(log_likelihood.values()) < EXTENSION_TRIGGER \
-                and MAX_HYPOTHESIS_SIZE < 3:
-            extra = build(3)
-            for h in extra:
-                if h not in log_likelihood:
-                    log_likelihood[h] = -COMPLEXITY_PENALTY * len(h)
-                    for route_id, seen_arrived in probed.items():
-                        blocked = bool(set(routes[route_id]) & set(h))
-                        agrees = (seen_arrived and not blocked) \
-                            or (not seen_arrived and blocked)
-                        log_likelihood[h] += math.log(1.0 - flip) if agrees \
-                            else math.log(flip)
-            hypotheses = list(log_likelihood)
-
-    best, runner = best_and_runner_up()
-    leader = max(log_likelihood, key=log_likelihood.get)
-    if best - runner >= DECISION_MARGIN:
-        return {"broken_pipes": sorted(leader), "abstain": False, "confidence": 0.85}
-    # Unsettled: structural twins (identical route signatures) make the rivalry
-    # unresolvable by any route; other ties may just be budget-exhausted.
-    columns = {pipe: frozenset(incidence[pipe]) for pipe in pipes}
-    rivals = [h for h in hypotheses
-              if h != leader and log_likelihood[h] >= best - RUNNER_UP_GAP]
-    for rival in rivals:
-        for a in set(leader) ^ set(rival):
-            for b in set(leader) | set(rival):
-                if a != b and columns.get(a) == columns.get(b):
-                    return {"broken_pipes": None, "abstain": True, "confidence": 0.75}
-    return {"broken_pipes": None, "abstain": True, "confidence": 0.7}
+    leader = int(np.argmax(logp))
+    group = group_of[leader]
+    log_evidence = float(np.logaddexp.reduce(logp))
+    inadequate = MODEL_CHECK and log_evidence < null_logp + math.log(0.1)
+    ambiguous = STRUCTURAL_REFUSAL and len(group) != 1
+    weights = np.exp(logp - np.max(logp))
+    confidence = float(weights[group].sum() / weights.sum())
+    if inadequate or ambiguous or confidence < 0.55:
+        return {'broken_pipes': None, 'abstain': True, 'confidence': 0.8}
+    return {'broken_pipes': list(hypotheses[leader]), 'abstain': False,
+            'confidence': confidence}

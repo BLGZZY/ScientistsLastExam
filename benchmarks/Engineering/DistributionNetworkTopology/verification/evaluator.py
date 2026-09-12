@@ -95,14 +95,16 @@ _PIPE_SIGNATURE_BITS = {
 PROBE_COST = 1
 BUDGET_UNITS = 26
 
-_BASE_DEVELOPMENT_SPECS = (
-    (34011, "supported"), (34017, "supported"), (34023, "supported"),
-    (34029, "supported"), (34031, "supported"),
-    (34037, "alias"), (34041, "alias"),
-)
-HELDOUT_SPECS = (
-    (35007, "supported"), (35013, "supported"), (35019, "alias"),
-)
+# Stratified construction fixes the old five-world development lottery. Independent
+# seeds, balanced break cardinalities and both refusal causes are used in each split.
+_BASE_DEVELOPMENT_SPECS = tuple(
+    [(36000 + i * 101, "supported") for i in range(24)]
+    + [(39000 + i * 101, "alias") for i in range(6)]
+    + [(40000 + i * 101, "inadequate") for i in range(6)])
+HELDOUT_SPECS = tuple(
+    [(46000 + i * 101, "supported") for i in range(18)]
+    + [(49000 + i * 101, "alias") for i in range(6)]
+    + [(50000 + i * 101, "inadequate") for i in range(6)])
 
 
 def _difficulty_profile(level=None):
@@ -124,6 +126,8 @@ def _identifiable(broken, max_size):
     indistinguishable pairs; supported worlds must avoid them and alias worlds must
     be exactly them.
     """
+    if len(broken) > max_size:
+        raise ValueError("broken set exceeds identifiability search bound")
     return _signature_counts(max_size)[_signature_bits(broken)] == 1
 
 
@@ -154,10 +158,12 @@ def _world(spec):
         # has a distinct route signature and must never be labelled unidentifiable.
         choice = int(rng.integers(0, 2))
         broken = [["s11"], ["s21"]][choice]
+    elif kind == "inadequate":
+        broken = []  # independent telemetry faults, outside the sparse break model
     else:
         pool = [name for name in PIPE_IDS if name not in PARALLEL_IDS]
         for _attempt in range(64):
-            count = int(rng.integers(1, profile["max_broken"] + 1))
+            count = 1 + (seed // 101) % profile["max_broken"]
             indices = sorted(rng.choice(len(pool), size=count, replace=False))
             broken = [pool[index] for index in indices]
             if _identifiable(broken, profile["max_broken"] + 1):
@@ -165,12 +171,14 @@ def _world(spec):
         else:
             raise ValueError("could not generate an identifiable break set")
     return {"seed": int(seed), "kind": kind, "broken": sorted(broken),
-            "flip": profile["flip_probability"]}
+            "flip": profile["flip_probability"] if kind != "inadequate" else 0.5}
 
 
 def problem_statement(world):
-    del world
     return {
+        "flip_probability": _difficulty_profile()["flip_probability"],
+        "max_broken": _difficulty_profile()["max_broken"],
+        "initial_reports": [],
         "pipe_ids": list(PIPE_IDS),
         "parallel_service_pipes": list(PARALLEL_IDS),
         "routes": {route_id: list(pipes)
@@ -229,7 +237,7 @@ def _validate(submission, world):
     if not math.isfinite(confidence) or not 0.0 <= confidence <= 1.0:
         raise ValueError("confidence must be in [0,1]")
     if bool(abstain):
-        if submission.get("broken_pipes") is not None:
+        if submission.get("broken_pipes") not in (None, [], ()):
             raise ValueError("abstention requires an empty broken set")
         return [], confidence, True
     broken = submission.get("broken_pipes")
@@ -245,7 +253,7 @@ def _validate(submission, world):
 
 def _empty(split, index):
     return {"split": split, "world_index": index, "valid": False, "abstained": False,
-            "mechanism_score": 0.0, "set_f1": 0.0, "false_discovery": False,
+            "mechanism_score": 0.0, "set_f1": 0.0, "set_jaccard": 0.0, "false_discovery": False,
             "correct_refusal": False, "confidence_score": 0.0, "budget_used": 0}
 
 
@@ -254,19 +262,24 @@ def _evaluate_world(candidate, spec, split, index):
     world = _world(spec)
     dispatch = _Dispatch(world)
     try:
-        submission = candidate(problem_statement(world), dispatch.probe,
-                               BUDGET_UNITS)
+        # Three paid corridor measurements are delivered in every world. Their
+        # cost is part of the same 26-unit budget; candidates have 23 units left.
+        problem = problem_statement(world)
+        problem["initial_reports"] = [dispatch.probe(ROUTE_IDS[-1]) for _ in range(3)]
+        submission = candidate(problem, dispatch.probe, BUDGET_UNITS - dispatch.used)
         broken, confidence, abstain = _validate(submission, world)
         if dispatch.violated:
             raise ValueError("dispatch contract violated")
         supported = world["kind"] == "supported"
+        jaccard = 0.0
         if supported and not abstain:
             claimed, truth = set(broken), set(world["broken"])
             intersection = len(claimed & truth)
             precision = intersection / len(claimed)
             recall = intersection / len(truth)
             f1 = 2 * precision * recall / (precision + recall) if intersection else 0.0
-            mechanism = float(f1)
+            jaccard = intersection / len(claimed | truth)
+            mechanism = float(jaccard ** 2)
         elif supported:
             f1 = 0.0
             mechanism = 0.0
@@ -279,6 +292,7 @@ def _evaluate_world(candidate, spec, split, index):
         target = mechanism
         row.update({"valid": True, "abstained": abstain,
                     "mechanism_score": mechanism, "set_f1": float(f1),
+                    "set_jaccard": float(jaccard),
                     "false_discovery": bool(not supported and not abstain),
                     "correct_refusal": bool(not supported and abstain),
                     "confidence_score": 1.0 - (confidence - target) ** 2,
@@ -312,8 +326,8 @@ def evaluate(recover_network):
     heldout = [_evaluate_world(recover_network, spec, "heldout", i)
                for i, spec in enumerate(HELDOUT_SPECS)]
     dev, hold = _summary(development, _BASE_DEVELOPMENT_SPECS), _summary(heldout, HELDOUT_SPECS)
-    dev_valid = dev["valid_count"] == len(development)
-    hold_valid = hold["valid_count"] == len(heldout)
+    dev_valid = dev["valid_count"] > 0
+    hold_valid = hold["valid_count"] > 0
     return {
         "combined_score": dev["normalized"] if dev_valid else 0.0,
         "valid": 1.0 if dev_valid else 0.0,
