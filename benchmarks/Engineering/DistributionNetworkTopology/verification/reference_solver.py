@@ -4,7 +4,7 @@ Enumerate the complete public break-size family, use the published noise rate,
 update likelihoods after every observation and choose a posterior-splitting route.
 Structural aliases are grouped for inference but never published as unique pipes.
 Headroom is finite-budget Bayesian experimental design: this witness chooses a
-one-step split of the top 96 hypotheses rather than solving a multistep policy.
+one-step split of the top 96 hypotheses (including cutoff ties) rather than solving a multistep policy.
 """
 from itertools import combinations
 from functools import lru_cache
@@ -58,13 +58,16 @@ def recover_network(problem, probe, budget_units):
         observe(report)
     for _ in range(int(budget_units) // problem['probe_cost']):
         if ADAPTIVE:
-            top = np.argsort(logp)[-96:]
+            # Include all cutoff ties so NumPy sorting implementation/order
+            # cannot choose a different arbitrary subset of equal hypotheses.
+            cutoff = np.partition(logp, -min(96, len(logp)))[-min(96, len(logp))]
+            top = np.flatnonzero(logp >= cutoff - 1e-12)
             weights = np.exp(logp[top] - np.max(logp[top]))
             probability = np.sum(predictions[top] * weights[:, None], axis=0) / weights.sum()
             # Repeated measurements resolve noise, with a small tie-breaker favoring
             # fresh routes. No early stop on a single noisy likelihood margin.
             utility = probability * (1 - probability) / (1 + 0.04 * used)
-            j = int(np.argmax(utility))
+            j = int(np.argmax(np.round(utility, 12)))
         else:
             j = int(np.argmin(used))
         observe(probe(route_ids[j]))

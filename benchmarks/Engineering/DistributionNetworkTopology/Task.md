@@ -56,6 +56,7 @@ do not count as discovery attempts. `valid=1` means at least one valid developme
 world; `feasibility_rate` reports the valid fraction. One bad world does not erase
 other worlds' scores. All-invalid submissions return `valid=0, combined_score=0`.
 
+Use `sle.contract_lint` for free local submission-shape checks.
 Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, without
 network or process creation. Do not read `verification/` or `frontier_eval/`.
 
@@ -78,3 +79,6 @@ The pinned available catalog has 78 rows / 84 expanded entries; the documented
 95-entry source remains unresolved. This package remains **candidate**. Review
 replays and capability ablations are in `references/known_best.md`; they do not
 establish expert difficulty or replace fresh worlds and frontier calibration.
+
+Each sandbox world starts a fresh candidate session. Module globals and temporary
+files cannot carry a world index or previous answers across worlds.

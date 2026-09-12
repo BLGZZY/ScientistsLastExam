@@ -259,6 +259,10 @@ def _empty(split, index):
 
 def _evaluate_world(candidate, spec, split, index):
     row = _empty(split, index)
+    # Main provides a fresh-worker boundary: no global/import/tmpfs call-order channel.
+    reset = getattr(candidate, "reset_session", None)
+    if callable(reset) and (split != "development" or index > 0):
+        reset()
     world = _world(spec)
     dispatch = _Dispatch(world)
     try:

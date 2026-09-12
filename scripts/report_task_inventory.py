@@ -130,7 +130,7 @@ CHINESE_NAMES = {
 CHINESE_BRIEFS = {
     "WaterDistribution/DistributionNetworkTopology": (
         "在路径探针预算下定位管网破损管段,孪生服务廊道不可辨识须拒答",
-        "破损集 F1;结构别名拒答,百分之七翻转噪声下最多三个故障,全面弃权为零"),
+        "破损集 Jaccard 平方;收费廊道检测、结构别名及遥测失配拒答,全面弃权为零"),
     'Microbiology/MetagenomeCompositionAssignment': (
         "从收费 marker 计数中恢复分类单元与丰度,保留近缘别名并识别参考库不足",
         "组成恢复、别名/库外拒答与假发现率分列"),

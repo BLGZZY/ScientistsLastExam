@@ -113,3 +113,15 @@ evaluation_budget:
   heldout_worlds: 30
   timeout_seconds: 300
   hardware: CPU; Linux bubblewrap sandbox
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  relative_margin: 0.1
+  score_tolerance: 1.0e-09
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.9270833333333333
+  probes:
+  - id: route_grid
+    candidate: verification/shortcut_grid.py
+    expected_score: 0.502037037037037

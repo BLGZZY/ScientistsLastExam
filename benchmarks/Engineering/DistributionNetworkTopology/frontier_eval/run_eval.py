@@ -20,6 +20,8 @@ INVALID = -1e18
 TASK_ID = "WaterDistribution/DistributionNetworkTopology"
 ROOT = Path(__file__).resolve().parents[4]
 EVAL_TIMEOUT_S = 300
+if TASK_ID.rsplit("/", 1)[-1] != Path(__file__).resolve().parents[1].name:
+    raise RuntimeError("TASK_ID must match the task directory")
 
 
 def main() -> int:
