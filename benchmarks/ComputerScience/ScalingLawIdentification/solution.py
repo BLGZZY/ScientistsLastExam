@@ -6,7 +6,7 @@ from __future__ import annotations
 
 def identify_scaling_law(problem, time_run, budget_units):
     del budget_units
-    time_run(16)
+    time_run(problem["size_bounds"][0])
     probabilities = {name: 1.0 / len(problem["classes"])
                      for name in problem["classes"]}
     return {"class_probabilities": probabilities, "scale": 100.0,

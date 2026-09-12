@@ -129,8 +129,8 @@ CHINESE_NAMES = {
 # so a new package cannot silently ship without one.
 CHINESE_BRIEFS = {
     "Algorithm/ScalingLawIdentification": (
-        "在计时预算下辨识黑盒程序渐近复杂度类,双分支或抖动须拒答",
-        "类概率+尺度+密封外推几何均值;分裂拟合与噪声地板拒答分列"),
+        "在有限规模计时预算下拟合有限尺寸修正并辨识复杂度类,模型不足或类别不可辨识时拒答",
+        "类概率、尺度与概率加权外推几何均值;拟合不足和类别证据不足分别检验"),
     'Microbiology/MetagenomeCompositionAssignment': (
         "从收费 marker 计数中恢复分类单元与丰度,保留近缘别名并识别参考库不足",
         "组成恢复、别名/库外拒答与假发现率分列"),

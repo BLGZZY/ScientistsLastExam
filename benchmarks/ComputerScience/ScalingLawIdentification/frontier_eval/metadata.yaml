@@ -6,8 +6,8 @@ tier: T2
 oracle_type: analytical
 score_mode: clipped
 gpu_required: false
-eval_time_seconds: 25
-science_metric: evidence-efficient asymptotic complexity class identification with branch and jitter refusal
+eval_time_seconds: 5
+science_metric: finite-size empirical complexity evidence with nuisance and adequacy uncertainty
 reference_baseline: one timing at the smallest size followed by uniform class probabilities
-reference_sota: truth-blind log-log regression with residual bimodality and scatter tests; runnable witness
-citation: Cormen, Leiserson, Rivest & Stein, Introduction to Algorithms, ISBN 9780262033848
+reference_sota: Public-only bounded nuisance likelihood fits, adequacy and class-separation checks
+citation: CLRS ISBN 9780262033848; McGeoch ISBN 9781107001732

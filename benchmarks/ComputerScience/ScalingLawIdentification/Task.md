@@ -1,103 +1,100 @@
-# ScalingLawIdentification — identify the asymptotic law of a black-box program
+# ScalingLawIdentification — finite-size evidence for empirical complexity
 
 ## Scientific setting
 
-Empirical algorithm analysis profiles a program at chosen input sizes and infers its
-asymptotic complexity class from noisy run times. Two worlds make a confident class
-claim a false discovery: a runtime that branches on the input size (no single law
-exists), and a noise floor so large the law is unrecoverable from any affordable
-ladder.
+An asymptotic class can fit measured runtimes poorly because of finite-size effects,
+or fit well while remaining indistinguishable from an adjacent class over the
+accessible input sizes. Infer class probabilities and the asymptotic scale from
+charged timing observations. Refuse inadequate models or insufficient evidence for
+class identification. This is a synthetic empirical-algorithmics experiment, not a
+proof of any real program's asymptotic complexity.
 
-## Your task
+## Submission and observation contract
 
 ```python
 def identify_scaling_law(problem, time_run, budget_units):
-    """Return {"class_probabilities": mapping over the six classes summing to one,
-               "scale": positive constant, "abstain": bool, "confidence": [0,1]}."""
+    return {"class_probabilities": {...}, "scale": ..., "abstain": ..., "confidence": ...}
 ```
 
-`problem` is a mapping with the keys
+Every public `problem` key:
 
-```text
-classes / class_shapes   the six public forms c, c*log2(m), c*m, c*m*log2(m),
-                          c*m^2, c*2^(m/8)
-size_bounds              [8, 384]
-cost_tiers               size <= 64 costs 1, <= 192 costs 2, otherwise 3
-budget_units             9
-noise_note               multiplicative noise; repeats draw fresh noise
-refusal_note             branching runtimes and jitter floors must be refused
-```
+| Key | Meaning |
+|---|---|
+| `classes` | constant, logarithmic, linear, linearithmic, quadratic, exponential |
+| `class_shapes` | respectively c, c*log2(m), c*m, c*m*log2(m), c*m^2, c*2^(m/8) |
+| `size_bounds` | inclusive integer query domain for this experiment; may vary |
+| `cost_tiers` | sizes <=64 cost 1, <=192 cost 2, <=384 cost 3 |
+| `budget_units` | 18 units, also passed as the third argument |
+| `log_noise_std` | known standard deviation of independent Gaussian log timing error |
+| `finite_size_correction` | log(runtime_ms) = log(c*f(m)) + a*64/m; unknown a in [-2,2] |
+| `noise_note` | observation-noise description; repeated sizes receive fresh errors |
+| `refusal_note` | refuse model inadequacy or budget/domain-limited class ambiguity |
 
-`time_run(size)` charges by tier and returns `{size, runtime_ms, budget_cost}`.
-Repeated sizes are allowed and draw fresh noise. Overspending or malformed calls
-invalidate the world even when caught.
+`time_run(size)` returns `{size, runtime_ms, budget_cost}`. Python/NumPy integers
+and finite integer-valued floats (such as `16.0`) are equivalent. Booleans,
+strings, fractional sizes, out-of-domain requests and overspending are invalid.
+Caught callback violations invalidate that world. Other valid worlds keep their
+scores; aggregate `valid` means at least one valid development world, while
+`feasibility_rate` reports the fraction.
 
-Sizes must be integers; strings, booleans and fractional sizes are invalid.
-`class_probabilities` must contain exactly the six named classes with finite
-scalar probabilities in `[0, 1]` summing to one within `1e-6`. This mapping is
-required on abstention too. Return `scale: None` when abstaining, otherwise a
-finite scale in `[1e-12, 1e12]`; confidence must be finite and in `[0, 1]`.
+`class_probabilities` contains exactly the six named keys with finite scalar
+probabilities in [0,1], summing to one within 1e-6. It is required even on
+abstention. Return `scale: None` on abstention; otherwise a finite scale in
+[1e-12,1e12]. `abstain` is boolean and `confidence` is a finite scalar in [0,1].
+The finite-size nuisance coefficient need not be submitted.
 
-## Evaluation
+## Scoring
 
-- `combined_score` is development mechanism recovery above the always-abstain
-  baseline: geometric mean of the true class probability, a log-scale score for the
-  constant, and a sealed extrapolation of the runtime at size 700 under seven
-  percent multiplicative noise, multiplied on supported discoveries by the profiling-efficiency factor
-  `1 - 0.25 * budget_used / 9`. An equally accurate adaptive ladder using less than
-  the full budget can therefore outperform the exhaustive reference.
-- Branch and jitter worlds score refusal only; abstaining scores one and any class
-  claim scores zero. Refusal credit is not efficiency-weighted, so evidence-backed
-  refusal is not penalized relative to blind abstention.
-- Intrinsic and efficiency-adjusted mechanism recovery, profiling efficiency, class probability, false discovery rate, correct refusal rate and discovery
-  coverage are reported with denominators; a full abstention scores exactly zero.
-- `robustness_score` repeats the audit on held-out classes, scales and failures.
+On supported worlds, mechanism recovery is the geometric mean of true-class
+probability, `exp(-2*abs(log(scale/true_scale)))`, and the probability-weighted
+skill of asymptotic runtime extrapolation to size 700. Each class contributes its
+probability times `exp(-2*abs(log(prediction/truth)))`. This scores the asymptotic
+component c*f(700), with the finite-size correction removed. No argmax is used
+for extrapolation and no score discount is imposed for spending the budget.
 
-The aggregate efficiency diagnostics are `development_evidence_efficiency_score` and
-`heldout_evidence_efficiency_score`; per-world rows also retain
-`intrinsic_mechanism_score`, `mechanism_score`, `evidence_efficiency_score` and
-`budget_used`. Split membership and hidden truth are never candidate inputs.
+Inadequate or observationally ambiguous worlds reward refusal only. The average
+mechanism score is normalized above the always-abstain score and clipped to [0,1].
+Full abstention therefore scores exactly zero. Mechanism, confidence, class/scale/
+extrapolation skill, false discovery, correct refusal and coverage are reported
+separately with denominators on both splits. Confidence predicts intrinsic response
+quality, including correct refusal, and is scored by one minus squared error.
 
-This is a deterministic synthetic profiler, not a claim about any real program.
+Two distinct failures matter: rejection of every family by the data, and multiple
+families agreeing with the data despite accurate observations. A narrow query
+interval alone does not imply refusal: well-separated families can still be
+identified when measurement precision is sufficient.
 
 ## Rules
 
-- Only edit `solution.py`; keep the complete function signature.
-- Deterministic Python/NumPy/SciPy/stdlib code only; no network or process creation.
-- Do not read `verification/` or `frontier_eval/`.
-- Profiler errors and overspending invalidate the world even when caught.
-- Use `sle.contract_lint` for free local shape checks before returning an inference.
-
-Reference: Cormen, Leiserson, Rivest & Stein, *Introduction to Algorithms*, ISBN
-`9780262033848`, for the asymptotic-class family.
+Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib code; no
+network/process creation or reading `verification/` or `frontier_eval/`. The
+`sle.contract_lint` helpers are available for local artifact shape checks.
 
 ## 关系与区别 / Relationship to nearby tasks
 
-SequenceLawRecovery recovers exact integer recurrences; ChronoamperometryLawID
-identifies electrochemical law families from functional transients. This task infers
-an asymptotic complexity class from budgeted noisy timings, with branching-runtime
-and jitter refusal worlds and a sealed out-of-ladder extrapolation that separates the
-polynomial classes from the exponential tail.
+SequenceLawRecovery recovers exact integer recurrences. ActiveLawDiscovery selects
+experiments for physical laws; ComplexBoseLaw fits complex many-body responses;
+ChronoamperometryLawID separates electrochemical transient families. Here the
+artifact is empirical evidence for a timing class after nuisance correction,
+including bounded-n nonidentifiability. This follows the evidence variant in the
+repository's next-task plan and occupies discovery/evidence.
 
-## Admission and reference scope
+## References and admission
 
-This package remains **candidate**. The runnable reference uses public inputs only.
-Its method, shortcut probes and ablation diagnostics are recorded in the
-maintainer-facing `references/known_best.md`; they do not replace clean Linux
-sandbox replay, independent review or a frozen frontier-model calibration draw.
+CLRS, *Introduction to Algorithms*, ISBN 9780262033848 supports the class forms.
+McGeoch, *A Guide to Experimental Algorithmics* (2012), ISBN 9781107001732,
+[Cambridge excerpt](https://assets.cambridge.org/97811070/01732/excerpt/9781107001732_excerpt.pdf),
+motivates finite experiments, runtime measurement and finite-size effects. The
+specific correction/noise family is an original reduced synthetic model; the book
+does not validate its constants.
 
-## Frontier-Eng overlap comparison (2026-09-07)
+This package remains candidate. The standalone reference reads only this public
+contract and charged responses. Current shortcut and ablation results are recorded
+below and in `references/known_best.md`; they do not establish expert difficulty or
+replace a clean frontier-model calibration draw.
 
-无. Nearest catalog entries: MallocLab; MLA; FlashAttention; TriMul. Pay to observe a black-box size ladder, classify asymptotic runtime and refuse branching/noise floors. FE implements faster kernels/allocators rather than inferring a law from budgeted timings.
-
-See `.research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md`
-for the task-specific comparison against the pinned paper and available repository
-catalog. Independent algorithms review and maintainer acceptance remain pending.
-
-## Metric interpretation
-
-Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
-including a correct refusal. Its diagnostic is one minus squared error against
-that quality, before any evidence-cost adjustment. Invalid submissions do not
-count as discovery attempts. Both splits publish attempt, false-discovery and
-refusal counts with their denominators. These diagnostics remain evaluator-only.
+Frontier-Eng overlap: no equivalent complexity-inference task was found; nearest
+MallocLab, MLA, FlashAttention and TriMul optimize implementations. The task-specific
+review is `.research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md`.
+The requested 95-entry source remains unreconciled with the pinned 78-row/84-expanded
+catalog and requires maintainer resolution.

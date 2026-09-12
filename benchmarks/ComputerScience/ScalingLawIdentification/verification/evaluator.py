@@ -1,16 +1,13 @@
-"""Deterministic scaling-law oracle.
+"""Finite-size empirical scaling with nuisance corrections and identifiable refusal.
 
-A black-box program answers timed runs: request a size, receive its runtime with
-multiplicative noise. Six textbook asymptotic classes are public; the hidden world
-holds one class and a scale constant — or a runtime that branches on the input size
-(no single law exists), or a jitter so large the law is unrecoverable. Both must be
-refused rather than forced onto the nearest class.
+Ambiguous worlds have a certified small pairwise KL bound over every affordable
+query, rather than a label assigned solely from a noise threshold.
 """
 
 from __future__ import annotations
 
 import math
-from numbers import Integral
+from numbers import Real
 
 import numpy as np
 
@@ -20,27 +17,27 @@ CLASSES = ("constant", "logarithmic", "linear", "linearithmic", "quadratic",
            "exponential")
 SIZE_BOUNDS = (8, 384)
 COST_TIERS = ((64, 1), (192, 2), (384, 3))
-BUDGET_UNITS = 9
+BUDGET_UNITS = 18
 
-# Profiling efficiency is part of mechanism recovery. Consuming the full budget
-# carries a 25% evidence-efficiency penalty, so an accurate but exhaustive ladder
-# remains a competent reference rather than saturating the clipped score.
-MAX_EVIDENCE_COST_PENALTY = 0.25
-NOISE_SIGMA = 0.07
-JITTER_SIGMA = 0.60
+# Budget is a hard observation constraint, not an artificial score discount.
+MAX_EVIDENCE_COST_PENALTY = 0.0
+NOISE_SIGMA = 0.16
 SEALED_SIZE = 700
 
-_BASE_DEVELOPMENT_SPECS = (
-    (30011, "supported", "constant"), (30017, "supported", "logarithmic"),
-    (30023, "supported", "linear"), (30029, "supported", "linearithmic"),
-    (30031, "supported", "quadratic"), (30037, "supported", "exponential"),
-    (30041, "branch", "branch"), (30047, "jitter", "linear"),
-)
-HELDOUT_SPECS = (
-    (31007, "supported", "quadratic"), (31013, "supported", "linearithmic"),
-    (31019, "supported", "logarithmic"), (31023, "branch", "branch"),
-    (31029, "jitter", "quadratic"),
-)
+# Replicated families prevent a single lucky three-point fit from dominating a
+# tiny class-per-seed split. Seeds are frozen and independent across splits.
+_BASE_DEVELOPMENT_SPECS = tuple(
+    (30011 + 101*r + 17*j, "supported", name)
+    for r in range(4) for j,name in enumerate(CLASSES)
+) + tuple((34001+103*r, "supported_narrow", "exponential") for r in range(4)) + tuple(
+    (35011+107*r, kind, "linear" if r%2 == 0 else "linearithmic")
+    for r in range(8) for kind in ("ambiguous", "misspecified"))
+HELDOUT_SPECS = tuple(
+    (40009 + 109*r + 19*j, "supported", name)
+    for r in range(3) for j,name in enumerate(CLASSES)
+) + tuple((44017+113*r, "supported_narrow", "exponential") for r in range(3)) + tuple(
+    (45007+127*r, kind, "linear" if r%2 == 0 else "linearithmic")
+    for r in range(6) for kind in ("ambiguous", "misspecified"))
 
 
 def class_shape(name, size):
@@ -68,13 +65,15 @@ def _sample_scale(rng, family):
 def _world(spec):
     seed, kind, family = spec
     rng = np.random.default_rng(int(seed))
-    scale = _sample_scale(rng, "linear" if kind in ("branch", "jitter") else family)
+    scale = _sample_scale(rng, family)
+    narrow = kind in ("ambiguous", "supported_narrow")
     return {"seed": int(seed), "kind": kind, "family": family, "scale": scale,
-            "noise": JITTER_SIGMA if kind == "jitter" else NOISE_SIGMA}
+            "correction": float(rng.uniform(-2., 2.)),
+            "bounds": (64, 72) if narrow else SIZE_BOUNDS,
+            "noise": .12 if kind == "ambiguous" else (.0005 if narrow else NOISE_SIGMA)}
 
 
 def problem_statement(world):
-    del world
     return {
         "classes": list(CLASSES),
         "class_shapes": {
@@ -82,29 +81,38 @@ def problem_statement(world):
             "linearithmic": "c*m*log2(m)", "quadratic": "c*m^2",
             "exponential": "c*2^(m/8)",
         },
-        "size_bounds": list(SIZE_BOUNDS),
+        "size_bounds": list(world["bounds"]),
         "cost_tiers": [[bound, cost] for bound, cost in COST_TIERS],
         "budget_units": BUDGET_UNITS,
-        "noise_note": "run times carry multiplicative noise; repeats draw fresh noise",
-        "refusal_note": (
-            "runtimes that branch on the input size follow no single class and must "
-            "be refused -- the branching residue need not be one a geometric size "
-            "ladder ever samples; noise floors that swamp the affordable ladder make "
-            "the law unrecoverable and must be refused"
-        ),
+        "log_noise_std": world["noise"],
+        "finite_size_correction": "log runtime = log(c*f(m)) + a*64/m; -2 <= a <= 2",
+        "noise_note": "independent Gaussian log timing error with stated standard deviation",
+        "refusal_note": "refuse model inadequacy or classes observationally indistinguishable within the query domain and budget",
     }
 
 
 def _true_runtime(world, size):
-    if world["kind"] == "branch":
-        # Branch predicate, maintainer-only (recorded in references/known_best.md):
-        # sizes congruent to 1 mod 3 run quadratic, all others linearithmic. It is
-        # withheld from candidates, who must recover it by split-hypothesis fitting.
-        value = world["scale"] * (size ** 2 if size % 3 == 1
-                                  else size * math.log2(max(size, 2)))
-    else:
-        value = world["scale"] * class_shape(world["family"], size)
-    return float(min(value, 1e300))
+    log_value = math.log(world["scale"] * class_shape(world["family"], size))
+    log_value += world["correction"] * 64. / size
+    if world["kind"] == "misspecified":
+        log_value += 1.4 * math.sin(3. * math.log(size))
+    return math.exp(min(log_value, 690.))
+
+
+def ambiguity_information_bound(world):
+    """KL upper bound for ANY adaptive policy, and equal-prior binary accuracy.
+
+    Match a linear and a linearithmic world at the geometric midpoint of their
+    log-ratio range. Keep their nuisance coefficients and Gaussian noise equal.
+    The chain rule bounds adaptive transcript KL by budget times max KL/cost;
+    Pinsker then bounds the best possible classification accuracy.
+    """
+    sizes = np.arange(world["bounds"][0], world["bounds"][1]+1)
+    ratios = np.log(np.log2(sizes))
+    delta = ratios - .5*(min(ratios)+max(ratios))
+    kl = BUDGET_UNITS * max(d*d/(2*world["noise"]**2*_call_cost(int(n)))
+                            for n,d in zip(sizes,delta))
+    return float(kl), float(min(1., .5 + math.sqrt(kl/2.)/2.))
 
 
 def _call_cost(size):
@@ -123,10 +131,10 @@ class _Profiler:
 
     def time_run(self, size):
         try:
-            if isinstance(size, (bool, np.bool_)) or not isinstance(size, Integral):
+            if isinstance(size, (bool, np.bool_)) or not isinstance(size, Real) or not math.isfinite(size) or float(size) != int(size):
                 raise ValueError("size must be an integer")
             value = int(size)
-            if not SIZE_BOUNDS[0] <= value <= SIZE_BOUNDS[1]:
+            if not self.world["bounds"][0] <= value <= self.world["bounds"][1]:
                 self.violated = True
                 raise ValueError("size outside allowed bounds")
             cost = _call_cost(value)
@@ -179,7 +187,7 @@ def _scale_score(proposed, truth):
 
 
 def _extrapolation_score(world, scale, family):
-    truth = _true_runtime(world, SEALED_SIZE)
+    truth = world["scale"] * class_shape(world["family"], SEALED_SIZE)
     predicted = scale * class_shape(family, SEALED_SIZE)
     return float(math.exp(-2.0 * abs(math.log(max(predicted, 1e-300)
                                                / max(truth, 1e-300)))))
@@ -203,12 +211,12 @@ def _evaluate_world(candidate, spec, split, index):
         probs, scale, confidence, abstain = _validate(submission)
         if profiler.violated:
             raise ValueError("profiler contract violated")
-        supported = world["kind"] == "supported"
+        supported = world["kind"].startswith("supported")
         if supported and not abstain:
             class_probability = float(probs[CLASSES.index(world["family"])])
             scale_score = _scale_score(scale, world["scale"])
-            chosen = CLASSES[int(np.argmax(probs))]
-            extrapolation = _extrapolation_score(world, scale, chosen)
+            extrapolation = sum(float(prob) * _extrapolation_score(world, scale, name)
+                                for prob, name in zip(probs, CLASSES))
             mechanism = float((max(class_probability, 1e-9) * max(scale_score, 1e-9)
                                * max(extrapolation, 1e-9)) ** (1.0 / 3.0))
         elif supported:
@@ -237,14 +245,14 @@ def _evaluate_world(candidate, spec, split, index):
                     "correct_refusal": bool(not supported and abstain),
                     "confidence_score": 1.0 - (confidence - target) ** 2,
                     "budget_used": profiler.used})
-    except Exception:
+    except BaseException:
         pass
     return row
 
 
 def _summary(rows, specs):
-    supported = [r for r, s in zip(rows, specs) if s[1] == "supported"]
-    unsupported = [r for r, s in zip(rows, specs) if s[1] != "supported"]
+    supported = [r for r, s in zip(rows, specs) if s[1].startswith("supported")]
+    unsupported = [r for r, s in zip(rows, specs) if not s[1].startswith("supported")]
     raw = float(np.mean([r["mechanism_score"] for r in rows]))
     abstain_base = len(unsupported) / len(rows)
     return {
@@ -269,13 +277,14 @@ def evaluate(identify_scaling_law):
     heldout = [_evaluate_world(identify_scaling_law, spec, "heldout", i)
                for i, spec in enumerate(HELDOUT_SPECS)]
     dev, hold = _summary(development, _BASE_DEVELOPMENT_SPECS), _summary(heldout, HELDOUT_SPECS)
-    dev_valid = dev["valid_count"] == len(development)
-    hold_valid = hold["valid_count"] == len(heldout)
+    dev_valid = dev["valid_count"] > 0
+    hold_valid = hold["valid_count"] > 0
     return {
         "combined_score": dev["normalized"] if dev_valid else 0.0,
         "valid": 1.0 if dev_valid else 0.0,
         "feasibility_rate": dev["valid_count"] / len(development),
         "mechanism_score": dev["raw"],
+        "heldout_mechanism_score": hold["raw"],
         "development_confidence_score": dev["confidence"],
         "development_discovery_attempt_count": dev["attempt_count"],
         "development_evidence_efficiency_score": dev["evidence_efficiency"],

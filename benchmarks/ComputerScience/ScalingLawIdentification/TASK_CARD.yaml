@@ -1,69 +1,69 @@
 schema_version: 2
-scientific_question: Can a budgeted size ladder identify which asymptotic class a
-  black-box program belongs to, while refusing branching runtimes and noise floors
-  that no single law explains?
-artifact: Six-class probabilities, a positive scale constant, optional abstention
-  and a confidence scalar.
+scientific_question: Can finite-size timing experiments separate asymptotic families after fitting a bounded
+  nuisance correction, while refusing model inadequacy and budget-limited class ambiguity?
+artifact: Six-class probabilities, a positive scale constant, optional abstention and a confidence scalar.
 oracle:
-  model: deterministic seeded class worlds with log-uniform scales, seven percent
-    multiplicative timing noise, sizes bounded by 384, branch worlds mixing c*m^2
-    and c*m*log2(m) by size mod 3, and jitter worlds at sixty percent noise
-  feasibility: probabilities over exactly the six classes, positive finite scale,
-    charged tiers within a nine-unit budget
+  model: Gaussian log timing errors with publicly reported standard deviation; log runtime = log(c*f(m))
+    + a*64/m, a in [-2,2]; replicated wide and narrow domains, smooth misspecification, and linear/linearithmic
+    ambiguity with a policy-independent KL bound.
+  feasibility: Six scalar probabilities, positive finite scale, public size bounds and cost tiers within
+    18 units; integer-valued floats accepted; invalid worlds do not erase valid worlds.
   deterministic: true
   external_tooling: none beyond NumPy
 difficulty_ladder:
   default_level: 1
   levels:
-    1: seven percent noise, undisclosed mod-three branching (predicate recoverable by
-      split-hypothesis fitting), sixty percent jitter
+    1: Finite-size nuisance fitting and domain-dependent likelihood separation; the narrow supported control
+      prevents domain-only refusal.
 normalization:
   baseline: one timing, uniform probabilities and a fixed mid-range scale
-  reference: eight-call, six-unique-size residue-covering ladder with a 192 top,
-    fixed-shape penalized
-    class selection, predicate-agnostic split-fit branch test and repeated-size
-    jitter gate; the branch predicate and the numeric noise criterion are
-    maintainer-only and withheld from candidates
-  score: geometric mean of class probability, log-scale score and sealed
-    extrapolation, multiplied by 1 - 0.25 * budget_used / 9 on supported discoveries and normalized
-    above always abstaining; refusal credit remains unweighted on its separate axis
+  reference: Public-domain geometric design, bounded nuisance least squares, known-noise adequacy and
+    profile-likelihood separation.
+  score: Class probability, scale skill and probability-weighted asymptotic size-700 extrapolation geometric
+    mean above always abstaining. No artificial budget discount.
 citations:
 - id: isbn:9780262033848
   title: Introduction to Algorithms
+- id: isbn:9781107001732
+  title: A Guide to Experimental Algorithmics (McGeoch, 2012)
 invariants:
-- repeated sizes draw fresh multiplicative noise
-- the reference ladder costs exactly all nine budget units
-- branch worlds are exact deterministic functions of the size
-- a full abstention scores exactly zero after normalization
-known_shortcuts: Uniform probabilities with a fixed scale score 0.000; the full-budget reference
-  reaches 0.711/0.703 after profiling-efficiency calibration with zero false discoveries.
-  A reconstructed minimal first-shot ladder without refusal gates reaches 0.364/0.030 and
-  disabling the jitter gate drops the reference to 0.544/0.370, so difficulty rests on the
-  class-separation gap, refusal axes and budget. Formal
-  clean Linux calibration and independent review remain pending.
+- Integer-valued float queries equal integer queries.
+- Every charged query stays within its public domain and total budget.
+- Ambiguous paired linear/linearithmic worlds have adaptive transcript KL <= 0.13 and binary accuracy
+  <= 0.63.
+- A narrow supported exponential control remains distinguishable.
+- Full abstention has zero normalized score; per-world failures retain other valid results.
+known_shortcuts: 'Historical reviewed head: a 275-point grid reached 0.863028/0.858821 and the untuned
+  doubling ladder reached 0.792895/0.799391, both above the 0.710786/0.702993 reference. The contrary
+  old claim is withdrawn. verification/replay_review.py replays 2304 ladder x RMS gate x probability mass
+  x nuisance-fit settings plus four capability ablations on the redesigned worlds. See references/review_replay.json
+  and known_best.md for current Linux results; no frontier-model calibration is claimed.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
-  note: All runtime worlds are generated from original repository code; cited
-    publications are not redistributed.
+  note: All runtime worlds are generated from original repository code; cited publications are not redistributed.
 contamination:
   status: cannot_be_ruled_out
-  rationale: Fixed seeds and generated worlds are repository-visible. Procedural
-    origin does not rule out memorization or benchmark-specific fingerprinting;
-    server-held fresh worlds are required for generalization claims.
+  rationale: Fixed seeds and generated worlds are repository-visible. Procedural origin does not rule
+    out memorization or benchmark-specific fingerprinting; server-held fresh worlds are required for generalization
+    claims.
 review:
   domain: pending_external_algorithms
   evaluator_security: targeted_local_regressions_added_clean_linux_sandbox_replay_pending
 provenance:
   class: procedural
-  target_source: Repository-visible deterministic profiler worlds with development
-    and held-out classes, scales and failures.
+  target_source: Repository-visible deterministic profiler worlds with development and held-out classes,
+    scales and failures.
   task_contract_public_before_evaluation: true
   fresh_confirmation_status: not_completed
 novelty_risk:
   level: medium
-  rationale: Empirical complexity fitting is standard practice; the mod-3 branching
-    and jitter refusal worlds with budgeted ladders are original to this package.
+  rationale: SequenceLawRecovery recovers exact recurrences; ActiveLawDiscovery selects physical-law experiments;
+    ComplexBoseLaw fits complex many-body responses; ChronoamperometryLawID fits electrochemical transients.
+    This task targets nuisance-corrected timing-family evidence under bounded input sizes. It implements
+    the finite-n nonidentifiability direction of .research/next_task_candidates_2026-09-06.md; taxonomy
+    is now evidence rather than a separate formula variant. Empirical fitting is standard, so expert-level
+    difficulty remains subject to model calibration.
 lineage:
   status: complete
   builder_model_ids:
@@ -73,7 +73,12 @@ lineage:
   calibrator_model_ids: []
   calibration_runs: []
   calibration_evidence_status: missing
-  edits_triggered_by_model: 2026-09-05 local build caught jitter worlds carrying a non-class family field, a degenerate constant-class regression, a repeated-size index that no longer repeated after the ladder grew, a one-point branch split, and an exponent-difference branch criterion that could never fire; each was fixed and pinned by tests.
+  edits_triggered_by_model: 2026-09-05 local build caught jitter worlds carrying a non-class family field,
+    a degenerate constant-class regression, a repeated-size index that no longer repeated after the ladder
+    grew, a one-point branch split, and an exponent-difference branch criterion that could never fire;
+    each was fixed and pinned by tests. 2026-09-12 maintainer review prompted removal of hidden residue
+    and arbitrary jitter gates, bounded finite-size nuisance modeling, certified pairwise ambiguity, a
+    public-only reference, replicated worlds and explicit shortcut replay. No new frontier-model draw.
   shortcut_discoverer: initial_internal_red_team
   frozen_before_eval: false
   freeze_timestamp: null
@@ -92,18 +97,15 @@ long_horizon:
   evidence: []
 difficulty_assessment:
   status: unverified_candidate
-  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations
-    and clean frontier-model calibration before certification
-  remaining_risk: The fixed-shape BIC selection is stable on the frozen worlds;
-    the frontier question is whether models find the residue-covering ladder and
-    the triple-repeat noise floor unprompted.
-
+  requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model
+    calibration before certification
+  remaining_risk: Finite frozen ensembles and low-dimensional nuisance fits may still admit better designs;
+    independent red teaming and a clean frontier-model draw remain required.
 frontier_eng_overlap_review:
   date: '2026-09-07'
   classification: 无
   nearest: MallocLab; MLA; FlashAttention; TriMul
-  distinction: Pay to observe a black-box size ladder, classify asymptotic runtime and
-    refuse branching/noise floors. FE implements faster kernels/allocators rather than
-    inferring a law from budgeted timings.
+  distinction: Pay to observe a black-box size ladder, classify asymptotic runtime and refuse branching/noise
+    floors. FE implements faster kernels/allocators rather than inferring a law from budgeted timings.
   evidence: .research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md
   status: source_count_discrepancy_pending_maintainer_confirmation

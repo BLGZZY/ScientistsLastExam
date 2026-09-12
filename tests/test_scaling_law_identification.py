@@ -79,51 +79,59 @@ class RoundFourPackageTests(unittest.TestCase):
 
 
 class ScalingLawPins(unittest.TestCase):
-    def test_reference_ladder_matches_public_nine_unit_budget(self):
+    def setUp(self):
         task = ROOT / "benchmarks/ComputerScience/ScalingLawIdentification"
-        ev = _load(task / "verification/evaluator.py", "scale_budget_contract")
-        ref = _load(task / "verification/reference_solver.py", "scale_ladder_contract")
-        costs = [1 if size <= 64 else 2 if size <= 192 else 3
-                 for size in ref.SIZES]
-        self.assertEqual(ref.SIZES, (16, 16, 16, 13, 27, 55, 62, 192))
-        self.assertEqual(sum(costs), ev.BUDGET_UNITS)
-        self.assertEqual(ev.BUDGET_UNITS, 9)
+        self.ev = _load(task / "verification/evaluator.py", "scale_ev")
+        self.ref = _load(task / "verification/reference_solver.py", "scale_ref")
 
-    def test_branch_world_is_deterministic_in_size(self):
-        ev = _load("benchmarks/ComputerScience/ScalingLawIdentification"
-                   "/verification/evaluator.py", "r4_scale")
-        world = ev._world((30041, "branch", "branch"))
-        self.assertEqual(ev._true_runtime(world, 334), ev._true_runtime(world, 334))
-        # The branch predicate splits sizes into two runtime regimes; under either
-        # the mod-three or mod-seven design the split is at least 25x at size ~330.
-        ratio = max(ev._true_runtime(world, 331) / ev._true_runtime(world, 332),
-                    ev._true_runtime(world, 332) / ev._true_runtime(world, 331))
-        self.assertGreater(ratio, 25.0)
+    def test_design_is_public_and_within_budget_on_each_domain(self):
+        for spec in self.ev._BASE_DEVELOPMENT_SPECS + self.ev.HELDOUT_SPECS:
+            world = self.ev._world(spec)
+            problem = self.ev.problem_statement(world)
+            sizes = self.ref.design(problem, self.ev.BUDGET_UNITS)
+            self.assertTrue(all(world["bounds"][0] <= n <= world["bounds"][1] for n in sizes))
+            self.assertLessEqual(sum(self.ev._call_cost(n) for n in sizes), self.ev.BUDGET_UNITS)
 
-    def test_tightened_statistics_beat_lazy_ladders(self):
-        # The fixed-shape BIC reference with the predicate-agnostic branch scan
-        # remains accurate while the evidence-efficiency axis prevents saturation;
-        # free-slope regression (v1)
-        # collapsed the power-law classes into one family and scored 0.470.
-        ev = _load("benchmarks/ComputerScience/ScalingLawIdentification"
-                   "/verification/evaluator.py", "r4_scale")
-        ref = _load(ROOT / "benchmarks/ComputerScience/ScalingLawIdentification"
-                    "/verification" / "reference_solver.py", "r4_scale_ref")
-        reference = ev.evaluate(ref.identify_scaling_law)
-        self.assertLess(reference["combined_score"], 0.75)
-        self.assertGreater(reference["combined_score"], 0.65)
-        self.assertAlmostEqual(reference["development_evidence_efficiency_score"], 0.75)
-        self.assertEqual(reference["development_correct_refusal_rate"], 1.0)
-        self.assertEqual(reference["development_false_discovery_rate"], 0.0)
-        self.assertGreater(reference["robustness_score"], 0.60)
+    def test_ambiguity_has_a_policy_independent_information_bound(self):
+        for spec in self.ev._BASE_DEVELOPMENT_SPECS + self.ev.HELDOUT_SPECS:
+            if spec[1] != "ambiguous":
+                continue
+            world = self.ev._world(spec)
+            kl, accuracy = self.ev.ambiguity_information_bound(world)
+            self.assertLess(kl, .13)
+            self.assertLess(accuracy, .63)
+            self.assertGreater(accuracy, .5)
 
-    def test_jitter_worlds_carry_a_lawful_family(self):
-        ev = _load("benchmarks/ComputerScience/ScalingLawIdentification"
-                   "/verification/evaluator.py", "r4_scale")
-        for spec in ev._BASE_DEVELOPMENT_SPECS + ev.HELDOUT_SPECS:
-            world = ev._world(spec)
-            if world["kind"] != "branch":
-                self.assertIn(world["family"], ev.CLASSES)
+    def test_two_refusal_checks_have_different_jobs(self):
+        full = self.ev.evaluate(self.ref.identify_scaling_law)
+        for key in ("adequacy", "separation"):
+            reduced = self.ev.evaluate(lambda *a: self.ref.solve(*a, **{key: False}))
+            self.assertEqual(reduced["valid"], 1.)
+            self.assertGreater(reduced["development_false_discovery_rate"],
+                               full["development_false_discovery_rate"])
+        # A narrow domain alone is not a refusal label.
+        world = self.ev._world((30053, "supported_narrow", "exponential"))
+        lab = self.ev._Profiler(world)
+        answer = self.ref.identify_scaling_law(self.ev.problem_statement(world), lab.time_run, self.ev.BUDGET_UNITS)
+        self.assertFalse(answer["abstain"])
+
+    def test_integer_valued_floats_preserve_reference_results(self):
+        import numpy as np
+        expected = self.ev.evaluate(self.ref.identify_scaling_law)
+        for cast in (float, np.float64, np.int64):
+            actual = self.ev.evaluate(lambda p, lab, b: self.ref.identify_scaling_law(p, lambda n: lab(cast(n)), b))
+            self.assertEqual(expected, actual)
+
+    def test_one_invalid_world_does_not_erase_valid_worlds(self):
+        calls = 0
+        def candidate(*args):
+            nonlocal calls
+            calls += 1
+            return {} if calls == 1 else self.ref.identify_scaling_law(*args)
+        result = self.ev.evaluate(candidate)
+        self.assertEqual(result["valid"], 1.)
+        self.assertGreater(result["combined_score"], 0.)
+        self.assertLess(result["feasibility_rate"], 1.)
 
 
 @skip_unless_sandbox("bwrap")
