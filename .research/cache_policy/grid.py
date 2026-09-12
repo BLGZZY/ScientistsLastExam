@@ -13,6 +13,7 @@ added or dropped after a score is seen. One JSON line per cell and shift is appe
 processes); `best K` re-runs the K highest development cells of shift 0 on further shifts.
 """
 import json
+import math
 import sys
 import time
 from pathlib import Path
@@ -70,6 +71,27 @@ def _cells():
 CELLS = _cells()
 
 
+def _best_cells(records, count):
+    """Select by development only; legacy/missing/duplicate validity is not evidence."""
+    order = {name: index for index, (name, _cfg) in enumerate(CELLS)}
+    rows = [row for row in records if row["shift"] == 0]
+    if len(rows) != len(CELLS) or {row["name"] for row in rows} != set(order):
+        raise ValueError("best requires exactly one shift-0 record for every declared cell")
+    planned_worlds = len(ev.DEVELOPMENT_WORLDS) + len(ev.HELDOUT_WORLDS)
+    for row in rows:
+        worlds, valid = row.get("world_count"), row.get("valid_worlds")
+        if type(worlds) is not int or worlds != planned_worlds or type(valid) is not int or not 0 <= valid <= worlds:
+            raise ValueError("grid record lacks measured world validity; do not backfill old scores")
+        if type(row.get("dev")) not in (int, float) or not math.isfinite(row["dev"]):
+            raise ValueError("grid development score must be finite")
+    eligible = [row for row in rows if row["valid_worlds"] == row["world_count"]]
+    if type(count) is not int or not 0 < count <= len(eligible):
+        raise ValueError("best count exceeds the number of fully valid cells")
+    top = sorted(eligible, key=lambda row: (-row["dev"], order[row["name"]]))[:count]
+    by_name = dict(CELLS)
+    return [(row["name"], by_name[row["name"]]) for row in top]
+
+
 def _run(name, cfg, shift):
     original = {s["name"]: s["seed"] for s in ev.DEVELOPMENT_WORLDS + ev.HELDOUT_WORLDS}
     for spec in ev.DEVELOPMENT_WORLDS + ev.HELDOUT_WORLDS:
@@ -78,16 +100,20 @@ def _run(name, cfg, shift):
     CALLS.clear()
     CONFIGS["_grid"] = cfg or {}
     start = time.time()
-    m = ev.evaluate(build(name if cfg is None else "_grid"))
-    for spec in ev.DEVELOPMENT_WORLDS + ev.HELDOUT_WORLDS:
-        spec["seed"] = original[spec["name"]]
+    try:
+        m = ev.evaluate(build(name if cfg is None else "_grid"))
+    finally:
+        for spec in ev.DEVELOPMENT_WORLDS + ev.HELDOUT_WORLDS:
+            spec["seed"] = original[spec["name"]]
+        ev._WORLDS.clear()
     rows = m["per_instance"]
     return {"name": name, "cfg": cfg, "shift": shift, "seconds": round(time.time() - start, 1),
+            "world_count": len(rows), "valid_worlds": sum(bool(r["valid"]) for r in rows),
             "dev": round(m["development_mechanism_score"], 4), "held": round(m["heldout_mechanism_score"], 4),
             "dev_fd": sum(r["false_discovery"] for r in rows if r["split"] == "development"),
             "held_fd": sum(r["false_discovery"] for r in rows if r["split"] == "heldout"),
             "dev_coverage": round(m["development_discovery_coverage"], 3),
-            "max_calls": max(CALLS), "total_calls": sum(CALLS),
+            "max_calls": max(CALLS, default=0), "total_calls": sum(CALLS),
             "rows": [(r["split"][0] + "%02d" % (r["world_index"] + 1), r["mechanism_score"],
                       "FD" if r["false_discovery"] else "", r["runs_used"]) for r in rows]}
 
@@ -107,9 +133,7 @@ if __name__ == "__main__":
         k = int(sys.argv[2])
         shifts = [int(x) for x in sys.argv[3:]] or [1, 2, 3, 4, 5, 6, 7]
         done = [json.loads(line) for line in open(HERE / "grid.jsonl")]
-        top = sorted((r for r in done if r["shift"] == 0), key=lambda r: (-r["dev"], -r["held"]))[:k]
-        by_name = dict(CELLS)
-        chosen = [(r["name"], by_name[r["name"]]) for r in top]
+        chosen = _best_cells(done, k)
     with open(HERE / "grid.jsonl", "a") as fh:
         for name, cfg in chosen:
             for shift in shifts:

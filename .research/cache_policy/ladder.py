@@ -156,9 +156,10 @@ def build(name):
         def counted(trace):
             count[0] += 1
             return run(trace)
-        out = base(problem, counted)
-        CALLS.append(count[0])
-        return out
+        try:
+            return base(problem, counted)
+        finally:
+            CALLS.append(count[0])
     return identify
 
 
