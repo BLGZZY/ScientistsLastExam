@@ -247,7 +247,7 @@ class ReviewContractRegressions(unittest.TestCase):
             command = run.call_args.args[0]
             self.assertEqual(command[1], str(ROOT / "sle/frontier_eval_entrypoint.py"))
             self.assertEqual(command[command.index("--task") + 1], "Mathematics/EllipticCurveRecovery")
-            self.assertEqual(command[command.index("--candidate") + 1], str(candidate.resolve()))
+            self.assertEqual(command[command.index("--candidate") + 1], str(candidate))
             self.assertNotIn("-m", command)
 
 
