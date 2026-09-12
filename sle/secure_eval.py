@@ -205,8 +205,10 @@ def _is_system_library_destination(path: Path) -> bool:
 @functools.lru_cache(maxsize=16)
 def _elf_dependency_mount_args(
     sources: tuple[Path, ...], runtime_library_dirs: tuple[Path, ...] = (),
+    hidden_elf_files: tuple[Path, ...] = (),
 ) -> tuple[str, ...]:
     """Mount only shared libraries required by trusted runtime and package ELF objects."""
+    hidden_elf_files = tuple(path.resolve() for path in hidden_elf_files)
     runtime_library_dirs = tuple(path.resolve() for path in runtime_library_dirs)
     exposed_roots = tuple(path.resolve() for path in sources if path.is_dir())
     exposed_files = {path.resolve() for path in sources if path.is_file()}
@@ -229,6 +231,8 @@ def _elf_dependency_mount_args(
         else:
             candidates.append(source)
         for candidate in candidates:
+            if candidate.resolve() in hidden_elf_files:
+                continue
             try:
                 with candidate.open("rb") as stream:
                     is_elf = stream.read(4) == b"\x7fELF"
@@ -512,6 +516,16 @@ def _sandbox_command(candidate: Path, entrypoint: str, seccomp_fd: int,
     runtime_python, runtime_stdlib, runtime_libpython = _candidate_runtime()
     runtime_version = "%d.%d" % sys.version_info[:2]
     package_mounts = _candidate_package_mounts(packages)
+    # The candidate is single-threaded. Numba's optional TBB pool is unavailable
+    # in this profile and must not make ordinary nmrsim/serial JIT imports depend
+    # on libtbb. Mask that backend itself; every ELF still exposed is checked.
+    hidden_backends = []
+    for source, destination in package_mounts:
+        if destination == "/packages/numba":
+            for backend in source.glob("np/ufunc/tbbpool*.so"):
+                if not backend.is_file() or backend.resolve().parent != backend.parent.resolve():
+                    raise RuntimeError("optional candidate backend escapes its package")
+                hidden_backends.append((backend, destination + "/" + str(backend.relative_to(source))))
     dependency_sources = [runtime_python, runtime_stdlib]
     if runtime_libpython is not None:
         dependency_sources.append(runtime_libpython)
@@ -520,7 +534,8 @@ def _sandbox_command(candidate: Path, entrypoint: str, seccomp_fd: int,
         bwrap, "--unshare-all", "--die-with-parent", "--new-session", "--seccomp", str(seccomp_fd),
         "--uid", "65534", "--gid", "65534", "--hostname", "frontier-candidate", "--as-pid-1",
         *_elf_dependency_mount_args(
-            tuple(dependency_sources), (runtime_stdlib.parent,)),
+            tuple(dependency_sources), (runtime_stdlib.parent,),
+            tuple(source for source, _ in hidden_backends)),
         *_proc_mount_args(), "--dev", "/dev", "--tmpfs", "/tmp",
         "--dir", "/runner", "--dir", "/runner/sle", "--dir", "/work", "--dir", "/packages",
         "--dir", "/runtime", "--dir", "/runtime/bin", "--dir", "/runtime/lib",
@@ -546,11 +561,15 @@ def _sandbox_command(candidate: Path, entrypoint: str, seccomp_fd: int,
         if source.is_dir():
             cmd += ["--dir", destination]
         cmd += ["--ro-bind", str(source), destination]
+    for _source, destination in hidden_backends:
+        cmd += ["--ro-bind", "/dev/null", destination]
     cmd += [
         "--chdir", "/work", "--setenv", "HOME", "/tmp", "--setenv", "TMPDIR", "/tmp",
         "--setenv", "PYTHONPATH", "/runner:/packages", "--setenv", "PYTHONDONTWRITEBYTECODE", "1",
         "--setenv", "PYTHONHOME", "/runtime", "--setenv", "PYTHONNOUSERSITE", "1",
         "--setenv", "LD_LIBRARY_PATH", "/runtime/lib",
+        "--setenv", "NUMBA_THREADING_LAYER", "workqueue",
+        "--setenv", "NUMBA_NUM_THREADS", "1",
         "--setenv", "PYTHONHASHSEED", "0", "--setenv", "PATH", "/runtime/bin",
         "--", "/runtime/bin/python", "-S", "/runner/sle/candidate_worker.py",
         "--candidate", "/work/candidate.py", "--entrypoint", entrypoint,

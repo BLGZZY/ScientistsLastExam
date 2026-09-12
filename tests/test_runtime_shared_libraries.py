@@ -49,3 +49,28 @@ def test_unrelated_host_library_is_still_rejected(tmp_path):
     result = CompletedProcess([], 0, "private.so => %s (0x123)\n" % outside, "")
     with patch("sle.secure_eval.shutil.which", return_value="/usr/bin/ldd"), patch("sle.secure_eval.subprocess.run", return_value=result), pytest.raises(RuntimeError, match="outside trusted library directories"):
         _elf_dependency_mount_args((executable,))
+
+
+def test_missing_exposed_dependency_still_fails_closed(tmp_path):
+    executable = tmp_path / "python"
+    executable.write_bytes(b"\x7fELFfixture")
+    result = CompletedProcess([], 0, "libmissing.so => not found\n", "")
+    with patch("sle.secure_eval.shutil.which", return_value="/usr/bin/ldd"), patch("sle.secure_eval.subprocess.run", return_value=result), pytest.raises(RuntimeError, match="shared-library resolution failed"):
+        _elf_dependency_mount_args((executable,))
+
+
+def test_only_masked_elf_is_excluded_from_dependency_resolution(tmp_path):
+    executable = tmp_path / "python"
+    executable.write_bytes(b"\x7fELFfixture")
+    package = tmp_path / "numba"
+    package.mkdir()
+    hidden = package / "tbbpool.so"
+    visible = package / "serial.so"
+    for path in (hidden, visible):
+        path.write_bytes(b"\x7fELFfixture")
+    with patch("sle.secure_eval.shutil.which", return_value="/usr/bin/ldd"), patch("sle.secure_eval.subprocess.run", return_value=CompletedProcess([], 0, "", "")) as run:
+        _elf_dependency_mount_args((executable, package), (), (hidden,))
+    scanned = run.call_args.args[0]
+    assert str(hidden) not in scanned
+    assert str(visible) in scanned
+    assert str(executable) in scanned
