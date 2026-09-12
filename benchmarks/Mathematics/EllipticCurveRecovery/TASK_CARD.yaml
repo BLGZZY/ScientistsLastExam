@@ -113,3 +113,21 @@ evaluation_budget:
   heldout_worlds: 30
   timeout_seconds: 300
   hardware: CPU; Linux bubblewrap sandbox
+shortcut_probe:
+  schema_version: 1
+  metric: combined_score
+  relative_margin: 0.1
+  score_tolerance: 1.0e-09
+  reference:
+    candidate: verification/reference_solver.py
+    expected_score: 0.875
+  probes:
+  - id: literal_0_queries
+    candidate: verification/shortcut_memo_0.py
+    expected_score: 0.0
+  - id: literal_1_queries
+    candidate: verification/shortcut_memo_1.py
+    expected_score: 0.0
+  - id: literal_2_queries
+    candidate: verification/shortcut_memo_2.py
+    expected_score: 0.0

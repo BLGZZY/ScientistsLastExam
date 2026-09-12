@@ -71,6 +71,7 @@ as one minus squared error. Invalid rows earn zero and are not discovery attempt
 fraction. One malformed world does not erase other valid recovery. All-invalid
 submissions return `valid=0, combined_score=0`.
 
+Use `sle.contract_lint` for free local submission-shape checks.
 Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, with no
 network or process creation. Do not read `verification/` or `frontier_eval/`.
 
@@ -91,3 +92,6 @@ review history are in `references/known_best.md`. Repository-visible frozen worl
 remain enumerable; evidence checks block unqueried answers but cannot establish
 that a candidate did not memorize an informative query policy. Fresh server-held
 worlds, independent review and frontier-model calibration remain pending.
+
+Each sandbox world starts a fresh candidate session. Module globals and temporary
+files cannot carry a world index or previous answers across worlds.
