@@ -6,13 +6,16 @@ The reference is `verification/reference_permutation_augmented.py`, the maintain
 standalone candidate that restores the permutation-family inference the builder's first
 reference left out. The builder's first reference, `verification/reference_lstar_family.py`,
 is kept as the omission probe of the `shortcut_probe` contract and is not the admission line.
-Every number below was measured in process on this source with the package's own evaluator
-(`.research/cache_policy/summary.py` recomputes all of them). The Linux sandbox measurement
-that fills the `expected_score` declarations, the false-positive guard review and the
-first-proposal calibration remain with the maintainer, and the declarations stay `null` until
-then. These measurements do not establish difficulty at the frontier; the shortcut grid below
-says what a fixed strategy without one of the reference's parts reaches, and the last
-paragraph of that section says why the first-proposal check may still fail.
+The tables below retain the builder's in-process construction evidence
+(`.research/cache_policy/summary.py` recomputes those records). The independent
+[2026-09-12 Linux review](../../../../.research/cache_policy/review_2026-09-12.md)
+separately repeated nine fixed methods twice, completed the 343-cell grid and tested the
+claim guard over eight fixed observation-seed shifts. The executable contract now records
+the measured 7/9 reference, 6/9 no-age-table omission, 5/9 no-permutation omission and zero
+baseline. Two original oversized grid templates were invalid; their separately repaired
+variants were fully valid and scored zero in both repeat runs. Original invalid measurements
+are not used as difficulty evidence. First-proposal calibration and final framework evidence
+remain pending, so these comparisons do not establish frontier-model difficulty.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget

@@ -7,8 +7,9 @@ permutation-family inference that the builder's first reference left out; that f
 is kept as an omission probe and its 0.556 line is not the admission threshold. Independent
 Linux sandbox double runs reproduced the augmented reference at 7/9 development and 0.750
 held out, with all 18 worlds valid and identical complete metrics. The original-seed ability
-ablations were also repeated. The broader grid, false-positive guard robustness review and
-first-proposal calibration remain pending. Nothing here establishes model difficulty.
+ablations were also repeated. The independent fixed grid and false-positive guard review
+are complete; the first-proposal calibration and final framework evidence remain pending.
+Nothing here establishes model difficulty.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget
@@ -184,6 +185,10 @@ policies out without running anything, fit textbook policies or fixed policy fam
 traces with and without a check, or run a generic automaton learner with claim caps from 8 to 1024
 states, alone or with one family fit. The best of them reaches 0.667 on the development split, 86
 per cent of the reference, and 0.500 held out; none reaches 90 per cent.
+The independent Linux replay completed all 343 original configurations: 341 were valid in
+all 18 worlds; two oversized textbook machines were invalid and supply no difficulty
+evidence. Separately repaired variants of those two strategies were each run twice,
+were fully valid and scored zero. The valid original maximum remains 0.667.
 
 ## Rules
 

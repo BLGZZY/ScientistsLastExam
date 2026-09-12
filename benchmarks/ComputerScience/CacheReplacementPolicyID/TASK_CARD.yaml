@@ -7,7 +7,7 @@ oracle:
   deterministic: true
 normalization:
   baseline: ten random traces of 32 accesses played once each, the closest of LRU, FIFO and tree PLRU submitted as its machine at confidence 0.9, never declining
-  reference: victim queries answered by replaying a prefix, missing once and probing the old blocks in a shuffled order, accumulated to a likelihood lead of 10^4 and remembered; a per-position tail test on six random traces and a pooled minority test on 32 bursts and loops at 48 runs each, either one failing a refusal; a library of 2064 age-table policies fitted by majority vote on 24 mixed traces, survivors settled by the victim query their difference names and checked on 16 traces; otherwise L* for Mealy machines with Rivest-Schapire counterexample processing, its equivalence queries 64 targeted traces at five runs each with every disagreement confirmed by six more, before L*, a permutation-policy fit in the manner of Abel and Reineke from eviction ranks under consecutive misses, checked on 64 traces; no hypothesis above 32 states claimed, a false-positive guard under which the 120-state switch policy and the 78- and 134-state fill-ageing policies are declined; it scores 0.778 on the development split and 0.750 held out
+  reference: victim queries answered by replaying a prefix, missing once and probing the old blocks in a shuffled order, accumulated to a likelihood lead of 10^4 and remembered; a per-position tail test on six random traces and a pooled minority test on 32 bursts and loops at 48 runs each, either one failing a refusal; a library of 2064 age-table policies fitted by majority vote on 24 mixed traces, survivors settled by the victim query their difference names and checked on 16 traces; otherwise L* for Mealy machines with Rivest-Schapire counterexample processing, its equivalence queries 64 targeted traces at five runs each with every disagreement confirmed by six more, before L*, a permutation-policy fit in the manner of Abel and Reineke from eviction ranks under consecutive misses, checked on 64 traces; no generic L* hypothesis above 32 states claimed (verified family fits may be larger), a false-positive guard under which the 120-state switch policy and the 78- and 134-state fill-ageing policies are declined; it scores 0.778 on the development split and 0.750 held out
   score: development mechanism recovery normalized above always-abstain; a machine equivalent to the policy scores 1 in a deterministic world and one that differs anywhere scores minus one there and zero in a randomised world, declining scores zero and one; recovery, false discovery, refusal, coverage, calibration, runs used and the held-out split stay separate
 citations:
 - id: doi:10.1109/RTAS.2013.6531080
@@ -52,7 +52,11 @@ known_shortcuts: >-
   (64, best 0.556) and L* with the permutation fit (64, best 0.667); the grid tops out at 0.667 on
   the development split and 0.500 held out, 86 per cent of the reference, at the reference without
   its age-table library, and no cell reaches 90 per cent; over eight re-drawn seeds the best cells
-  average 0.653 and 0.500 with no false discovery
+  average 0.653 and 0.500 with no false discovery in the builder's construction records.
+  The independent Linux replay completed the entire original grid: 341 fully valid cells,
+  two oversized invalid templates excluded from the difficulty bound, and valid maximum
+  6/9. Separately fixed variants of both invalid templates were each valid twice and
+  scored zero. Original invalid observations are retained and never relabeled.
 review:
   domain: pending_external_computer_architecture
   evaluator_security: automated_bad_candidate_crash_sweep_determinism_and_abstention_normalization_checks
@@ -108,7 +112,18 @@ construction_audit:
   expert_hours: null
   red_team_rounds: 8
   oracle_disagreement_status: not_quantified
-  independent_recomputation_status: the reference and the baseline are runnable from this directory, and the 23-rung ablation ladder, the fixed 343-cell shortcut grid, the determinism statistics over 24 seeds and the sixteen-seed robustness check of the reference from the scripts in .research/cache_policy, where summary.py recomputes every quoted number; the 29 bad-candidate shapes are in tests/test_cache_replacement_policy_id.py; the sandbox evaluation of scripts/check_task_contribution.py has not been run because the task was built on a machine without Bubblewrap; a frontier-model draw has not been run because the machine has no model endpoint
+  independent_recomputation_status: >-
+    The 2026-09-12 Linux CandidateProxy review repeated nine fixed methods twice, all
+    324 world evaluations valid and every pair's full metrics identical. The 343-cell
+    independent grid completed with 341 original candidates fully valid and two oversized
+    original templates invalid; the valid maximum was 6/9. Separately fixed templates
+    were each run twice, fully valid and zero-scoring. Eight fixed observation-seed shifts
+    compared the reference with the 1024-cap variant: 288 valid world evaluations, zero
+    versus six false claims. The real contribution gate passed all 16 checks with 15
+    actual evaluations; the three task/research fixture files passed 25 tests with no
+    skips on Linux. Source and payload hashes are recorded in the independent review.
+    The builder's other in-process robustness records remain distinct. Independent
+    first-proposal calibration and final framework/global evidence remain pending.
 
 # Original graded-world measurements were independently repeated in the Linux
 # sandbox at a8cbb99d; the source-bound aggregate report is cited below. The
@@ -165,7 +180,7 @@ shortcut_probe:
   score_tolerance: 0.000001
 post_builder_review:
   original_pr_head: 7d59e684485db9df3a54303ed956b8bb7025856d
-  status: hold_pending_independent_grid_guard_and_model_calibration
+  status: hold_pending_independent_model_calibration_and_final_framework_evidence
   historical_threshold_rejected: >-
     The builder reference at 0.556 deliberately omits the published permutation-family
     inference used by its own 0.778 headroom rung. That lower score is not an admission
@@ -176,8 +191,10 @@ post_builder_review:
     heldout 0.75, zero false claims and complete randomized-world refusal. Nine fixed
     methods were each evaluated twice. The machine contract also includes the strongest
     declared omission probe, without the age-table library, measured at 6/9 development.
-    The broad grid and claim-guard robustness review remain distinct from this original-seed
-    replay, and no model-difficulty pass is asserted.
+    The independent 343-cell grid and eight-shift claim-guard review now also complete
+    the bounded comparison. The two original invalid grid cells remain invalid; only
+    their separately repaired, fully valid variants supply replacement evidence.
+    No model-difficulty pass is asserted.
   repairs: >-
     Reset candidate sessions between worlds; preserve all charged callbacks within each
     world; keep malformed-trace violations fatal after the candidate catches the exception;
