@@ -10,6 +10,7 @@ from __future__ import annotations
 
 
 import importlib.util
+import hashlib
 
 
 import json
@@ -122,20 +123,22 @@ class RunEvalIntegrationTests(unittest.TestCase):
 
     def test_reference_candidate_runs_through_run_eval(self):
         task = ROOT / "benchmarks/Engineering/DistributionNetworkTopology"
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as private:
             metrics_path = Path(tmp) / "metrics.json"
+            candidate = task / "verification/reference_solver.py"
             completed = subprocess.run(
-                [sys.executable,
-                 str(task / "frontier_eval" / "run_eval.py"),
-                 "--candidate",
-                 str(task / "verification" / "reference_solver.py"),
-                 "--metrics-out", str(metrics_path)],
-                cwd=str(ROOT), capture_output=True, text=True, timeout=450,
-            )
+                [sys.executable, str(task / "frontier_eval/run_eval.py"),
+                 "--candidate", str(candidate), "--metrics-out", str(metrics_path),
+                 "--full-metrics-dir", private],
+                cwd=str(ROOT), capture_output=True, text=True, timeout=480)
             self.assertEqual(completed.returncode, 0, completed.stderr)
             summary = json.loads(completed.stdout)
-            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
-        self.assertEqual(set(summary), {"combined_score", "valid"})
+            public = json.loads(metrics_path.read_text())
+            self.assertEqual(summary, public)
+            self.assertNotIn("robustness_score", public)
+            self.assertNotIn("per_world", public)
+            digest = hashlib.sha256(candidate.read_bytes()).hexdigest()
+            metrics = json.loads((Path(private) / (digest + ".json")).read_text())
         self.assertEqual(summary["valid"], 1.0)
         self.assertEqual(summary["combined_score"], metrics["combined_score"])
         for key in ("combined_score", "valid", "feasibility_rate",
@@ -176,10 +179,10 @@ class ReviewContractRegressions(unittest.TestCase):
             with patch.object(sys, "argv", ["run_eval.py", "--candidate", str(candidate), "--metrics-out", str(metrics)]), patch.object(runner.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(runner.main(), 0)
             command = run.call_args.args[0]
-            self.assertEqual(command[1:4], ["-m", "sle", "eval"])
+            self.assertEqual(command[1], str(ROOT / "sle/frontier_eval_entrypoint.py"))
             self.assertEqual(command[command.index("--task") + 1], "WaterDistribution/DistributionNetworkTopology")
             self.assertEqual(command[command.index("--candidate") + 1], str(candidate.resolve()))
-            self.assertEqual(json.loads(metrics.read_text())["combined_score"], 0.2)
+            self.assertNotIn("-m", command)
 
 
 class TomographyScienceRegressions(unittest.TestCase):

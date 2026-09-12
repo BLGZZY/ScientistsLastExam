@@ -99,3 +99,8 @@ Measured capability comparisons (development / heldout):
 | Without structural ambiguity refusal | 0.635417 / 0.469136 |
 
 These are diagnostic capability comparisons, not model calibration.
+
+The external `frontier_eval/run_eval.py` writes only search-visible metrics. Full
+diagnostics can be saved with `--full-metrics-dir` to an explicitly private
+directory outside both the candidate and public output directories. Infrastructure
+failures exit 2 with no public score file, following the shared trusted entrypoint.

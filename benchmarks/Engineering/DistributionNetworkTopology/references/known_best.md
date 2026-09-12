@@ -108,3 +108,9 @@ Measured at `4ba912cba5ffccea232a33bf68155054d9ac5898` using Ubuntu 22.04, Pytho
 | STRUCTURAL_REFUSAL | 0.635417 | 0.469136 |
 
 Grid best: **0.502037** development, 0.110247 heldout. Reference repeats were equal. Full grid parameters and diagnostic axes are retained in `review_evidence.json`.
+
+The subsequent full-suite integration audit found an inherited wrapper mismatch
+with current main. The task wrapper now uses `sle/frontier_eval_entrypoint.py`;
+public files omit heldout and per-world diagnostics. Integration tests opt into
+an explicit private sidecar. This wrapper correction leaves the measured evaluator
+and reference source unchanged and is validated separately.
