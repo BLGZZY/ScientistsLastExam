@@ -8,7 +8,7 @@ from _sandbox_tools import skip_unless_sandbox
 from sle.secure_eval import CandidateProxy, read_candidate_packages
 
 
-@skip_unless_sandbox
+@skip_unless_sandbox("bwrap")
 class NmrsimRuntimeProfileTests(unittest.TestCase):
     def test_serial_nmrsim_and_jit_work_while_tbb_backend_is_masked(self):
         try:

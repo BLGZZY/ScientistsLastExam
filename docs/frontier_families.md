@@ -72,6 +72,12 @@ manifest hash, task package hash, runtime source hash, and trusted evaluator run
 The trusted runtime fingerprint identifies the Python ABI and audited distribution versions. It is
 not a claim that every installed runtime byte is bit-identical.
 
+The NMR candidate profile permits serial Numba JIT compilation. It fixes
+`NUMBA_NUM_THREADS=1` and `NUMBA_THREADING_LAYER=workqueue`, and masks Numba's optional
+`tbbpool` binary. The TBB backend is outside this single-threaded sandbox profile;
+its absent `libtbb` dependency must not prevent ordinary `nmrsim.qm` imports. Shared
+library checks still fail closed for every binary exposed to candidates.
+
 ## Trusted record contract
 
 `FrontierLedger.record()` deliberately rejects direct callers. The only public credit path is
