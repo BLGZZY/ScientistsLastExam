@@ -1,6 +1,10 @@
 # CacheReplacementPolicyID: which replacement policy does this cache set run?
 
-## Post-builder admission status: hold
+## Frozen pre-calibration review snapshot
+
+The following review records the status before the independent calibration at source
+`c0b000c9`. Current maintainer findings and their source bindings are recorded in
+`TASK_CARD.yaml` and `references/known_best.md`; this snapshot is not the current merge decision.
 
 The reference is `verification/reference_permutation_augmented.py`, which restores the
 permutation-family inference that the builder's first reference left out; that first reference
@@ -8,8 +12,8 @@ is kept as an omission probe and its 0.556 line is not the admission threshold. 
 Linux sandbox double runs reproduced the augmented reference at 7/9 development and 0.750
 held out, with all 18 worlds valid and identical complete metrics. The original-seed ability
 ablations were also repeated. The independent fixed grid and false-positive guard review
-are complete; the first-proposal calibration and final framework evidence remain pending.
-Nothing here establishes model difficulty.
+were complete; the first-proposal calibration and final framework evidence were still pending.
+That pre-calibration evidence did not establish model difficulty.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget

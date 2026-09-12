@@ -1,6 +1,6 @@
 # CacheReplacementPolicyID: known best
 
-## Post-builder admission status: hold
+## Bounded internal admission review
 
 The reference is `verification/reference_permutation_augmented.py`, the maintainer's
 standalone candidate that restores the permutation-family inference the builder's first
@@ -14,8 +14,10 @@ claim guard over eight fixed observation-seed shifts. The executable contract no
 the measured 7/9 reference, 6/9 no-age-table omission, 5/9 no-permutation omission and zero
 baseline. Two original oversized grid templates were invalid; their separately repaired
 variants were fully valid and scored zero in both repeat runs. Original invalid measurements
-are not used as difficulty evidence. First-proposal calibration and final framework evidence
-remain pending, so these comparisons do not establish frontier-model difficulty.
+are not used as difficulty evidence. The fixed independent first-proposal comparison has
+now completed as described below. Framework compatibility and global integration evidence
+remain separate from that original model experiment. External domain certification and
+general frontier-model difficulty have not been established.
 
 Each world starts a fresh candidate process, imported state and private tmpfs. All charged
 run callbacks in that world remain in one session. Catching a malformed-trace or budget
@@ -77,9 +79,27 @@ accesses, which this package does not have.
 
 ## Model draws
 
-None. The task was built on a machine without a model endpoint. The card records
-`calibration_evidence_status: missing`; the frontier draw and the global evidence refresh are owed
-before certification.
+The builder's construction had no model endpoint. The independent 2026-09-12 review
+subsequently froze clean source `c0b000c90b3ded1b8fb2d5e4cc392f091ede3591` and evaluated
+one selection-blind gpt-5.6-sol Responses/high proposal for each fixed label 0, 1 and 2.
+All three attempted discovery and were valid in all 18 worlds. Their development scores
+were 2/9, 1/9 and 1/9, below the complete reference's 7/9; heldout scores were 0, 0 and 1/4.
+Development false-discovery rates were 0, 1/3 and 0, and randomized-world refusal was
+complete. The six independent evaluations of the three exact programs reproduced all
+original full metrics. No proposal was repaired, replaced or selected using heldout results.
+
+The [source-bound report](../../../../experiments/cache_replacement_policy_id_first_proposal_2026-09-12.json)
+records the immutable plan, candidate hashes, conditions, axes and limitations. This supports
+the bounded D16 first-proposal comparison. It remains a manual admission review with
+`trusted_evidence=false` and zero modern receipt-verified formal model coverage. The card's
+`historical_only` lineage preserves the original runtime; later frozen-program compatibility
+checks do not migrate the original model run. The introductory review in `Task.md` is labeled
+as its pre-calibration snapshot; the original model input remains preserved at `c0b000c9`.
+
+Successful returned usage totals 50,344 tokens. Replicate labels do not set provider random
+seeds. Internal HTTP retry counts and failed-attempt usage are unknown. Full response text
+was retained only for label 2; all three exact candidates, prompt hashes, successful usage,
+ledgers and full evaluation metrics remain private. No missing response was reconstructed.
 
 ## Baseline: the closest textbook policy, never declining
 
@@ -182,9 +202,9 @@ development age table and the 40-state held-out one. A first proposal that runs 
 tests reaches 0.667; one that also fits an RRIP-style age-table family reaches the reference's
 0.778, and the score moves in steps of 1/9, so there is no room between the two. The published
 literature (Abel and Reineke 2013; Vila et al. 2020) names all of these parts. The builder
-therefore cannot rule out that an independent first proposal reaches the reference, which is the
-first-proposal criterion of the admission workflow, and only the maintainer's calibration run can
-settle it.
+therefore could not rule out that an independent first proposal would reach the reference.
+The subsequent three fixed maintainer draws described above were all below that admission
+line; this bounded observation does not establish that every future first proposal will be.
 
 ## Construction errors caught on the way
 
@@ -236,8 +256,12 @@ raising. `tests/test_cache_replacement_admission_contract.py` covers the referen
 fit, the per-world session reset and the claim-conditional false discovery rate. A reference
 evaluation takes 2.5 to 5 seconds in process. It makes at most 11761 calls to `run` in one world
 and 56978 in one evaluation, which the sandboxed evaluation carries as RPC calls.
-`.research/cache_policy/summary.py` recomputes every number on this page.
+`.research/cache_policy/summary.py` recomputes the builder's construction records. The later
+independent Linux and model measurements have their own source-bound reports cited above.
 
-Not done: the sandbox half of `scripts/check_task_contribution.py` (no Bubblewrap on the build
-machine), so the `shortcut_probe` declarations stay `null`; a frontier-model draw; the global
-evidence refresh.
+At the builder checkpoint, the sandbox half of `scripts/check_task_contribution.py`, measured
+shortcut declarations, model draws and the global evidence refresh had not been completed.
+The independent 2026-09-12 review subsequently passed all 16 contribution checks, filled the
+executable declarations from actual sandbox measurements and completed the three fixed draws.
+Global integration evidence is refreshed separately against the integrated source. The
+earlier missing measurements are retained as construction history, not current task status.
