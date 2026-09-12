@@ -122,3 +122,23 @@ Current difficulty ladder (same Linux direct environment):
 The joint refinement removes about 0.309 development points when ablated. The
 diagonal error-propagation effect is only about 0.0004; it is a numerical
 approximation, not evidence for an independent expert capability.
+
+## Integration validation (2026-09-12)
+
+Integrated upstream `dbed92712860`. Metadata now explicitly states
+`difficulty: unmeasured` and `tier: candidate`; model difficulty is not established.
+CI-pinned Linux compatibility tests at `ff5223e012c8`: **195 passed, 17 subtests passed in 121.08s (0:02:01)**.
+The task's real world-session isolation test passed separately. The full contribution
+gate and the actual shared wrapper passed on `c7312e30689d`; subsequent changes
+only update runner regression tests. Public score output excludes held-out/internal
+metrics, while the explicitly separate trusted sidecar retains full diagnostics.
+The real reference scores remain 0.797115 development /
+0.715310 held out, valid 1.
+
+The earlier full suite on the `58e4b8e` integration had
+1473 passed, 2 old-wrapper failures, 48 skipped and 511
+passed subtests. Those failures are fixed and covered by the final compatibility
+suite. The 48 historical-run skips are not passes. This is a prior full suite plus
+a current-main compatibility suite, not a claim of a new full-suite GitHub green.
+[`linux_validation.json`](linux_validation.json) records versions, revision scopes,
+source hashes, gate details and the remaining admission work.
