@@ -15,7 +15,7 @@ An `uncapped` release score may exceed its score-one reference. It does not by i
 the task will remain scientifically productive forever. Lifetime credit can grow across waves,
 but must never be used to compare models that were evaluated on different frozen manifests.
 
-The current repository has no task packages with `wave.yaml`. This is an opt-in
+At the 2026-09-12 integration snapshot, no task packages have `wave.yaml`. This is an opt-in
 framework interface; its merge does not admit a family, award scientific credit,
 or certify a model measurement.
 
