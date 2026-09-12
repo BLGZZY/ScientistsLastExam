@@ -128,3 +128,19 @@ used a privileged trusted launcher, and CI-pinned checks used an isolated test
 container. In both cases candidate UID/GID 65534, network/process isolation,
 read-only mounts and seccomp restrictions were retained. Neither workaround
 changed task or harness security policy.
+
+### Reduced-design control retaining full inference
+
+A stronger reduced-design control retains bounded nuisance fitting, known-noise
+adequacy and likelihood-separation tests, and probability-weighted predictions.
+Among 18 reduced-design/threshold settings explored, the development-selected
+five-point ladder `(8, 32, 96, 192, 384)` with separation threshold `0.7` scores
+**0.572169 development / 0.626147 held out** in the CI-pinned Linux sandbox.
+This is **84.0% / 97.1%** of the reference: fewer measurements can nearly match
+its held-out score when all inference capabilities are retained. The 2304-setting
+single-RMS grid and its 30% guard cover only that declared restricted family;
+they do not establish a universal shortcut gap or expert-level difficulty.
+`verification/reference_sparse_control.py` is standalone;
+`references/reduced_design_control.json` records provenance and full metrics.
+Independent red teaming, fresh worlds and frontier-model calibration remain
+necessary before scientific admission.

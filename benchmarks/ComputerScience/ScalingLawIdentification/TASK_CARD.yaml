@@ -38,7 +38,9 @@ known_shortcuts: 'Historical reviewed head: a 275-point grid reached 0.863028/0.
   old claim is withdrawn. verification/replay_review.py replays 2304 ladder x RMS gate x probability mass
   x nuisance-fit settings plus four capability ablations on the redesigned worlds. See references/review_replay.json
   and known_best.md for current Linux results; no frontier-model calibration is claimed. Current clean
-  Linux replay: best 0.413705/0.360038, reference 0.681348/0.644685; 2304 grid settings.'
+  Linux replay: best 0.413705/0.360038, reference 0.681348/0.644685; 2304 grid settings. A stronger five-point control retains all inference
+  and scores 0.572169/0.626147 (84.0%/97.1% of reference); the 30% guard covers only the restricted
+  single-RMS family, not a universal shortcut gap. See references/reduced_design_control.json.'
 licensing:
   task_package: repository_license_not_declared
   external_assets: none
@@ -103,8 +105,9 @@ difficulty_assessment:
   status: unverified_candidate
   requirement: standard-method and low-dimensional shortcut sweeps, capability ablations and clean frontier-model
     calibration before certification
-  remaining_risk: Finite frozen ensembles and low-dimensional nuisance fits may still admit better designs;
-    independent red teaming and a clean frontier-model draw remain required.
+  remaining_risk: A five-point design retaining all inference reaches 97.1% of reference held-out score.
+    Finite frozen ensembles and low-dimensional nuisance fits may admit still better designs;
+    independent red teaming, fresh worlds and a clean frontier-model draw remain required.
 frontier_eng_overlap_review:
   date: '2026-09-07'
   classification: 无
