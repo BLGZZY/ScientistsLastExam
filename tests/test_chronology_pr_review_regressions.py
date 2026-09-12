@@ -31,18 +31,20 @@ def test_external_entrypoints_delegate_without_importing_candidate(task, task_id
 
     def trusted_eval(command, **kwargs):
         calls.append((command, kwargs))
-        return SimpleNamespace(returncode=0, stdout=json.dumps({"combined_score": 0.4, "valid": 1.0}), stderr="")
+        metrics = json.dumps({"combined_score": 0.4, "valid": 1.0})
+        Path(command[command.index("--metrics-out") + 1]).write_text(metrics)
+        return SimpleNamespace(returncode=0, stdout=metrics, stderr="")
 
     monkeypatch.setattr(runner.subprocess, "run", trusted_eval)
     monkeypatch.setattr(runner.sys, "argv", ["run_eval.py", "--candidate", str(candidate), "--metrics-out", str(output)])
     assert runner.main() == 0
     assert not marker.exists()
     command, kwargs = calls[0]
-    assert command[1:4] == ["-m", "sle", "eval"]
+    assert Path(command[1]) == ROOT / "sle/frontier_eval_entrypoint.py"
     assert command[command.index("--task") + 1] == task_id
     assert command[command.index("--candidate") + 1] == str(candidate.resolve())
-    assert "--allow-uncertified" in command
-    assert Path(kwargs["cwd"]) == ROOT
+    assert Path(command[command.index("--root") + 1]) == ROOT
+    assert float(command[command.index("--timeout") + 1]) == runner.EVAL_TIMEOUT_S
     assert json.loads(output.read_text())["combined_score"] == 0.4
 
 
