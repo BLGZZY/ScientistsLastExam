@@ -129,6 +129,11 @@ this implementation does not silently introduce either policy.
 
 ## Integrity properties
 
+The canonical ledger contains complete evaluator receipts and hidden metrics. Keep its root
+outside every Git repository; the writer enforces owner-only ledger/event directories (0700)
+and creates event files with mode 0600. Publish only a reviewed aggregate and ledger head hash,
+never the raw ledger.
+
 The local ledger stores each event as a separately fsynced, atomically published JSON document
 under a POSIX advisory lock. Every event binds the previous event hash and is deterministically
 replayed before another event is appended. Replay recomputes all deduplication and credit
