@@ -98,3 +98,20 @@ MallocLab, MLA, FlashAttention and TriMul optimize implementations. The task-spe
 review is `.research/scaling_law_identification_frontier_eng_overlap_2026-09-07.md`.
 The requested 95-entry source remains unreconciled with the pinned 78-row/84-expanded
 catalog and requires maintainer resolution.
+
+## Measured capability ladder
+
+Contributor Linux replay (NumPy 1.26.4 / SciPy 1.13.1); both splits use the same
+method and fixed parameters. These measurements do not establish model difficulty.
+
+| Method | Development | Held out | Development loss |
+|---|---:|---:|---:|
+| Full reference | 0.681348 | 0.644685 | 0.000000 |
+| Without finite-size nuisance fitting | 0.052938 | 0.069044 | 0.628410 |
+| Without model-adequacy test | 0.395634 | 0.358970 | 0.285714 |
+| Without class-separation test | 0.460003 | 0.421387 | 0.221346 |
+| Without either refusal check | 0.174288 | 0.135673 | 0.507060 |
+| Best of 2304 fixed cheap strategies | 0.413705 | 0.360038 | 0.267643 |
+
+Each scientific world, including the first held-out world, starts a fresh sandbox
+process; calls within one world share the same charged budget and candidate state.

@@ -235,3 +235,32 @@ class ProfilingContractRegressions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_information_bound_matches_explicit_paired_likelihoods():
+    import math
+    task = ROOT / 'benchmarks/ComputerScience/ScalingLawIdentification'
+    ev = _load(task / 'verification/evaluator.py', 'paired_likelihood_test')
+    world = ev._world((30047, 'ambiguous', 'linear'))
+    lo, hi = world['bounds']
+    midpoint = math.sqrt(math.log2(lo)*math.log2(hi))
+    counterpart = dict(world, family='linearithmic', scale=world['scale']/midpoint)
+    per_cost = []
+    for size in range(lo, hi+1):
+        gap = math.log(ev._true_runtime(world, size)/ev._true_runtime(counterpart, size))
+        per_cost.append(gap*gap/(2*world['noise']**2*ev._call_cost(size)))
+    assert abs(ev.ambiguity_information_bound(world)[0] - ev.BUDGET_UNITS*max(per_cost)) < 1e-12
+
+
+def test_extrapolation_uses_probability_mass_instead_of_argmax():
+    task = ROOT / 'benchmarks/ComputerScience/ScalingLawIdentification'
+    ev = _load(task / 'verification/evaluator.py', 'weighted_extrapolation_test')
+    spec = (30011, 'supported', 'constant')
+    world = ev._world(spec)
+    def candidate(*args):
+        return {'class_probabilities': {name: .5 if name in ('constant', 'exponential') else 0.
+                                         for name in ev.CLASSES},
+                'scale': world['scale'], 'abstain': False, 'confidence': .8}
+    row = ev._evaluate_world(candidate, spec, 'development', 0)
+    assert row['valid']
+    assert abs(row['extrapolation_score']-.5) < 1e-12

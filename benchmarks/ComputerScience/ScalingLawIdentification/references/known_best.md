@@ -93,4 +93,35 @@ Linux sandbox replay and contribution checks are reported separately below.
 
 ## Current revision measurements
 
-Pending clean Linux replay of the revised sources; no old scores are relabeled as current.
+Linux direct replay from clean revision `bee50a353643`,
+Python 3.12.3, NumPy 1.26.4 / SciPy 1.13.1. The machine-readable
+[replay record](review_replay.json) binds the executable source hashes. Later
+measurement declarations, documentation and regression additions do not change
+these evaluator/reference/probe hashes.
+
+| Method | Development | Held out | Development loss |
+|---|---:|---:|---:|
+| Full reference | 0.681348 | 0.644685 | 0.000000 |
+| Without finite-size nuisance fitting | 0.052938 | 0.069044 | 0.628410 |
+| Without model-adequacy test | 0.395634 | 0.358970 | 0.285714 |
+| Without class-separation test | 0.460003 | 0.421387 | 0.221346 |
+| Without either refusal check | 0.174288 | 0.135673 | 0.507060 |
+| Best of 2304 fixed cheap strategies | 0.413705 | 0.360038 | 0.267643 |
+
+The best fixed probe reaches 60.7% of the reference on development
+and 55.8% on held out. This is the measured finite grid,
+not a universal upper bound over algorithms. Parameters: `{"ladder": [8, 16, 32, 64, 128], "gate": 0.4, "mass": 1.0, "correction": true}`.
+
+CI-pinned Python 3.10 / NumPy 1.24.4 / SciPy 1.10.1, through the actual
+`frontier_eval/run_eval.py` sandbox wrapper: reference 0.681348 development /
+0.644685 held out, valid 1. The fixed probe is standalone under
+`verification/` and is declared in `TASK_CARD.shortcut_probe`, with a 30% relative
+margin and 0.01 portability tolerance. The small optimizer/runtime differences
+are reported rather than rounded away or mixed into one result.
+
+On this Ubuntu host, unprivileged bubblewrap fails even for `/usr/bin/true`
+with an RTM_NEWADDR loopback permission error. Native sandbox checks therefore
+used a privileged trusted launcher, and CI-pinned checks used an isolated test
+container. In both cases candidate UID/GID 65534, network/process isolation,
+read-only mounts and seccomp restrictions were retained. Neither workaround
+changed task or harness security policy.
