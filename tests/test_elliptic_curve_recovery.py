@@ -10,6 +10,7 @@ from __future__ import annotations
 
 
 import importlib.util
+import hashlib
 
 
 import json
@@ -137,15 +138,22 @@ class RunnerIntegrationTests(unittest.TestCase):
 
     def _run_entrypoint(self, candidate: str) -> tuple[int, dict, dict]:
         task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
-        with tempfile.TemporaryDirectory() as tmp:
+        with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as private:
             metrics_path = Path(tmp) / "metrics.json"
+            candidate_path = task / candidate
             completed = subprocess.run(
-                [sys.executable, str(task / "frontier_eval" / "run_eval.py"),
-                 "--candidate", str(task / candidate),
-                 "--metrics-out", str(metrics_path)],
-                cwd=ROOT, capture_output=True, text=True, timeout=450)
+                [sys.executable, str(task / "frontier_eval/run_eval.py"),
+                 "--candidate", str(candidate_path), "--metrics-out", str(metrics_path),
+                 "--full-metrics-dir", private],
+                cwd=ROOT, capture_output=True, text=True, timeout=480)
+            self.assertEqual(completed.returncode, 0, completed.stderr)
             stdout = json.loads(completed.stdout.strip().splitlines()[-1])
-            metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
+            public = json.loads(metrics_path.read_text())
+            self.assertEqual(stdout, public)
+            self.assertNotIn('robustness_score', public)
+            self.assertNotIn('per_world', public)
+            digest = hashlib.sha256(candidate_path.read_bytes()).hexdigest()
+            metrics = json.loads((Path(private) / (digest + '.json')).read_text())
         return completed.returncode, stdout, metrics
 
     def test_reference_exits_zero_and_reports_score_keys(self):
@@ -237,10 +245,10 @@ class ReviewContractRegressions(unittest.TestCase):
             with patch.object(sys, "argv", ["run_eval.py", "--candidate", str(candidate), "--metrics-out", str(metrics)]), patch.object(runner.subprocess, "run", return_value=completed) as run, contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(runner.main(), 0)
             command = run.call_args.args[0]
-            self.assertEqual(command[1:4], ["-m", "sle", "eval"])
+            self.assertEqual(command[1], str(ROOT / "sle/frontier_eval_entrypoint.py"))
             self.assertEqual(command[command.index("--task") + 1], "Mathematics/EllipticCurveRecovery")
             self.assertEqual(command[command.index("--candidate") + 1], str(candidate.resolve()))
-            self.assertEqual(json.loads(metrics.read_text())["combined_score"], 0.2)
+            self.assertNotIn("-m", command)
 
 
 class ArithmeticScienceRegressions(unittest.TestCase):

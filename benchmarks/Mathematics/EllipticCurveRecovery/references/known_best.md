@@ -129,3 +129,9 @@ Measured at `b02aef3b4281001b0cabd463e0fcf01d38ca6af0` using Ubuntu 22.04, Pytho
 | MAX_QUERIES=4 | 0.166667 | 0.111111 |
 
 Grid best: **0.000000** development, 0.000000 heldout. Reference repeats were equal. Full grid parameters and diagnostic axes are retained in `review_evidence.json`.
+
+The subsequent full-suite integration audit found an inherited wrapper mismatch
+with current main. The task wrapper now uses `sle/frontier_eval_entrypoint.py`;
+public files omit heldout and per-world diagnostics. Integration tests opt into
+an explicit private sidecar. This wrapper correction leaves the measured evaluator
+and reference source unchanged and is validated separately.
