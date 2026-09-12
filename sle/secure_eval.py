@@ -203,8 +203,11 @@ def _is_system_library_destination(path: Path) -> bool:
 
 
 @functools.lru_cache(maxsize=16)
-def _elf_dependency_mount_args(sources: tuple[Path, ...]) -> tuple[str, ...]:
+def _elf_dependency_mount_args(
+    sources: tuple[Path, ...], runtime_library_dirs: tuple[Path, ...] = (),
+) -> tuple[str, ...]:
     """Mount only shared libraries required by trusted runtime and package ELF objects."""
+    runtime_library_dirs = tuple(path.resolve() for path in runtime_library_dirs)
     exposed_roots = tuple(path.resolve() for path in sources if path.is_dir())
     exposed_files = {path.resolve() for path in sources if path.is_file()}
     elf_files: list[Path] = []
@@ -245,7 +248,9 @@ def _elf_dependency_mount_args(sources: tuple[Path, ...]) -> tuple[str, ...]:
         capture_output=True,
         text=True,
         timeout=30,
-        env={"LC_ALL": "C", "PATH": "/usr/bin:/bin"},
+        env={"LC_ALL": "C", "PATH": "/usr/bin:/bin",
+             **({"LD_LIBRARY_PATH": ":".join(map(str, runtime_library_dirs))}
+                if runtime_library_dirs else {})},
     )
     output = completed.stdout + "\n" + completed.stderr
     if completed.returncode != 0 or "=> not found" in output:
@@ -266,7 +271,11 @@ def _elf_dependency_mount_args(sources: tuple[Path, ...]) -> tuple[str, ...]:
             or _is_below(source, exposed_roots)
         ):
             continue
-        if not _is_system_library_destination(destination):
+        if destination.parent.resolve() in runtime_library_dirs:
+            if source.parent not in runtime_library_dirs:
+                raise RuntimeError("candidate runtime library escapes its trusted directory")
+            destination = Path("/runtime/lib") / destination.name
+        elif not _is_system_library_destination(destination):
             raise RuntimeError(
                 "candidate runtime dependency is outside trusted library directories"
             )
@@ -510,7 +519,8 @@ def _sandbox_command(candidate: Path, entrypoint: str, seccomp_fd: int,
     cmd = [
         bwrap, "--unshare-all", "--die-with-parent", "--new-session", "--seccomp", str(seccomp_fd),
         "--uid", "65534", "--gid", "65534", "--hostname", "frontier-candidate", "--as-pid-1",
-        *_elf_dependency_mount_args(tuple(dependency_sources)),
+        *_elf_dependency_mount_args(
+            tuple(dependency_sources), (runtime_stdlib.parent,)),
         *_proc_mount_args(), "--dev", "/dev", "--tmpfs", "/tmp",
         "--dir", "/runner", "--dir", "/runner/sle", "--dir", "/work", "--dir", "/packages",
         "--dir", "/runtime", "--dir", "/runtime/bin", "--dir", "/runtime/lib",
@@ -540,6 +550,7 @@ def _sandbox_command(candidate: Path, entrypoint: str, seccomp_fd: int,
         "--chdir", "/work", "--setenv", "HOME", "/tmp", "--setenv", "TMPDIR", "/tmp",
         "--setenv", "PYTHONPATH", "/runner:/packages", "--setenv", "PYTHONDONTWRITEBYTECODE", "1",
         "--setenv", "PYTHONHOME", "/runtime", "--setenv", "PYTHONNOUSERSITE", "1",
+        "--setenv", "LD_LIBRARY_PATH", "/runtime/lib",
         "--setenv", "PYTHONHASHSEED", "0", "--setenv", "PATH", "/runtime/bin",
         "--", "/runtime/bin/python", "-S", "/runner/sle/candidate_worker.py",
         "--candidate", "/work/candidate.py", "--entrypoint", entrypoint,
