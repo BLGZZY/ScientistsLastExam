@@ -67,10 +67,15 @@ def _world(spec):
     rng = np.random.default_rng(int(seed))
     scale = _sample_scale(rng, family)
     narrow = kind in ("ambiguous", "supported_narrow")
+    correction = float(rng.uniform(-2., 2.))
+    if kind == "supported_narrow":
+        # Same public domain AND noise as the ambiguous pair. A genuinely steep
+        # observed exponential slope, rather than precision metadata, distinguishes it.
+        correction = -1.5 + .25 * correction
     return {"seed": int(seed), "kind": kind, "family": family, "scale": scale,
-            "correction": float(rng.uniform(-2., 2.)),
+            "correction": correction,
             "bounds": (64, 72) if narrow else SIZE_BOUNDS,
-            "noise": .12 if kind == "ambiguous" else (.0005 if narrow else NOISE_SIGMA)}
+            "noise": .12 if narrow else NOISE_SIGMA}
 
 
 def problem_statement(world):

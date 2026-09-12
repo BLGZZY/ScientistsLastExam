@@ -12,7 +12,10 @@ adaptive experimental design and marginalization over scale/correction uncertain
 
 Wide worlds use log-noise sigma 0.16, bounds [8,384], and a uniform coefficient in
 [-2,2]. Narrow ambiguity worlds use [64,72] and sigma 0.12; narrow supported controls
-use exponential timing with sigma 0.0005. The observed noise precision is public.
+use exponential timing with the identical sigma 0.12 and correction in [-2,-1].
+Their public problem mappings are identical, so neither domain nor noise metadata
+is a refusal label. The class-separating slope must be measured. Scale uncertainty
+on the narrow interval remains real headroom. The observed noise precision is public.
 Misspecified worlds add `1.4*sin(3*log(m))` to log runtime; its exact form is hidden.
 
 For each ambiguous world, pair linear and linearithmic families, match their scale

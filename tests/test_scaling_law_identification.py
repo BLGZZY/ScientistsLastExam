@@ -115,6 +115,11 @@ class ScalingLawPins(unittest.TestCase):
         answer = self.ref.identify_scaling_law(self.ev.problem_statement(world), lab.time_run, self.ev.BUDGET_UNITS)
         self.assertFalse(answer["abstain"])
 
+    def test_narrow_control_cannot_be_identified_from_public_metadata(self):
+        ambiguous = self.ev._world((30047, "ambiguous", "linear"))
+        supported = self.ev._world((30053, "supported_narrow", "exponential"))
+        self.assertEqual(self.ev.problem_statement(ambiguous), self.ev.problem_statement(supported))
+
     def test_integer_valued_floats_preserve_reference_results(self):
         import numpy as np
         expected = self.ev.evaluate(self.ref.identify_scaling_law)
