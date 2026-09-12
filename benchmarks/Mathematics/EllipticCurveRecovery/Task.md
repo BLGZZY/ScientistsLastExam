@@ -1,99 +1,93 @@
-# EllipticCurveRecovery — recover curve coefficients from prime point counts
+# EllipticCurveRecovery — evidence-supported coefficient recovery
 
-## Scientific setting
-
-An elliptic curve y^2 = x^3 + ax + b with integer coefficients is studied through
-its reduction modulo primes: for a chosen prime p, the exact number of points on
-the reduced curve over the finite field F_p is an obtainable measurement.
-Coefficients live in a bounded integer window. Not every world is such a curve:
-two break the elliptic premise — a singular cubic and a smooth genus-two quintic — and
-their measurements are not reproducible by any admissible pair (a, b).
-
-## Your task
+A hidden arithmetic object provides exact point counts at selected finite-field
+primes. Recover the bounded integer coefficients of `y² = x³ + ax + b` when the
+measurements determine a unique nonsingular pair. Refuse singular-only or empty
+compatibility sets, and indistinguishable nonsingular coefficient pairs.
 
 ```python
 def recover_curve(problem, count_points, budget_units):
-    """Return {"a": int, "b": int within public bounds, "abstain": bool,
-               "confidence": float in [0,1]}."""
+    return {"a": 0, "b": 1, "abstain": False, "confidence": 0.8}
 ```
 
-`problem` is a mapping with the keys
+`problem` contains:
 
 ```text
 curve_family      y^2 = x^3 + a*x + b, |a|,|b| <= 1200, nonzero discriminant
-prime_list        the queryable primes
+coefficient_bound 1200 (integer bound on each coefficient)
+prime_list        all queryable primes
 cost_tiers        prime <= 100 costs 1, <= 1000 costs 2, otherwise 3
-budget_units      8
-answer_semantics  the oracle returns #E(F_p) exactly
-refusal_note      singular cubics and smooth genus-two quintics must be refused
+budget_units      5
+answer_semantics  exact projective point counts, including the point at infinity
+refusal_note      singular-only, empty and indistinguishable nonsingular cases
 ```
 
-`count_points(prime)` charges by tier and returns `{prime, point_count,
-budget_cost}`. Overspending or unknown primes invalidate the world even when
-caught.
+`count_points(prime)` charges by tier and returns `{prime, point_count, budget_cost}`.
+Both budget fields equal five. Repeated calls are charged and return the same exact
+count, so they do not add information. Unknown primes, noninteger inputs (including
+`11.0`, strings and booleans), and overspending invalidate that world even if caught.
 
-Primes and claimed coefficients must be integers; booleans, strings and fractional
-values are invalid. A claim must satisfy `4*a**3 + 27*b**2 != 0`. On abstention,
-return both `a: None` and `b: None`, together with `abstain: True` and a finite
-confidence between zero and one.
+Return integer coefficients in the public window, boolean `abstain`, and finite
+`confidence` in [0,1]. With abstention, omit both coefficients or set them to `None`.
+A **singular integer claim is syntactically valid but scientifically wrong**. On a
+refusal world it is a false discovery and scores zero; it does not invalidate the
+whole evaluation. Floats, strings and booleans are not coefficient integers.
 
 ## Evaluation
 
-- `combined_score` is development coefficient recovery above the always-abstain
-  baseline: exp(-6 x normalized total absolute error of a and b), multiplied on
-  supported curves by `1 - 0.25 * budget_used / 8`. Recovery that spends less
-  budget therefore retains more score.
-- Singular and genus-two worlds score refusal only; abstaining scores one and any
-  coefficient claim scores zero. Refusal credit is not efficiency-weighted, so an
-  evidence-backed refusal is not penalized relative to blind abstention.
-- Intrinsic and efficiency-adjusted recovery, evidence efficiency, false discovery rate, correct refusal rate and discovery coverage are reported
-  with denominators; a full abstention scores exactly zero.
-- `robustness_score` repeats the audit on held-out curves and failures.
+Recovery earns one on a supported world only if the returned pair is correct
+**and all the actual purchased counts together isolate it as the unique
+nonsingular pair in the entire public window**. The evaluator independently
+recomputes this compatibility set. No queries, one prime, or a transcript that
+still admits competing nonsingular pairs gives zero recovery credit, even if a
+memorized answer happens to equal the hidden pair. There is no reward for unspent
+budget. Uncertainty must be reduced by scientifically informative measurements.
 
-The aggregate efficiency diagnostics are `development_evidence_efficiency_score` and
-`heldout_evidence_efficiency_score`; per-world rows also retain
-`intrinsic_mechanism_score`, `mechanism_score`, `evidence_efficiency_score` and
-`budget_used`. Split membership and hidden truth are never candidate inputs.
+Supported abstention earns zero. Unsupported worlds earn one for refusal and zero
+for a claim. The mean is normalized above the always-abstain baseline and clipped
+to [0,1], making complete abstention exactly zero. The development cohort has
+24 supported worlds and four worlds of each refusal kind; heldout has 18 supported
+and four of each refusal kind. Aggregation yields a graded recovery rate across
+worlds; individual recovery certificates are exact. `combined_score` uses
+development and `robustness_score` uses heldout.
 
-This is exact integer arithmetic, not a numerical experiment.
+The three refusal causes differ: a singular cubic leaves only discriminant-zero
+lifts; a smooth genus-two quintic can leave no bounded cubic lift; Q-isomorphic
+curves `(a,b)` and `(16a,64b)` have identical counts at every listed prime and
+cannot be distinguished as coefficient pairs. A genus-two curve need not violate
+the elliptic Hasse interval at any single queried prime: joint bounded consistency
+is the decisive test. These are finite-window statements, not a theorem that
+arbitrary genus-two counts always exclude every elliptic curve.
 
-## Rules
+`development_evidence_support_score` and `heldout_evidence_support_score` report
+supported certificate coverage. Per-world diagnostics include
+`compatible_curve_count`, `queried_prime_count`, `budget_used`,
+`intrinsic_mechanism_score` and `evidence_support_score`. Compatibility counts
+are computed for claims; zero in an unexamined row is not proof of an empty set.
+Mechanism recovery, false discovery, refusal and discovery coverage are reported
+separately with denominators. Confidence predicts response quality and is scored
+as one minus squared error. Invalid rows earn zero and are not discovery attempts.
+`valid=1` means at least one valid development world; `feasibility_rate` gives the
+fraction. One malformed world does not erase other valid recovery. All-invalid
+submissions return `valid=0, combined_score=0`.
 
-- Only edit `solution.py`; keep the complete function signature.
-- Deterministic Python/NumPy/SciPy/stdlib code only; no network or process creation.
-- Do not read `verification/` or `frontier_eval/`.
-- Oracle errors and overspending invalidate the world even when caught.
-- Use `sle.contract_lint` for free local shape checks before returning an inference.
+Only edit `solution.py`. Use deterministic Python/NumPy/SciPy/stdlib, with no
+network or process creation. Do not read `verification/` or `frontier_eval/`.
 
-Reference: Silverman, *The Arithmetic of Elliptic Curves*, ISBN `9780387094939`.
+## Sources and relationship to nearby tasks
 
-## 关系与区别 / Relationship to nearby tasks
+Silverman, *The Arithmetic of Elliptic Curves*, ISBN `9780387094939`, supplies the
+elliptic-curve model; [MIT hyperelliptic definitions](https://math.mit.edu/~drew/Definitions.html)
+support the odd-degree genus-two point-count model.
+SequenceLawRecovery infers integer recurrences; ExactIdentityEvidence certifies
+identities from digits; BlackBoxGroupIdentification classifies group structure.
+This task instead acquires finite-field counts to identify a bounded coefficient
+pair, with exact evidence and family/isomorphism refusal.
 
-SequenceLawRecovery infers recurrences from integer terms; ExactIdentityEvidence
-certifies identities from purchasable digits. This task inverts exact arithmetic
-objects — point counts over finite fields — under a prime-query budget, with
-refusal worlds that break the curve family itself.
-
-## Admission and reference scope
-
-This package remains **candidate**. The runnable reference uses public inputs
-only; its method is recorded in `references/known_best.md`, which is
-maintainer-facing and not served to candidates. Local shortcut and ablation
-diagnostics there do not replace clean Linux sandbox replay, independent review
-or a frozen frontier-model calibration draw.
-
-## Frontier-Eng overlap comparison (2026-09-07)
-
-无. Nearest catalog entries: AES-128 CTR; SHA-256; SHA3-256. Query finite-field point counts at chosen primes and recover an integer elliptic-curve coefficient pair or refuse. FE implements symmetric cryptographic throughput, with no arithmetic-geometry inverse problem.
-
-See `.research/elliptic_curve_recovery_frontier_eng_overlap_2026-09-07.md` for
-the task-specific comparison against the pinned paper and available repository
-catalog. Independent mathematics review and maintainer acceptance remain pending.
-
-## Metric interpretation
-
-Confidence estimates the intrinsic quality (0 to 1) of the submitted response,
-including a correct refusal. Its diagnostic is one minus squared error against
-that quality, before any evidence-cost adjustment. Invalid submissions do not
-count as discovery attempts. Both splits publish attempt, false-discovery and
-refusal counts with their denominators. These diagnostics remain evaluator-only.
+The Frontier-Eng comparison is in
+`.research/elliptic_curve_recovery_frontier_eng_overlap_2026-09-07.md`.
+The package remains **candidate**. Reference, shortcuts, capability ablations and
+review history are in `references/known_best.md`. Repository-visible frozen worlds
+remain enumerable; evidence checks block unqueried answers but cannot establish
+that a candidate did not memorize an informative query policy. Fresh server-held
+worlds, independent review and frontier-model calibration remain pending.

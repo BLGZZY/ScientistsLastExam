@@ -5,16 +5,24 @@ chosen primes: for each p the oracle returns #E(F_p) exactly. Each count leaves
 a finite set of compatible (a mod p, b mod p) pairs; the Chinese remainder
 theorem combines the residue sets in the bounded integer window. Two worlds
 break the elliptic premise — a singular cubic and a
-smooth genus-two quintic — whose point counts no pair (a, b) can reproduce, and those
-worlds must be refused rather than fitted.
+smooth genus-two quintic. In the frozen window the former has singular-only
+lifts and the latter no lifts after enough primes. Nonsingular Q-isomorphic twins
+provide a third refusal cause: an exact coefficient pair is not identifiable.
 """
 
 from __future__ import annotations
 
 import math
+import importlib.util
+from pathlib import Path
+from functools import lru_cache
 from numbers import Integral
 
 import numpy as np
+
+_spec = importlib.util.spec_from_file_location("elliptic_evidence_arithmetic", Path(__file__).with_name("arithmetic.py"))
+_arithmetic = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_arithmetic)
 
 PRIME_LIST = (11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
               73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131, 137, 139,
@@ -32,22 +40,20 @@ PRIME_LIST = (11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
               1049, 1051, 1061, 1063, 1069, 1087, 1091, 1093, 1097)
 COEFFICIENT_BOUND = 1200
 COST_TIERS = ((100, 1), (1000, 2), (1100, 3))
-BUDGET_UNITS = 8
+BUDGET_UNITS = 5
 
-# Exact recovery alone should not saturate the clipped scale when it exhausts the
-# arithmetic budget. The score therefore retains 25% headroom for an equally exact
-# certificate obtained from fewer prime queries.
-MAX_EVIDENCE_COST_PENALTY = 0.25
-
-_BASE_DEVELOPMENT_SPECS = (
-    (41011, "elliptic"), (41017, "elliptic"), (41023, "elliptic"),
-    (41029, "elliptic"), (41031, "elliptic"),
-    (41037, "singular"), (41041, "genus_two"),
-)
-HELDOUT_SPECS = (
-    (42007, "elliptic"), (42013, "elliptic"), (42017, "elliptic"),
-    (42021, "singular"), (42023, "genus_two"),
-)
+# Frozen, disjoint procedural cohorts. Exact transcript support, rather than a
+# discount for unspent budget, determines recovery credit.
+_BASE_DEVELOPMENT_SPECS = tuple(
+    [(61000 + 101*i, "elliptic") for i in range(24)]
+    + [(61101 + 101*i, "singular") for i in range(4)]
+    + [(64000 + 101*i, "genus_two") for i in range(4)]
+    + [(65000 + 101*i, "isomorphic") for i in range(4)])
+HELDOUT_SPECS = tuple(
+    [(71000 + 101*i, "elliptic") for i in range(18)]
+    + [(71101 + 101*i, "singular") for i in range(4)]
+    + [(74000 + 101*i, "genus_two") for i in range(4)]
+    + [(75000 + 101*i, "isomorphic") for i in range(4)])
 
 
 def _legendre_count_cubic(prime, a, b):
@@ -106,6 +112,7 @@ def _squarefree_mod_prime(coefficients, prime):
     return len(a) == 1
 
 
+@lru_cache(maxsize=256)
 def _world(spec):
     seed, kind = spec
     rng = np.random.default_rng(int(seed))
@@ -113,21 +120,21 @@ def _world(spec):
         while True:
             a = int(rng.integers(-COEFFICIENT_BOUND, COEFFICIENT_BOUND + 1))
             b = int(rng.integers(-COEFFICIENT_BOUND, COEFFICIENT_BOUND + 1))
-            if 4 * a ** 3 + 27 * b * b != 0:
+            # Exclude rational scaling twins from supported coefficient worlds.
+            primitive = not any(a % u**4 == 0 and b % u**6 == 0 for u in range(2, 5))
+            scalable = abs(16*a) <= COEFFICIENT_BOUND and abs(64*b) <= COEFFICIENT_BOUND
+            if 4 * a ** 3 + 27 * b * b != 0 and primitive and not scalable:
                 break
         quintic = None
     elif kind == "singular":
-        # Discriminant zero: a nodal or cuspidal cubic.
-        while True:
-            b = int(rng.integers(-COEFFICIENT_BOUND, COEFFICIENT_BOUND + 1))
-            if b != 0:
-                break
-        a = int(round(-(27 * b * b / 4.0) ** (1.0 / 3.0)))
-        if 4 * a ** 3 + 27 * b * b != 0:
-            a = -b  # 4(-b)^3 + 27b^2 = 0 only for specific b; force exact zero below
-        # exact singular pair: choose t with a = -3t^2, b = 2t^3
-        t = int(rng.integers(1, 3))
-        a, b = -3 * t * t, 2 * t ** 3
+        # Signed disjoint square classes: the former two-valued generator
+        # accidentally shipped the exact same cubic in both splits.
+        t = (1, 2, 3, 5)[(seed // 101) % 4] * (1 if seed < 70000 else -1)
+        a, b = -3*t*t, 2*t**3
+        quintic = None
+    elif kind == "isomorphic":
+        a = 1 + (seed // 101) % 4
+        b = (1 if seed < 70000 else -1) * (1 + (seed // 103) % 8)
         quintic = None
     else:
         a = b = None
@@ -143,6 +150,7 @@ def _world(spec):
 def problem_statement(world):
     del world
     return {
+        "coefficient_bound": COEFFICIENT_BOUND,
         "curve_family": "y^2 = x^3 + a*x + b with |a|,|b| <= %d and nonzero discriminant"
                         % COEFFICIENT_BOUND,
         "prime_list": list(PRIME_LIST),
@@ -150,8 +158,8 @@ def problem_statement(world):
         "budget_units": BUDGET_UNITS,
         "answer_semantics": "the oracle returns the exact size of the solution set mod p, computed by Legendre sums",
         "refusal_note": (
-            "singular cubics and smooth genus-two quintics produce point counts no "
-            "elliptic pair can reproduce and must be refused"
+            "refuse a singular-only or empty bounded compatibility set, and "
+            "indistinguishable nonsingular coefficient pairs (including Q-isomorphic twins)"
         ),
     }
 
@@ -162,6 +170,7 @@ class _ArithmeticOracle:
         self.used = 0
         self.calls = 0
         self.violated = False
+        self.transcript = []
 
     def count_points(self, prime):
         try:
@@ -177,12 +186,13 @@ class _ArithmeticOracle:
                 raise RuntimeError("query budget exceeded")
             self.used += cost
             self.calls += 1
-            if self.world["kind"] == "elliptic":
+            if self.world["kind"] in ("elliptic", "isomorphic"):
                 count = _legendre_count_cubic(value, self.world["a"], self.world["b"])
             elif self.world["kind"] == "singular":
                 count = _legendre_count_cubic(value, self.world["a"], self.world["b"])
             else:
                 count = _legendre_count_quintic(value, self.world["quintic"])
+            self.transcript.append((value, int(count)))
             return {"prime": value, "point_count": int(count), "budget_cost": cost}
         except Exception:
             self.violated = True
@@ -210,15 +220,14 @@ def _validate(submission):
     if not (-COEFFICIENT_BOUND <= a <= COEFFICIENT_BOUND
             and -COEFFICIENT_BOUND <= b <= COEFFICIENT_BOUND):
         raise ValueError("coefficients outside public bounds")
-    if 4 * a ** 3 + 27 * b * b == 0:
-        raise ValueError("a claimed elliptic curve must have nonzero discriminant")
     return a, b, confidence, False
 
 
 def _empty(split, index):
     return {"split": split, "world_index": index, "valid": False, "abstained": False,
             "mechanism_score": 0.0, "intrinsic_mechanism_score": 0.0,
-            "evidence_efficiency_score": 0.0, "false_discovery": False,
+            "evidence_support_score": 0.0,
+            "compatible_curve_count": 0, "queried_prime_count": 0, "false_discovery": False,
             "correct_refusal": False, "confidence_score": 0.0, "budget_used": 0}
 
 
@@ -233,26 +242,29 @@ def _evaluate_world(candidate, spec, split, index):
         if oracle.violated:
             raise ValueError("oracle contract violated")
         supported = world["kind"] == "elliptic"
+        pairs = None
+        # Blind abstention remains valid and costs no computation. A coefficient
+        # claim earns credit only if the measurements isolate that exact pair.
+        if not abstain:
+            pairs = _arithmetic.compatible_pairs(oracle.transcript, COEFFICIENT_BOUND)
+            if pairs is not None:
+                pairs = _arithmetic.nonsingular(pairs)
+        unique = pairs is not None and len(pairs) == 1 and tuple(pairs[0]) == (a, b)
+        evidence_support = float(unique)
         if supported and not abstain:
-            error = (abs(a - world["a"]) + abs(b - world["b"])) / (4.0 * COEFFICIENT_BOUND)
-            mechanism = float(math.exp(-6.0 * error))
+            mechanism = float((a, b) == (world["a"], world["b"])) * evidence_support
         elif supported:
             mechanism = 0.0
         else:
-            mechanism = 1.0 if abstain else 0.0
-        # Confidence predicts the intrinsic quality of the submitted response,
-        # including correct refusal; a wrong supported claim is not rewarded.
+            mechanism = float(abstain)
         target = mechanism
-        evidence_efficiency = 1.0 - MAX_EVIDENCE_COST_PENALTY * (
-            oracle.used / BUDGET_UNITS)
-        # Efficiency adjusts supported recovery only. Correct-refusal credit stays
-        # on its own axis; otherwise evidence-backed refusal would score below the
-        # zero-information always-abstain baseline.
-        scored_mechanism = mechanism * evidence_efficiency if supported else mechanism
+        scored_mechanism = mechanism
         row.update({"valid": True, "abstained": abstain,
                     "mechanism_score": scored_mechanism,
                     "intrinsic_mechanism_score": mechanism,
-                    "evidence_efficiency_score": evidence_efficiency,
+                    "evidence_support_score": evidence_support,
+                    "compatible_curve_count": len(pairs) if pairs is not None else 0,
+                    "queried_prime_count": len(dict(oracle.transcript)),
                     "false_discovery": bool(not supported and not abstain),
                     "correct_refusal": bool(not supported and abstain),
                     "confidence_score": 1.0 - (confidence - target) ** 2,
@@ -272,7 +284,7 @@ def _summary(rows, specs):
         "raw": raw,
         "confidence": float(np.mean([r["confidence_score"] for r in rows])),
         "valid_count": sum(r["valid"] for r in rows),
-        "evidence_efficiency": float(np.mean([r["evidence_efficiency_score"] for r in rows])),
+        "evidence_support": float(np.mean([r["evidence_support_score"] for r in supported])),
         "false_count": sum(r["false_discovery"] for r in unsupported),
         "refusal_count": sum(r["correct_refusal"] for r in unsupported),
         "attempt_count": sum(r["valid"] and not r["abstained"] for r in supported),
@@ -286,8 +298,8 @@ def evaluate(recover_curve):
     heldout = [_evaluate_world(recover_curve, spec, "heldout", i)
                for i, spec in enumerate(HELDOUT_SPECS)]
     dev, hold = _summary(development, _BASE_DEVELOPMENT_SPECS), _summary(heldout, HELDOUT_SPECS)
-    dev_valid = dev["valid_count"] == len(development)
-    hold_valid = hold["valid_count"] == len(heldout)
+    dev_valid = dev["valid_count"] > 0
+    hold_valid = hold["valid_count"] > 0
     return {
         "combined_score": dev["normalized"] if dev_valid else 0.0,
         "valid": 1.0 if dev_valid else 0.0,
@@ -295,7 +307,7 @@ def evaluate(recover_curve):
         "mechanism_score": dev["raw"],
         "development_confidence_score": dev["confidence"],
         "development_discovery_attempt_count": dev["attempt_count"],
-        "development_evidence_efficiency_score": dev["evidence_efficiency"],
+        "development_evidence_support_score": dev["evidence_support"],
         "development_false_discovery_rate": dev["false_count"] / dev["unsupported_count"],
         "development_correct_refusal_rate": dev["refusal_count"] / dev["unsupported_count"],
         "development_discovery_coverage": dev["attempt_count"] / dev["supported_count"],
@@ -304,7 +316,7 @@ def evaluate(recover_curve):
         "false_discovery_count": dev["false_count"],
         "correct_refusal_count": dev["refusal_count"],
         "robustness_score": hold["normalized"] if hold_valid else 0.0,
-        "heldout_evidence_efficiency_score": hold["evidence_efficiency"],
+        "heldout_evidence_support_score": hold["evidence_support"],
         "heldout_confidence_score": hold["confidence"],
         "heldout_supported_world_count": hold["supported_count"],
         "heldout_unsupported_world_count": hold["unsupported_count"],

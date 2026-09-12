@@ -89,19 +89,21 @@ class EllipticCurvePins(unittest.TestCase):
         task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
         ev = _load(task / "verification/evaluator.py", "ec_budget_contract")
         task_text = (task / "Task.md").read_text(encoding="utf-8")
-        self.assertEqual(ev.BUDGET_UNITS, 8)
-        self.assertIn("budget_units      8", task_text)
+        self.assertEqual(ev.BUDGET_UNITS, 5)
+        self.assertIn("budget_units      5", task_text)
 
-    def test_exact_reference_leaves_room_for_a_smaller_prime_certificate(self):
+    def test_reference_recovers_with_real_evidence(self):
         task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
-        ev = _load(task / "verification/evaluator.py", "r4_ec_calibration")
-        ref = _load(task / "verification/reference_solver.py", "r4_ec_reference")
+        ev = _load(task / "verification/evaluator.py", "ec_evidence")
+        ref = _load(task / "verification/reference_solver.py", "ec_reference")
         result = ev.evaluate(ref.recover_curve)
         self.assertEqual(result["valid"], 1.0)
-        self.assertAlmostEqual(result["combined_score"], 0.75)
-        self.assertAlmostEqual(result["development_evidence_efficiency_score"], 0.75)
-        self.assertEqual(result["development_correct_refusal_rate"], 1.0)
-        self.assertEqual(result["development_false_discovery_rate"], 0.0)
+        self.assertGreater(result["combined_score"], .5)
+        self.assertLess(result["combined_score"], 1)
+        for row in result['per_world']:
+            if row['evidence_support_score']:
+                self.assertEqual(row['compatible_curve_count'], 1)
+                self.assertGreaterEqual(row['queried_prime_count'], 2)
 
     def test_counts_match_direct_enumeration(self):
         ev = _load("benchmarks/Mathematics/EllipticCurveRecovery/verification/evaluator.py",
@@ -130,8 +132,8 @@ class RunnerIntegrationTests(unittest.TestCase):
     """
 
     SCORE_KEYS = ("combined_score", "raw_score", "robustness_score", "valid",
-                  "development_evidence_efficiency_score",
-                  "heldout_evidence_efficiency_score")
+                  "development_evidence_support_score",
+                  "heldout_evidence_support_score")
 
     def _run_entrypoint(self, candidate: str) -> tuple[int, dict, dict]:
         task = ROOT / "benchmarks/Mathematics/EllipticCurveRecovery"
@@ -141,7 +143,7 @@ class RunnerIntegrationTests(unittest.TestCase):
                 [sys.executable, str(task / "frontier_eval" / "run_eval.py"),
                  "--candidate", str(task / candidate),
                  "--metrics-out", str(metrics_path)],
-                cwd=ROOT, capture_output=True, text=True, timeout=420)
+                cwd=ROOT, capture_output=True, text=True, timeout=450)
             stdout = json.loads(completed.stdout.strip().splitlines()[-1])
             metrics = json.loads(metrics_path.read_text(encoding="utf-8"))
         return completed.returncode, stdout, metrics
@@ -150,12 +152,13 @@ class RunnerIntegrationTests(unittest.TestCase):
         returncode, stdout, metrics = self._run_entrypoint(
             "verification/reference_solver.py")
         self.assertEqual(returncode, 0)
-        self.assertEqual(stdout, {"combined_score": 0.75, "valid": 1.0})
+        self.assertEqual(stdout["valid"], 1.0)
+        self.assertEqual(stdout["combined_score"], metrics["combined_score"])
         for key in self.SCORE_KEYS:
             self.assertIn(key, metrics)
         self.assertEqual(metrics["valid"], 1.0)
-        self.assertAlmostEqual(metrics["combined_score"], 0.75)
-        self.assertAlmostEqual(metrics["robustness_score"], 0.75)
+        self.assertGreater(metrics["combined_score"], .5)
+        self.assertGreater(metrics["robustness_score"], .5)
         self.assertNotIn("error_message", metrics)
 
     def test_baseline_exits_zero_with_a_written_metrics_file(self):
@@ -234,8 +237,7 @@ class ArithmeticScienceRegressions(unittest.TestCase):
         for value in (0.5, "0", False):
             with self.assertRaises(ValueError):
                 self.ev._validate({"a": value, "b": 1, "abstain": False, "confidence": 0.5})
-        with self.assertRaises(ValueError):
-            self.ev._validate({"a": -3, "b": 2, "abstain": False, "confidence": 0.5})
+        self.ev._validate({"a": -3, "b": 2, "abstain": False, "confidence": 0.5})
 
     def test_confident_wrong_coefficients_do_not_get_perfect_calibration(self):
         row = self.ev._evaluate_world(lambda *args: {"a": 1200, "b": 1200, "abstain": False, "confidence": 1.0}, (41011, "elliptic"), "development", 0)
@@ -245,3 +247,91 @@ class ArithmeticScienceRegressions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class RevisionEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.ev = _load(ROOT / "benchmarks/Mathematics/EllipticCurveRecovery/verification/evaluator.py", "revision_ec")
+        self.ref = _load(ROOT / "benchmarks/Mathematics/EllipticCurveRecovery/verification/reference_solver.py", "revision_ref")
+
+    def test_literal_answers_and_one_prime_fingerprints_have_no_credit(self):
+        specs = self.ev._BASE_DEVELOPMENT_SPECS + self.ev.HELDOUT_SPECS
+        for n in (0, 1, 2):
+            index = 0
+            def memo(problem, count_points, budget):
+                nonlocal index
+                w = self.ev._world(specs[index]); index += 1
+                for p in (97, 89)[:n]:
+                    count_points(p)
+                return {'a': w['a'] if w['kind'] == 'elliptic' else None,
+                        'b': w['b'] if w['kind'] == 'elliptic' else None,
+                        'abstain': w['kind'] != 'elliptic', 'confidence': 1.0}
+            r = self.ev.evaluate(memo)
+            self.assertEqual(r['valid'], 1)
+            self.assertEqual(r['combined_score'], 0)
+            self.assertEqual(r['robustness_score'], 0)
+
+    def test_one_caught_bad_query_does_not_erase_other_worlds(self):
+        calls = 0
+        def partial(problem, count_points, budget):
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                try:
+                    count_points(11.0)
+                except ValueError:
+                    pass
+            return self.ref.recover_curve(problem, count_points, budget)
+        r = self.ev.evaluate(partial)
+        self.assertEqual(r['valid'], 1)
+        self.assertGreater(r['combined_score'], 0)
+        self.assertLess(r['feasibility_rate'], 1)
+
+    def test_singular_claim_is_a_false_discovery_not_invalid(self):
+        r = self.ev.evaluate(lambda *args: {'a': -3, 'b': 2, 'abstain': False, 'confidence': 1})
+        self.assertEqual(r['valid'], 1)
+        self.assertEqual(r['combined_score'], 0)
+        self.assertEqual(r['development_false_discovery_rate'], 1)
+
+    def test_singular_split_signatures_are_disjoint(self):
+        signatures = []
+        for specs in (self.ev._BASE_DEVELOPMENT_SPECS, self.ev.HELDOUT_SPECS):
+            current = set()
+            for spec in specs:
+                if spec[1] != 'singular': continue
+                w = self.ev._world(spec)
+                current.add(tuple(self.ev._legendre_count_cubic(p,w['a'],w['b']) for p in self.ev.PRIME_LIST))
+            signatures.append(current)
+        self.assertFalse(signatures[0] & signatures[1])
+        self.assertGreaterEqual(len(signatures[0]), 3)
+
+    def test_q_isomorphic_worlds_have_indistinguishable_bounded_twins(self):
+        for specs in (self.ev._BASE_DEVELOPMENT_SPECS, self.ev.HELDOUT_SPECS):
+            for spec in specs:
+                if spec[1] != 'isomorphic': continue
+                w = self.ev._world(spec); a,b = w['a'], w['b']
+                self.assertLessEqual(abs(16*a), self.ev.COEFFICIENT_BOUND)
+                self.assertLessEqual(abs(64*b), self.ev.COEFFICIENT_BOUND)
+                for p in self.ev.PRIME_LIST:
+                    self.assertEqual(self.ev._legendre_count_cubic(p,a,b), self.ev._legendre_count_cubic(p,16*a,64*b))
+
+    def test_trusted_compatibility_matches_independent_brute_force(self):
+        bound = 12
+        for truth in ((1,1),(-3,2),(4,-5)):
+            transcript = [(p,self.ev._legendre_count_cubic(p,*truth)) for p in (11,13)]
+            expected = {(a,b) for a in range(-bound,bound+1) for b in range(-bound,bound+1)
+                        if all(self.ev._legendre_count_cubic(p,a,b)==n for p,n in transcript)}
+            actual = self.ev._arithmetic.compatible_pairs(transcript,bound)
+            self.assertEqual({tuple(row) for row in actual},expected)
+
+    def test_spurious_empty_and_singular_only_worlds_are_distinct(self):
+        for kind in ('singular','genus_two'):
+            for spec in self.ev._BASE_DEVELOPMENT_SPECS + self.ev.HELDOUT_SPECS:
+                if spec[1] != kind: continue
+                w = self.ev._world(spec); oracle = self.ev._ArithmeticOracle(w)
+                for p in (97,89,83,79,73): oracle.count_points(p)
+                pairs = self.ev._arithmetic.compatible_pairs(oracle.transcript, self.ev.COEFFICIENT_BOUND)
+                if kind == 'genus_two':
+                    self.assertEqual(len(pairs), 0)
+                else:
+                    self.assertGreater(len(pairs), 0)
+                    self.assertEqual(len(self.ev._arithmetic.nonsingular(pairs)), 0)

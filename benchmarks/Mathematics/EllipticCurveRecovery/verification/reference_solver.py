@@ -1,86 +1,71 @@
-"""Truth-blind reference witness: residue enumeration with CRT lifting.
+"""Standalone truth-blind active bounded point-count reconstruction.
 
-Small primes are queried in ascending order as the budget allows; for each prime every (a mod p,
-b mod p) pair is tested against the returned count by direct enumeration. The
-product modulus exceeds the coefficient window twice over, so every consistent
-combination lifts by the Chinese remainder theorem to at most one integer pair;
-exactly one surviving lift is claimed, an empty residue set at any prime — no
-elliptic pair reproduces the counts — is refused. It deliberately lacks
-large-prime confirmation queries, quadratic-form methods and Hasse-interval
-reasoning.
+Enumerate residue classes, lift into the public window, filter on every exact
+count and choose the next affordable prime by entropy over remaining lifts.
+One-step entropy is a complete greedy design method; a multistep discrimination
+policy can improve ambiguous budget-limited worlds. No unspent-budget bonus.
 """
+from functools import lru_cache
+import math
+import numpy as np
 
-from __future__ import annotations
-
-QUERY_PRIMES = (11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67,
-                71, 73, 79, 83, 89, 97)
-BOUND = 1200
-
-
-def _count(prime, a, b):
-    total = 1
-    for x in range(prime):
-        value = (x * x * x + a * x + b) % prime
-        if value == 0:
-            total += 1
-        elif pow(value, (prime - 1) // 2, prime) == 1:
-            total += 2
-    return total
+ADAPTIVE = True
+DISCRIMINANT_FILTER = True
+MAX_QUERIES = None
 
 
-def _residues(prime, count):
-    return [(a, b) for a in range(prime) for b in range(prime)
-            if _count(prime, a, b) == count]
-
-
-def _centered(value, modulus):
-    return value - modulus * round(value / modulus)
+@lru_cache(maxsize=256)
+def _table(p):
+    # Independent candidate-side construction, delivered as a single source file.
+    squares = {x*x % p for x in range(1, p)}
+    chi = np.array([0 if x == 0 else (1 if x in squares else -1) for x in range(p)])
+    a, b, x = np.arange(p)[:, None], np.arange(p)[None, :], np.arange(p)
+    counts = np.empty((p, p), dtype=np.int32)
+    for aa in range(p):
+        counts[aa] = p + 1 + chi[(x[:, None]**3 + aa*x[:, None] + b) % p].sum(axis=0)
+    return counts
 
 
 def recover_curve(problem, count_points, budget_units):
+    bound = problem['coefficient_bound']
+    cost = {p: next(c for limit, c in problem['cost_tiers'] if p <= limit)
+            for p in problem['prime_list']}
+    # All published primes may be queried. Large-prime tables are expensive;
+    # choose among the cost-one tier, a documented computational design tradeoff.
+    available = sorted((p for p in cost if cost[p] == 1), reverse=True)
+    pairs = None
+    queries = 0
     budget = int(budget_units)
-    per_prime = []
-    for prime in QUERY_PRIMES:
-        pairs = _residues(prime, count_points(prime)["point_count"])
-        if not pairs:
-            return {"a": None, "b": None, "abstain": True, "confidence": 0.8}
-        per_prime.append(pairs)
-        # Small primes cost one unit each; stop querying once the running modulus
-        # pins a unique lift (the window is wide, so early stops are rare).
-        if len(per_prime) >= 4 and budget - len(per_prime) <= 0:
+    while budget and available and (MAX_QUERIES is None or queries < MAX_QUERIES):
+        if pairs is not None and len(pairs) <= 1:
             break
-
-    # Incremental CRT with window pruning: after each prime, only lifts with a
-    # representative inside the coefficient window survive, keeping the partial
-    # sets small instead of enumerating the full cartesian product.
-    partial = {(0, 0, 1)}  # (residue_a, residue_b, modulus)
-    for prime, pairs in zip(QUERY_PRIMES, per_prime):
-        extended = set()
-        for ra, rb, modulus in partial:
-            for pa, pb in pairs:
-                new_modulus = modulus * prime
-                factor = new_modulus // modulus
-                inverse = pow(modulus % prime, -1, prime)
-                combined = ((ra + modulus * (( (pa - ra) * inverse) % prime))
-                            % new_modulus)
-                combined_b = ((rb + modulus * (( (pb - rb) * inverse) % prime))
-                              % new_modulus)
-                a = _centered(combined, new_modulus)
-                b = _centered(combined_b, new_modulus)
-                if new_modulus <= 2 * BOUND + 1 or (abs(a) <= BOUND
-                                                    and abs(b) <= BOUND):
-                    extended.add((combined, combined_b, new_modulus))
-        if not extended:
-            return {"a": None, "b": None, "abstain": True, "confidence": 0.7}
-        partial = extended
-
-    lifts = set()
-    for ra, rb, modulus in partial:
-        a = _centered(ra, modulus)
-        b = _centered(rb, modulus)
-        if abs(a) <= BOUND and abs(b) <= BOUND and 4 * a ** 3 + 27 * b * b != 0:
-            lifts.add((a, b))
-    if len(lifts) != 1:
-        return {"a": None, "b": None, "abstain": True, "confidence": 0.7}
-    a, b = next(iter(lifts))
-    return {"a": a, "b": b, "abstain": False, "confidence": 0.85}
+        if ADAPTIVE and pairs is not None:
+            def entropy(p):
+                values, counts = np.unique(_table(p)[pairs[:, 0] % p, pairs[:, 1] % p], return_counts=True)
+                weights = counts / counts.sum()
+                return -float(np.sum(weights * np.log(weights))) / cost[p]
+            p = max(available, key=entropy)
+        else:
+            p = available[0]
+        report = count_points(p)
+        n = report['point_count']
+        budget -= report['budget_cost']
+        available.remove(p)
+        queries += 1
+        if pairs is None:
+            chunks = []
+            for a, b in np.argwhere(_table(p) == n):
+                av = np.arange(-bound+(int(a)+bound)%p, bound+1, p)
+                bv = np.arange(-bound+(int(b)+bound)%p, bound+1, p)
+                aa, bb = np.meshgrid(av, bv, indexing='ij')
+                chunks.append(np.column_stack((aa.ravel(), bb.ravel())))
+            pairs = np.concatenate(chunks) if chunks else np.empty((0, 2), dtype=int)
+        else:
+            pairs = pairs[_table(p)[pairs[:, 0] % p, pairs[:, 1] % p] == n]
+        # Keep singular models during experimental design; reject only at decision.
+    if pairs is not None and DISCRIMINANT_FILTER:
+        pairs = pairs[4*pairs[:, 0]**3 + 27*pairs[:, 1]**2 != 0]
+    if pairs is None or len(pairs) != 1:
+        return {'a': None, 'b': None, 'abstain': True, 'confidence': .8}
+    a,b=map(int,pairs[0])
+    return {'a': a, 'b': b, 'abstain': False, 'confidence': 1.0}
