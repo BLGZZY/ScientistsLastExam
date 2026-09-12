@@ -144,3 +144,23 @@ they do not establish a universal shortcut gap or expert-level difficulty.
 `references/reduced_design_control.json` records provenance and full metrics.
 Independent red teaming, fresh worlds and frontier-model calibration remain
 necessary before scientific admission.
+
+## Integration validation (2026-09-12)
+
+Integrated upstream `dbed92712860`. Metadata now explicitly states
+`difficulty: unmeasured` and `tier: candidate`; model difficulty is not established.
+CI-pinned Linux compatibility tests at `a3a20e0f036a`: **184 passed, 17 subtests passed in 66.05s (0:01:06)**.
+The task's real world-session isolation test passed separately. The full contribution
+gate and the actual shared wrapper passed on `af0a1ddd8fff`; subsequent changes
+only update runner regression tests. Public score output excludes held-out/internal
+metrics, while the explicitly separate trusted sidecar retains full diagnostics.
+The real reference scores remain 0.681348 development /
+0.644685 held out, valid 1.
+
+The earlier full suite on the `58e4b8e` integration had
+1460 passed, 2 old-wrapper failures, 48 skipped and 511
+passed subtests. Those failures are fixed and covered by the final compatibility
+suite. The 48 historical-run skips are not passes. This is a prior full suite plus
+a current-main compatibility suite, not a claim of a new full-suite GitHub green.
+[`linux_validation.json`](linux_validation.json) records versions, revision scopes,
+source hashes, gate details and the remaining admission work.
